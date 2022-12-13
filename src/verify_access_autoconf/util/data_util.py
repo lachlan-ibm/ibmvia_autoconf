@@ -2,6 +2,8 @@
 import os
 import yaml
 import base64
+import kubernetes
+import pathlib
 from . import constants as const
 
 class Map(dict):
@@ -69,15 +71,14 @@ class CustomLoader(yaml.SafeLoader):
         namespaceName, key = secret.split(':')
         namespace, name = namespaceName.split('/')
         #Use k8s API to look up secret
-        k8sSecret = const.KUBE_CLIENT.CoreV1Api().read_namespaced_secret(name, namespace)
+        k8sSecret = KUBE_CLIENT.CoreV1Api().read_namespaced_secret(name, namespace)
         return base64.b64decode(k8sSecret.data[key]).decode()
-
 
 class FileLoader():
 
-    def __init__(self, config_base_dir):
-        self.config_base = config_base_dir
-        if config_base_dir.endswith('/') == False:
+    def __init__(self, config_base_dir=None):
+        self.config_base_dir = config_base_dir if config_base_dir else str(pathlib.Path.home())
+        if self.config_base_dir.endswith('/') == False:
             self.config_base_dir += '/'
 
     def read_files(self, paths, include_directories=False):
@@ -89,7 +90,7 @@ class FileLoader():
     def read_file(self, path, include_directories=False):
         contents = []
         if not os.path.isabs(path):
-            path = self.config_base + path
+            path = self.config_base_dir + path
         if os.path.isdir(path):
             if include_directories == True:
                 contents += [{"name": os.path.basename(path), "path": path, "type": "dir", 
@@ -108,3 +109,24 @@ class FileLoader():
                     result['text'] = 'undefined'
                 contents += [result]
         return contents 
+
+FILE_LOADER = FileLoader(os.environ.get(const.CONFIG_BASE_DIR))
+
+class ISVA_Kube_Client:
+    _client = None
+    _caught = False
+
+    @classmethod
+    def get_client(cls):
+        if cls._client == None and cls._caught == False:
+            if const.KUBERNETES_CONFIG in os.environ.keys():
+                kubernetes.config.load_kube_config(config_file=os.environ.get(const.KUBERNETES_CONFIG))
+            elif cls._caught == False:
+                try:
+                    kubernetes.config.load_config()
+                except kubernetes.config.config_exception.ConfigException:
+                    cls._caught = True
+            cls._client = kubernetes.client
+        return cls._client
+
+KUBE_CLIENT = ISVA_Kube_Client.get_client()
