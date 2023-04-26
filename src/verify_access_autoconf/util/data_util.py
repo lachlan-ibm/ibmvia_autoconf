@@ -1,10 +1,38 @@
 #!/bin/python 
+"""
+@copyright: IBM
+"""
 import os
 import yaml
 import base64
 import kubernetes
 import pathlib
 from . import constants as const
+
+def to_camel_case(snake_case):
+    parts = snake_case.split('_')
+    return parts[0] + ''.join(x.title() for x in parts[1:])
+
+
+def remap_keys(data_dict, remap_dict):
+    '''
+    old_dict: dictionary with keys to be remapped
+    remap_dict: dictionary with mapping {old_key: new_key}
+    '''
+    if not isinstance(data_dict, dict) or not isinstance(remap_dict, dict):
+        raise TypeError("give me dictionaries")
+    return {remap_dict.get(k, k): v for k, v in data_dict.items()}
+
+#Method guaranteed to return a list with at least dictionary in it (if its not empty)
+def optional_list(x):
+    if isinstance(x, list) and len(x) > 0:
+        return x
+    else:
+        return [{}]
+
+#Filter a list of dicts on a given key for a given value
+def filter_list(attribute, value, _list):
+    return list(filter(lambda x: attribute in x and x[attribute] == value, _list))
 
 class Map(dict):
     def __init__(self, *args, **kwargs):

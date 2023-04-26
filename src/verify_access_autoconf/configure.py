@@ -1,4 +1,7 @@
 #!/bin/python
+"""
+@copyright: IBM
+"""
 import sys
 import os
 import logging
@@ -7,6 +10,7 @@ import requests
 import yaml
 import pyisva
 import time
+import typing
 
 from .appliance import Appliance_Configurator as APPLIANCE
 from .container import Docker_Configurator as CONTAINER
@@ -47,11 +51,32 @@ class ISVA_Configurator(object):
         return False
 
 
+    class Admin_Password(typing.TypedDict):
+        '''
+        Example:: 
+
+            mgmt_user: 'administrator'
+            mgmt_pwd: 'S3cr37Pa55w0rd!'
+            mgmt_old_pwd: 'administrator'
+
+        *note:* These properties are overridden by ``ISVA_MGMT_*`` environment variables
+
+        '''
+
+        mgmt_user: str
+        'Administrator user to run configuration as.'
+
+        mgmt_pwd: str
+        'Secret to authenticate as the Administrator user.'
+
+        mgmt_old_pwd: str
+        'Password to update for the Administrator user.'
 
     def set_admin_password(self, old, new):
-        response = self.factory.get_system_settings().sysaccount.update_admin_password(old_password=old[1], password=new[1]) 
+
+        response = self.factory.get_system_settings().sysaccount.update_admin_password(old_password=old[1], password=new[1])
         if response.success == True:
-            _logger.info("Successfullt updated admin password")
+            _logger.info("Successfully updated admin password")
         else:
             _logger.error("Failed to update admin password:/n{}".format(response.data))
 
@@ -77,7 +102,7 @@ class ISVA_Configurator(object):
         # Need to activate appliance
         rsp = self.factory.get_system_settings().licensing.activate_module(code)
         if rsp.success == True:
-            _logger.info("Successfully applied {} licence".format(module))
+            _logger.info("Successfully applied {} license".format(module))
             self.needsRestart = True
         else:
             _logger.error("Failed to apply {} license:\n{}".format(module, rsp.data))
@@ -97,10 +122,32 @@ class ISVA_Configurator(object):
             _logger.debug("Activating federations module")
             self._apply_license("federation", config.activation.federation)
 
+
+
+    class Module_Activations(typing.TypedDict):
+        '''
+        Example::
+
+                  activation:
+                    webseal: "example"
+                    access_control: !secret verify-access/isva-secrets:access_control_code
+                    federation: !environment ISVA_ACCESS_CONTROL_CODE
+
+        '''
+
+        webseal: typing.Optional[str]
+        'License code for the WebSEAL Reverse Proxy module.'
+
+        access_control: typing.Optional[str]
+        'License code for the Advanced Access Control module.'
+
+        federation: typing.Optional[str]
+        'License for the Federations module.'
+
     def activate_appliance(self, config):
         system = self.factory.get_system_settings()
         activations = system.licensing.get_activated_modules().json
-        _logger.debug("Exisitng activations: {}".format(activations))
+        _logger.debug("Existing activations: {}".format(activations))
         if not any(module.get('id', None) == 'wga' and module.get('enabled', "False") == "True" for module in activations):
             self._activateBaseAppliance(config)
         if not any(module.get('id', None) == 'mga' and module.get('enabled', "False") == "True" for module in activations):
@@ -108,7 +155,7 @@ class ISVA_Configurator(object):
         if not any(module.get('id', None) == 'federation' and module.get('enabled', "False") == "True" for module in activations):
             self._activateFederation(config)
         if self.needsRestart == True:
-            deploy_pending_changes(self.factory, self.config)
+            deploy_pending_changes(self.factory, self.config, restartContainers=False)
             self.needsRestart = False
         _logger.info("appliance activated")
 
@@ -148,6 +195,40 @@ class ISVA_Configurator(object):
             _logger.error("Failed to upload {} personal certificate to {}/n{}".format(
                 parsed_file['name'], database, rsp.data))
 
+    class SSL_Certificates(typing.TypedDict):
+        '''
+        Example::
+
+                  ssl_certificates:
+                  - database: "lmi_trust_store"
+                    personal_certificates:
+                    - path: "ssl/lmi_trust_store/personal"
+                      secret: "S3cr37"
+                    signer_certificates:
+                    - "ssl/lmi_trust_store/signer"
+                  - database: "rt_profile_keys"
+                    signer_certificates:
+                    - "ssl/rt_profile_keys/signer"
+
+        '''
+
+        database: str
+        'Name of SSL database to configure. If database does not exist it will be created.'
+
+        signer_certificates: typing.Optional[typing.List[str]]
+        'List of file paths for signer certificates (PEM or DER) to import.'
+
+
+        class Personal_Certificate(typing.TypedDict):
+            path: str
+            'Path to file to import as a personal certificate'
+
+            secret: typing.Optional[str]
+            'Optional secret to decrypt personal certificate'
+
+        personal_certificates: typing.Optional[typing.List[Personal_Certificate]]
+        'List of file paths for personal certificates (PKCS#12) to import.'
+
     def import_ssl_certificates(self, config):
         ssl_config = config.ssl_certificates
         ssl = self.factory.get_system_settings().ssl_certificates
@@ -157,7 +238,7 @@ class ISVA_Configurator(object):
                 if database.name not in old_databases:
                     rsp = ssl.create_database(database.name, type='kdb')
                     if rsp.success == True:
-                        _logger.info("Successfully created {} SSL Ceritificate database".format(
+                        _logger.info("Successfully created {} SSL Certificate database".format(
                             database.name))
                     else:
                         _logger.error("Failed to create {} SSL Certificate database".format(
@@ -181,11 +262,34 @@ class ISVA_Configurator(object):
             self.needsRestart == False
 
 
+    class Admin_Config(typing.TypedDict):
+        '''
+        Examples::
+
+                   admin_cfg:
+                     session_timeout: 7200
+                     sshd_client_alive: 300
+                     console_log_level: "AUDIT"
+                     accept_client_certs: true
+
+        The complete list of properties that can be set by this key can be found at :ref:`pyisva:systemsettings#administrator-settings`
+        '''
+
+        session_timeout: typing.Optional[int]
+        sshd_client_alive: typing.Optional[int]
+        enabled_tls: typing.Optional[typing.List[str]]
+        console_log_level: typing.Optional[str]
+        accept_client_certs: typing.Optional[bool]
+        log_max_files: typing.Optional[int]
+        log_max_size: typing.Optional[int]
+        http_proxy: typing.Optional[str]
+        https_proxy: typing.Optional[str]
+
     def admin_config(self, config):
         if config.admin_config != None:
             rsp = self.factory.get_system_settings().admin_settings.update(**config.admin_config)
             if rsp.success == True:
-                _logger.info("Successfullt set admin config")
+                _logger.info("Successfully set admin config")
             else:
                 _logger.error("Failed to set admin config using:\n{}\n{}".format(
                     json.dumps(config.admin_config), rsp.data))
@@ -202,7 +306,7 @@ class ISVA_Configurator(object):
                     rsp = self.factory.get_system_settings().sysaccount.update_user(
                             user.name, password=user.password)
                     if rsp.success == True:
-                        _logger.info("Successfully update passsword for {}".format(user.name))
+                        _logger.info("Successfully update password for {}".format(user.name))
                     else:
                         _logger.error("Failed to update password for {}:\n{}".format(
                             user.name, rsp.data))
@@ -227,18 +331,82 @@ class ISVA_Configurator(object):
     def _system_groups(self, groups):
         for group in config.account_management.groups:
             rsp = None
-            if group.operation == "add":
+            if group.operation == "add" or group.operation == "update":
                 rsp = self.factory.get_system_settings().sysaccount.create_group(group.id)
             elif group.operation == "delete":
                 rsp = self.factory.get_system_settings().sysaccount.delete_group(group.id)
             else:
-                _logger.error("oepration {} is not permited for groups".format(group.operation))
+                _logger.error("Operation {} is not permitted for groups".format(group.operation))
                 continue
             if rsp.success == True:
                 _logger.info("Successfully {} group {}".format(group.operation, group.id))
             else:
-                _logger.error("Faield to {} group {}:\n{}\n{}".format(
+                _logger.error("Failed to {} group {}:\n{}\n{}".format(
                     group.operation, group.id, json.dumps(group, indent=4), rsp.data))
+
+            if group.operation == "update":
+                for user in group.users:
+                    rsp = self.factory.get_system_settings().sysaccount.add_user(user=user, group=group.id)
+                    if rsp.success == True:
+                        _logger.info("Successfully added {} to group {}".format(user, group.id))
+                    else:
+                        _logger.error("Failed to add user {} to group {}:\n{}\n{}".format(
+                            user, group.id, json.dumps(group, indent=4), rsp.data))
+
+
+    class Account_Management(typing.TypedDict):
+        '''
+        Example::
+
+                account_management:
+                  users:
+                  - name: !secret default/isva-secrets:cfgsvc_user
+                    operation: "update"
+                    password: !secret default/isva-secrets:cfgsvc_secret
+                    groups:
+                    - "aGroup"
+                    - "anotherGroup"
+                 groups:
+                 - name: "adminGroup"
+                   operation: "update"
+                   users:
+                   - "admin"
+                   - "anotherUser"
+
+        '''
+        class Management_User(typing.TypedDict):
+            operation: str
+            'Operation to perform with user. "add" | "update" | delete".'
+
+            name: str
+            'Name of the user to create, remove or update.'
+
+            password: typing.Optional[str]
+            'Password to authenticate as user. Required if creating user.'
+
+            groups: typing.Optional[typing.List[str]]
+            'Optional list of groups to add user to.'
+
+
+        class Management_Group(typing.TypedDict):
+            '''
+            *note*: Groups are created before users; therefore if a user is being created and added to a group then
+                    this should be done in the user configuration entry.
+            '''
+            operation: str
+            'Operation to perform with group. "add" | "update" | delete".'
+
+            id: str
+            'Name of group to create.'
+
+            users: typing.Optional[typing.List[str]]
+            'Optional list of users to add to group.'
+
+        users: typing.Optional[typing.List[Management_User]]
+        'Optional list of management users to configure'
+
+        groups: typing.Optional[typing.List[Management_Group]]
+        'Optional list of management groups to configure.'
 
     def account_management(self, config):
         if config.account_management != None:
@@ -249,14 +417,14 @@ class ISVA_Configurator(object):
 
     def _add_auth_role(self, role):
         if role.operation == "delete":
-            rsp = self.factory.get_system_settings().manangemetauthorization.delete_role(role.name)
+            rsp = self.factory.get_system_settings().mgmt_authorization.delete_role(role.name)
             if rsp.success == True:
                 _logger.info("Successfully removed {} authorization role".format(role.name))
             else:
-                _logger.error("Failed to remove {} authroization role:\n{}".format(
+                _logger.error("Failed to remove {} authorization role:\n{}".format(
                     role.name, rsp.data))
         elif role.operation in ["add", "update"]:
-            configured_roles = self.factory.get_system_settings().managementauthorization.get_roles().json
+            configured_roles = self.factory.get_system_settings().mgmt_authorization.get_roles().json
             exists = False
             for r in configured_roles:
                 if r['name'] == role.name:
@@ -264,13 +432,13 @@ class ISVA_Configurator(object):
                     break
             rsp = None
             if exits == True:
-                rsp = self.factory.get_system_settings().managementauthorization.update_role(
+                rsp = self.factory.get_system_settings().mgmt_authorization.update_role(
                         name=role.name, users=role.users, groups=role.groups, features=role.features)
             else:
-                rsp = self.factory.get_system_settings().managementauthorization.create_role(
+                rsp = self.factory.get_system_settings().mgmt_authorization.create_role(
                         name=role.name, users=role.users, groups=role.groups, features=role.features)
             if rsp.success == True:
-                _logger.info("Successfully configured {} authprization role".format(role.name))
+                _logger.info("Successfully configured {} authorization role".format(role.name))
             else:
                 _logger.error("Failed to configure {} authorization role:\n{}".format(
                     role.name, rsp.data))
@@ -278,17 +446,92 @@ class ISVA_Configurator(object):
             _logger.error("Unknown operation {} for role configuration:\n{}".format(
                 role.operation, json.dumps(role, indent=4)))
 
+
+    class Management_Authorization(typing.TypedDict):
+        '''
+        Example::
+
+               management_authorization:
+                 authorization_enforcement: True
+                 roles:
+                 - operation: update
+                   name: "Configuration Service"
+                   users:
+                   - name: "cfgsvc"
+                     type: "local"
+                   features:
+                   - name: "shared_volume"
+                     access: "w"
+
+        '''
+
+        class Role(typing.TypedDict):
+            class User(typing.TypedDict):
+                name: str
+                'Name of user'
+                type: str
+                'Type of user. "local" | "remote".'
+
+            class Group(typing.TypedDict):
+                name: str
+                'name of group.'
+                type: str
+                'Type of group. "local" | "remote".'
+
+            class Feature(typing.TypedDict):
+                name: str
+                'Name of feature.'
+                access: str
+                'Access to grant to feature. "r" | "w".'
+
+            operation: str
+            'Operation to perform on authorization role. "add" | "remove" | "update".'
+            name: str
+            'Name of role.'
+            users: typing.Optional[typing.List[User]]
+            'Optional list of users to add to role.'
+            groups: typing.Optional[typing.List[Group]]
+            'Optional list of groups to add to role.'
+            features: typing.List[Feature]
+            'List of features to authorize users / groups for.'
+
+        authorization_enforcement: bool
+        'Enable role based authorization for this deployment.'
+
+        roles: typing.Optional[typing.List[Role]]
+        'Optional list of roles to modify for role based authorization.'
+
     def management_authorization(self, config):
         if config.management_authorization != None and config.management_authorization.roles != None:
             for role in config.management_authorization.roles:
                 self._add_auth_role(role)
             if config.management_authorization.authorization_enforcement:
-                rsp = self.factory.get_system_settings().managementauthorization.enable(
+                rsp = self.factory.get_system_settings().mgmt_authorization.enable(
                         enforce=config.management_authorization.authorization_enforcement)
                 if rsp.success == True:
-                    _logger.info("Successfully enabled role based authroization")
+                    _logger.info("Successfully enabled role based authorization")
                 else:
                     _logger.error("Failed to enable role based authorization:\n{}".format(rsp.data))
+
+
+    class Advanced_Tuning_Parameter:
+        '''
+        Example::
+
+                  advanced_tuning_parameters:
+                  - name: "wga.rte.embedded.ldap.ssl.port"
+                    value: 636
+                  - name: "password.policy"
+                    value: "minlen=8 dcredit=1 ucredit=1 lcredit=1"
+                    description: "Enforced PAM password quality for management accounts."
+
+        '''
+        name: str
+        'Name of the Advanced Tuning Parameter.'
+        value: str
+        'Value of the Advanced Tuning Parameter.'
+        description: typing.Optional[str]
+        'optional description of the Advanced Tuning Parameter.'
 
     def advanced_tuning_parameters(self, config):
         if config.advanced_tuning_parameters != None:
@@ -304,7 +547,7 @@ class ISVA_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully removed {} Advanced Tuning Parameter".format(atp.name))
                     else:
-                        _logger.error("Failed to remove {} Advanced tuning paramter:\n{}".format(
+                        _logger.error("Failed to remove {} Advanced Tuning Parameter:\n{}".format(
                             atp.name, rsp.data))
                 elif atp.operation == "update":
                     exits = False
@@ -323,7 +566,7 @@ class ISVA_Configurator(object):
                         _logger.info("Successfully updated {} Advanced Tuning Parameter".format(atp.name))
                     else:
                         _logger.error("Failed to update {} Advanced Tuning Parameter with:\n{}\n{}".format(
-                            atp.name, json.dupms(atp, indent=4), rsp.data))
+                            atp.name, json.dumps(atp, indent=4), rsp.data))
                 elif atp.operation == "add":
                     rsp = self.factory.get_system_settings().advanced_tuning.create_parameter(
                         key=atp.name, value=atp.value, comment=atp.comment)
@@ -331,21 +574,31 @@ class ISVA_Configurator(object):
                         _logger.info("Successfully add {} Advanced Tuning Parameter".format(atp.name))
                     else:
                         _logger.error("Failed to add {} Advanced Tuning Parameter with:\n{}\n{}".format(
-                            atp.name, json.dupms(atp, indent=4), rsp.data))
+                            atp.name, json.dumps(atp, indent=4), rsp.data))
                 else:
                     _logger.error("Unknown operation {} for Advanced Tuning Parameter:\n{}".format(
                         atp.operation, json.dumps(atp, indent=4)))
 
+
+    class Snapshot(typing.TypedDict):
+        '''
+        Example::
+
+                snapshot: "snapshot/isva-2023-02-08.snapshot"
+
+        '''
+        snapshot: str
+        'Path to signed snapshot archive file.'
 
     def apply_snapshot(self, config):
         if config != None and config.snapshot != None:
             snapshotConfig = config.snapshot
             rsp = self.factory.get_system_settings().snapshot.upload(snapshotConfig.snapshot)
             if rsp.success == True:
-                _logger.info("Successfully applied snapsnot [{}]".format(snapshotConfig.snapshot))
+                _logger.info("Successfully applied snapshot [{}]".format(snapshotConfig.snapshot))
                 deploy_pending_changes(self.factory, self.config)
             else:
-                _logger.error("Failed to apply snapshot [{}]\n{}".foramt(snapshotConfig.snapshot),
+                _logger.error("Failed to apply snapshot [{}]\n{}".format(snapshotConfig.snapshot),
                         rsp.content)
 
 
@@ -359,7 +612,7 @@ class ISVA_Configurator(object):
             base_config = self.config.container
             model = container
         else:
-            _logger.error("Deployment model cannot be found in config.yaml, skipping")
+            _logger.error("Deployment model cannot be found in config.yaml, skipping container/appliance configuration.")
             return
         self.apply_snapshot(base_config)
         self.admin_config(base_config)

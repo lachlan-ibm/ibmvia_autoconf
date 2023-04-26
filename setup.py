@@ -21,19 +21,20 @@ class CleanCommand(Command):
                     os.system('rm -vrf {}'.format(os.path.join(root, name)))
 
 setup(
-    name='verify_access_configurator',
-    version='0.1.%s' % os.environ.get('TRAVIS_BUILD_NUMBER', 0),
+    name='verify_access_autoconf',
+    version='0.2.%s' % os.environ.get('TRAVIS_BUILD_NUMBER', 0),
     description='YAML based configuration automation for IBM Security Verify Access',
     author='Lachlan Gleeson',
     author_email='lgleeson@au1.ibm.com',
-    license='MIT',
+    license='Apache2.0',
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     install_requires=['requests>=2.23.0',
                       'PyYAML>=5.3',
                       'pyisva>=0.1',
                       'kubernetes>=10.0.1',
-                      'docker-compose'
+                      'docker-compose',
+                      'typing'
     ],
     url='https://github.ibm.com/lgleeson/ISVAConfigurationAutomation',
     zip_safe=False,
