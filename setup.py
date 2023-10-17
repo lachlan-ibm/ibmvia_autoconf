@@ -38,7 +38,7 @@ setup(
                       'PyYAML>=6.0.0',
                       'pyisva',
                       'kubernetes',
-                      'docker-compose',
+                      'docker-compose>=1.29.1',
                       'typing'
     ],
     project_urls={
