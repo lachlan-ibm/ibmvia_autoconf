@@ -34,18 +34,24 @@ setup(
     license='Apache2.0',
     package_dir={"": "src"},
     packages=find_packages(where="src"),
-    install_requires=['requests>=2.23.0',
-                      'PyYAML>=5.3',
-                      'pyisva>=0.1',
-                      'kubernetes>=10.0.1',
+    install_requires=['requests',
+                      'PyYAML',
+                      'pyisva',
+                      'kubernetes',
                       'docker-compose',
                       'typing'
     ],
-    url='https://github.ibm.com/lachlan-ibm/verify_access_autoconf',
+    project_urls={
+        'Homepage': 'https://github.com/lachlan-ibm/verify_access_autoconf',
+        'Documentation': 'https://lachlan-ibm.github.io/verify_access_autoconf',
+        'Source': 'https://github.com/lachlan-ibm/verify_access_autoconf',
+        'Tracker': 'https://github.com/lachlan-ibm/verify_access_autoconf/issues'
+    },
     zip_safe=False,
     cmdclass={
         'clean': CleanCommand,
     },
     long_description=long_description,
-    long_description_content_type='text/markdown'
+    long_description_content_type='text/markdown',
+    keywords=["isva", "isam", "ibm security access manager", "ibm security verify access"]
 )
