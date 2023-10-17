@@ -35,7 +35,7 @@ setup(
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     install_requires=['requests',
-                      'PyYAML',
+                      'PyYAML>=6.0.0',
                       'pyisva',
                       'kubernetes',
                       'docker-compose',
