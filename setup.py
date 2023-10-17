@@ -37,7 +37,7 @@ setup(
     install_requires=['requests',
                       'PyYAML<=5.3.1',
                       'pyisva',
-                      'kubernetes',
+                      'kubernetes>=24.2.0',
                       'docker-compose>=1.29.1',
                       'typing'
     ],
