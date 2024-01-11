@@ -57,6 +57,13 @@ defintions and clients.
    :members:
 
 
+Attribute Sources
+=================
+
+To set Attribute sources, see the entry in the `Appliance <appliance.html#attribute-sources>`_ or 
+`Container <container.html#attribute-sources>`_ documentation.
+
+
 .. _authentication:
 
 Authentication
@@ -115,6 +122,13 @@ flow before permitting access.
    :members:
 
 
+Point Of Contact
+================
+
+To configure Point of Contact profiles, see the entry in the `Appliance <appliance.html#point-of-contact>`_ or 
+`Container <container.html#point-of-contact>`_ documentation.
+
+
 Policy Information Points
 =========================
 Policy Information Points allow administrators to integrate third party information sources to provide additional
@@ -129,29 +143,18 @@ context to an authorization policy before making a decision to permit/deny acces
 
 HTTP Template Files
 ===================
-This configuration option can be used to set files or directories containing HTML files which are compatible with the 
-AAC and Federation templating engine. The directory structure of any directories to upload should follow the default 
-top level directories. If you are defining a directory it should contain a trailing ``/``.
 
-
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Template_Files
-   :members:
+To upload HTTP template files, see the entry in the `Appliance <appliance.html#http-template-files>`_ or 
+`Container <container.html#http-template-files>`_ documentation.
 
 
 .. _access_control_mapping_rule:
 
 JavaScript Mapping Rules
 ========================
-This configuration option can be used to upload different types or categories of JavaScript Mapping Rules. These rules 
-are typically used to implement custom business logic for a particular integration requirement.
 
-
-.. note:: Some types of mapping rules are defined elsewhere, eg OIDC pre/post token mapping rules must be defined with 
-          the OIDC definition they are associated with.
-
-
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Mapping_Rules
-   :members:
+To upload JavaScript mapping rules, see the entry in the `Appliance <appliance.html#javascript-mapping-rules>`_ or 
+`Container <container.html#javascript-mapping-rules>`_ documentation.
 
 
 .. _access_control_push_notification:
@@ -179,23 +182,16 @@ registered for a user; and is capable of initiating or completing an "out of ban
 
 Server Connections
 ==================
-Server connections are used to connect to third party infrastructure such as LDAP registries, email servers, SMS servers, ect. These 
-connections are used by other AAC components to provide authentication/authorization services.
 
-
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Server_Connections
-   :members:
+To configure third party Server Connections, see the entry in the `Appliance <appliance.html#server-connections>`_ or 
+`Container <container.html#server-connections>`_ documentation.
 
 
 Advanced Configuration Parameters
 =================================
-The Advanced Configuration Parameters entry is used to set module wide properties for authentication and authorization 
-components. The list of available properties is dependant on the target version of Verify Access being configured. Administrators
-are able to use the Verify Access assigned identifier or the name of the property.
 
-
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Advanced_Configuration
-   :members:
+To set Advanced Configuration Properties, see the entry in the `Appliance <appliance.html#advanced-configuration-properties>`_ or 
+`Container <container.html#advanced-configuration-properties>`_ documentation.
 
 
 SCIM
@@ -219,10 +215,6 @@ documents (metadata) as well as any custom logic applied in a JavaScript mediato
 
 Runtime Server Configuration
 ============================
-This property can be used to configure the runtime liberty server. This includes: configuring trace; managing endpoints/interfaces that
-the runtime server can respond to requests; setting server configuration parameters (such as proxy settings, SSL configuration); and 
-defining users in the runtime user registry.
 
-
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Runtime_Configuration
-   :members:
+To set Runtime Server properties, see the entry in the `Appliance <appliance.html#runtime-server-configuration>`_ or 
+`Container <container.html#runtime-server-configuration>`_ documentation.

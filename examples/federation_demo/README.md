@@ -40,7 +40,10 @@ The first two stages configure the Identity Provider and Service Provider.
 
 The final two stages configures the IDP and SP partner relationships between the two deployments.
 
+Create the Config Map required for the configurator, this will contain the mapping rules, PKCS12, PEM and YAML files for the deployment
 
+kubectl create configmap fed-config --from-file=mapping_rules.zip --from-file=idp.pem --from-file=sp.pem --from-file=ldap.pem --from-file=postgresql.pem --from-file=federation_idp.yaml --from-file=federation_sp.yaml --from-file=federation_idp_partner.yaml --from-file=federation_sp_partner.yaml --from-file=idpkeys.p12 --from-file=spkeys.p12
+kubectl create secret generic fed-env --from-env-file=fed.env
 
 Configure IDP
 _____________
