@@ -7,9 +7,10 @@ import json
 import os
 import logging
 import typing
+import copy
 
-from .util.configure_util import deploy_pending_changes
-from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, to_camel_case
+from .util.configure_util import deploy_pending_changes, config_base_dir
+from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, to_camel_case, remap_keys
 
 _logger = logging.getLogger(__name__)
 
@@ -301,11 +302,25 @@ class FED_Configurator(object):
         self.needsRestart = False
 
 
+
+    def _mapping_rule_to_id(self, rule_name):
+        '''
+        Helper method to convert rule name to Verify Access ID
+        '''
+        rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
+        mapping_rule = optional_list(filter_list('name', rule_name, rules))[0]
+        if mapping_rule:
+            return mapping_rule['id']
+        else:
+            return None
+
+
     class Point_Of_Contact_Profiles(typing.TypedDict):
         '''
         Example::
 
-                point_of_contact_profiles:
+              point_of_contact:
+                profiles:
                 - name: "MyPoCProfile"
                   description: "MyPoCProfile description"
                   authenticate_callbacks:
@@ -372,15 +387,15 @@ class FED_Configurator(object):
             authn_policy_callbacks: typing.Optional[typing.List[Point_Of_Contact_Callback]]
             'An array of callbacks for authentication policy.'
 
-        point_of_contact_profiles: typing.List[Point_Of_Contact_Profile]
+        profiles: typing.List[Point_Of_Contact_Profile]
         'List of point of contact profiles to configure'
         active_profile: str
         'The name of the Point of Contact profile which should be the active profile. Only one profile can be active at a time.'
 
     def configure_poc(self, federation_config):
-        if federation_config.point_of_contact_profiles != None:
+        if federation_config.point_of_contact != None:
             old_pocs = optional_list(self.fed.poc.list_profiles().json)
-            for poc in federation_config.point_of_contact_profiles:
+            for poc in federation_config.point_of_contact.get('profiles', []):
                 old_poc = optional_list(filter_list('name', poc.name, old_pocs))[0]
                 methodArgs = copy.deepcopy(poc)
                 #Convert keys from snake to camel case
@@ -401,23 +416,99 @@ class FED_Configurator(object):
                     _logger.error("Failed to {} {} point of contact with config:\n{}\n{}".format(
                                             verb, poc.name, json.dumps(poc, indent=4), rsp.data))
 
-            if "active_profile" in federation_config.point_of_contact_profiles:
-                poc_profiles = self.fed.poc.list_profiles().json
+            if federation_config.point_of_contact.active_profile:
+                poc_profiles = optional_list(self.fed.poc.list_profiles().json)
                 if poc_profiles:
                     profile_to_activate = optional_list(filter_list(
-                            'name', federation_config.point_of_contact_profiles.active_profile, poc_profiles))[0]
+                            'name', federation_config.point_of_contact.active_profile, poc_profiles))[0]
                     if profile_to_activate:
                         rsp = self.fed.poc.set_current_profile(profile_to_activate['id'])
                         if rsp.success == True:
                             _logger.info("Successfully updated the active POC profile to {}".format(
-                                                            federation_config.point_of_contact_profiles.active_profile))
+                                                            federation_config.point_of_contact.active_profile))
                         else:
                             _logger.error("Failed to update the active POC profile to {}".format(
-                                                            federation_config.point_of_contact_profiles.active_profile))
+                                                            federation_config.point_of_contact.active_profile))
                     else:
                         _logger.error("Could not find the {} POC profile to activate.".format(
-                                                            federation_config.point_of_contact_profiles.active_profile))
+                                                            federation_config.point_of_contact.active_profile))
+                else:
+                    _logger.error("Could not list hte point of contact profiles")
 
+
+
+
+    def _chain_index_to_prefix(self, template_name, chain_index):
+        '''
+        Convert the given chain name and index to the Verify Access generated UUID prefix from
+        the chain template
+        '''
+        templates = optional_list(self.fed.sts.list_templates().json)
+        template = optional_list(filter_list('name', template_name, templates))[0]
+        if template:
+            items = template.get("chainItems", [])
+            if len(items) <= chain_index:
+                _logger.error("Index of chain template item {} does not exist :\n{}".format(chain_index, json.dumps(items, indent=4)))
+            else:
+                return items[chain_index].get("prefix", "NULL")
+        else:
+            _logger.error("Could not find chain template with name {}".format(template_name))
+        return "NULL"
+
+    def _remap_sts_chain_template_keys(self, template):
+        moduleTypes = optional_list(self.fed.sts.list_modules().json)
+        for module in template.get("modules", []):
+            moduleType = optional_list(filter_list("name", module.get("id", "NULL"), moduleTypes))[0]
+            module['id'] = moduleType.get("id", module.get("id", "MODULE_ID_MISSING"))
+
+    def _chain_template_name_to_id(self, template_name):
+        templates = optional_list(self.fed.sts.list_templates().json)
+        return optional_list(filter_list('name', template_name, templates))[0].get('id', template_name)
+
+    def _remap_sts_chain_keys(self, chain):
+        remap = {"issuer": "issuer_",
+                    "validation_key": "validation_",
+                    "signature": "sign_",
+                    "applies_to": "applies_to_"
+        }
+        if "properties" in chain.keys():
+            chain["self_properties"] = chain['properties'].get("myself", [])
+            chain["partner_properties"] = chain['properties'].get("partner", [])
+            del chain['properties']
+            for config_key in ["self_properties", "partner_properties"]:
+                for i, entry in enumerate(chain.get(config_key, [])):
+                    if isinstance(entry, dict):
+                        needToUpdate = False
+                        ruleName = "NULL"
+                        for k, v in entry.items():
+                            if v == "map.rule.reference.name":
+                                needToUpdate = True
+                                ruleName = entry.get("value", ["NULL"])[0]
+                        if needToUpdate == True:
+                            entry["name"] = "map.rule.reference.ids"
+                            entry['value'] = [self._mapping_rule_to_id(ruleName)] #Convert to id
+                        entry["name"] = self._chain_index_to_prefix(chain.chain_template, entry.get("index", -1)) + "." + entry["name"]
+                        del entry["index"] #Convert index to chain template prefix and remove index from properties
+        temp = {}
+        for key, new_key_prefix in remap.items():
+            if key in chain.keys()   and isinstance(chain.get(key), dict):
+                for old_key, value in chain.pop(key).items():
+                    temp[new_key_prefix + old_key] = value
+        chain.update(temp)
+        remap = {"sign_include_certificate_data": "sign_include_cert",
+                    "sign_include_public_key": "sign_include_pubkey",
+                    "sign_include_subject_key_identifier": "sign_include_ski",
+                    "sign_include_issuer_details": "sign_include_issuer",
+                    "sign_include_subject_name": "sign_include_subject",
+                    "validation_include_certificate_data": "validation_include_cert",
+                    "validation_include_public_key": "validation_include_pubkey",
+                    "validation_include_subject_key_identifier": "validation_include_ski",
+                    "validation_include_issuer_details": "validation_include_issuer",
+                    "validation_include_subject_name": "validation_include_subject",
+            }
+        chain["template_id"] = self._chain_template_name_to_id(chain.get("chain_template", "NULL"))
+        del chain["chain_template"]
+        return remap_keys(chain, remap)
 
     class Security_Token_Service(typing.TypedDict):
         '''
@@ -429,16 +520,6 @@ class FED_Configurator(object):
                     name: "OAuth20 Appliance Post Token Map Module"
                     description: "appliance-post-token-map-module"
                     moduleId: "OAuth20AppliancePostTokenMapModule"
-                    configuration :
-                    - name: "example_config_name_1"
-                        value: "example_config_value_1"
-                    supportedModes:
-                    - "map"
-                  chain_templates:
-                  - name:	"STS Chain Template name"
-		            description: "STS Chain Template description"
-		            chain_items: 
-                    - id: "default-map"
 				      mode: "map"
 				      prefix: "uuid3dbf4c6a-013d-15d5-bb8b-c2665e02a402"
 				    - id: "default-dynamic_chain"
@@ -452,7 +533,7 @@ class FED_Configurator(object):
                 'The token id of an STS module.'
                 mode: str
                 'The mode the STS module is used in in the chain. Must be one of the supported modes of the STS module.'
-                prefix: str
+                prefix: typing.Optional[str]
                 'The prefix for the chain item.'
 
             name: str
@@ -492,12 +573,32 @@ class FED_Configurator(object):
                 'The local part of a qualified name for a Web service.'
 
             class Properties(typing.TypedDict):
+
+                class AttributeMapping(typing.TypedDict):
+                    name: str
+                    attribute: str
+
                 class Item(typing.TypedDict):
+                    '''
+                    The names of valid chain template properties differ for each chain template module. The final name
+                    of the property being set is determined by the index in the chain template (to fetch the UUID prefix
+                    of the chain template module bing configured) and the name of the property. For example, the 
+                    properties::
+                        index: 1
+                        name: rule.type
+                        value: "JAVASCRIPT"
+
+                    would result in a property of::
+                        {"name": "071dcbe-93e3-11ee-a5af-14755ba358db.rule.type", "value": ["JAVASCRIPT"]}
+                    '''
+                    index: str
+                    'The index in the chain template of the property being set.'
                     name: str
                     'The name of the configuration property.'
                     value: typing.List[str]
                     'The values of the configuration property.'
 
+                attributes: typing.Optional[typing.List[AttributeMapping]]
                 partner: typing.Optional[typing.List[Item]]
                 'The partner properties for all modules within the STS Chain Template referenced in the STS Chain'
                 myself: typing.Optional[typing.List[Item]]
@@ -507,8 +608,8 @@ class FED_Configurator(object):
             'A friendly name for the STS Chain.'
             description: str
             'A description of the STS Chain.'
-            chain_id: str
-            'The Id of the STS Chain Template that is referenced by this STS Chain.'
+            chain_template: str
+            'The name of the STS Chain Template that is referenced by this STS Chain.'
             request_type: str
             'The type of request to associate with this chain. The request is one of the types that are supported by the WS-Trust specification.'
             token_type: typing.Optional[str]
@@ -537,49 +638,22 @@ class FED_Configurator(object):
         chains: typing.Optional[typing.List[Chain]]
         'List of STS chains to create or update.'
 
-    def _remap_sts_chain_keys(self, chain):
-            remap = {"issuer": "issuer_",
-                     "validation_key": "validation_",
-                     "signature": "sign_",
-                     "applies_to": "applies_to_"
-            }
-            if "properties" in chain:
-                chain["self_properties"] = chain['properties'].get("myself", [])
-                chain["partner_properties"] = chain['properties'].get("partner", [])
-                del chain['properties']
-            temp = {}
-            for key, new_key_prefix in remap.items():
-                if key in chain and isinstance(chain.get(key), dict):
-                    for old_key, value in chain.pop(key).items():
-                        temp[new_key_prefix + old_key] = value
-            chain.update(temp)
-            remap = {"sign_include_certificate_data": "sign_include_cert",
-                     "sign_include_public_key": "sign_include_pubkey",
-                     "sign_include_subject_key_identifier": "sign_include_ski",
-                     "sign_include_issuer_details": "sign_include_issuer",
-                     "sign_include_subject_name": "sign_include_subject",
-                     "validation_include_certificate_data": "validation_include_cert",
-                     "validation_include_public_key": "validation_include_pubkey",
-                     "validation_include_subject_key_identifier": "validation_include_ski",
-                     "validation_include_issuer_details": "validation_include_issuer",
-                     "validation_include_subject_name": "validation_include_subject"
-                }
-            remap_keys(chain, remap)
-
-
     def configure_sts(self, federation_config):
         if federation_config.sts != None:
             sts = federation_config.sts
             if sts.chain_templates:
-                old_templates = optional_list(fed.sts.list_templates().json)
+                old_templates = optional_list(self.fed.sts.list_templates().json)
                 for template in sts.chain_templates:
                     existing = optional_list(filter_list('name', template.name, old_templates))[0]
+                    methodArgs = copy.deepcopy(template)
+                    self._remap_sts_chain_template_keys(methodArgs)
+                    _logger.debug("Remapped STS Chain Template Properties:\n{}".format(json.dumps(methodArgs, indent=4)))
                     rsp = None; verb = None
                     if existing:
-                        rsp = self.fed.sts.update_template(existing['id'], **template)
+                        rsp = self.fed.sts.update_template(existing['id'], **methodArgs)
                         verb = "updated" if rsp.success == True else "update"
                     else:
-                        rsp = self.fed.sts.create_template(**template)
+                        rsp = self.fed.sts.create_template(**methodArgs)
                         verb = "created" if rsp.success == True else "create"
                     if rsp.success == True:
                         _logger.info("Successfully {} {} STS chain template.".format(verb, template.name))
@@ -588,24 +662,25 @@ class FED_Configurator(object):
                                                                                             template, indent=4), rsp.data))
 
             if sts.chains:
-                old_chains = optional_list(fed.sts.list_chains().json)
+                old_chains = optional_list(self.fed.sts.list_chains().json)
                 for chain in sts.chains:
                     existing = optional_list(filter_list('name', chain.name, old_chains))[0]
                     rsp = None
                     verb = None
                     methodArgs = copy.deepcopy(chain)
-                    self._remap_sts_chain_keys(methodArgs)
+                    methodArgs = self._remap_sts_chain_keys(methodArgs)
+                    _logger.debug("Remapped STS Chain Properties:\n{}".format(json.dumps(methodArgs, indent=4)))
                     if existing:
-                        rsp = self.fed.sts.update_chain(existing['id'], **chain)
+                        rsp = self.fed.sts.update_chain(existing['id'], **methodArgs)
                         verb = "updated" if rsp.success else "update"
                     else:
-                        rsp = self.fed.sts.create_chain(**chain)
+                        rsp = self.fed.sts.create_chain(**methodArgs)
                         verb = "created" if rsp.success == True else "create"
                     if rsp.success == True:
                         _logger.info("Successfully {} {} STS chain.".format(verb, chain.name))
                     else:
-                        _logger.error("Failed to {} {} STS chain:\n{}\n{}".format(verb, json.dumps(
-                                                                                        chain, indent=4), rsp.data))
+                        _logger.error("Failed to {} {} STS chain:\n{}\n{}".format(
+                                                verb, chain.name, json.dumps(chain, indent=4), rsp.data))
 
 
         else:
@@ -629,9 +704,9 @@ class FED_Configurator(object):
         type: typing.Optional[str]
         'System default type for each access policy. For example, "JavaScript".'
         category: typing.Optional[str]
-        'A grouping of related access polices. For example, category "OAUTH" identifies all the rules associated with the OAUTH flow. Maximum 256 bytes. Valid values are: "InfoMap", "AuthSVC", "OAUTH","OTP", "OIDC" and "SAML2_0".'
+        'A grouping of related access polices. For example, category "OAUTH" identifies all the rules associated with the OAUTH flow. Maximum 256 bytes. Valid values are "InfoMap", "AuthSVC", "OAUTH","OTP", "OIDC" and "SAML2_0".'
         policy_file: str
-        'The content of the access policy.'
+        'A file with the JavaScript content of the access policy.'
 
     def configure_access_policies(self, federation_config):
         if "access_policies" in federation_config:
@@ -640,9 +715,10 @@ class FED_Configurator(object):
                 old_policy = optional_list(filter_list('name', policy.name, existing_policies))[0]
                 rsp = None; verb = None
                 methodArgs = copy.deepcopy(policy)
-                policy_file = FILE_LOADER.read_file(policy.policy_file)
+                policy_file = optional_list(FILE_LOADER.read_file(policy.policy_file))[0]
                 del methodArgs['policy_file']
-                methodArgs['content'] = policy_file['content']
+                methodArgs['content'] = policy_file['text']
+                methodArgs = remap_keys(methodArgs, {"name": "policy_name", "type": "policy_type"})
                 if old_policy:
                     rsp = self.fed.access_policy.update_policy(policy_id=old_policy['id'], content=methodArgs['content'])
                     verb = "updated" if rsp.success == True else "update"
@@ -794,7 +870,7 @@ class FED_Configurator(object):
 
 
     def _import_partner(self, fed_id, partner):
-        metadata_file = optional_list(FILE_LOADER.read_files(partner.metadata))[0]
+        metadata_file = optional_list(FILE_LOADER.read_file(partner.metadata))[0]
         rsp = self.fed.federations.import_federation_partner(
                 fed_id=fed_id, name=partner.name, metadata=metadata_file['path'])
         if rsp.success == True:
@@ -832,7 +908,7 @@ class FED_Configurator(object):
             if config.authn_req_mapping != None:
                 methodArgs.update({
                         "authn_req_delegate_id": config.authn_req_mapping.active_delegate_id,
-                        "authn_req_mr": config.authn_req_mapping.mapping_rule
+                        "authn_req_mr": self._mapping_rule_to_id(config.authn_req_mapping.mapping_rule)
                     })
             if config.assertion_settings != None:
                 assert_settings = config.assertion_settings
@@ -863,7 +939,7 @@ class FED_Configurator(object):
                 if idMap.properties.mapping_rule:
                     methodArgs.update({
                             "identity_rule_type": idMap.properties.rule_type if idMap.properties.rule_type else 'JAVASCRIPT',
-                            "identity_mr": idMap.properties.mapping_rule
+                            "identity_mr": self._mapping_rule_to_id(idMap.properties.mapping_rule)
                         })
                 else:
                     methodArgs.update({
@@ -881,7 +957,7 @@ class FED_Configurator(object):
             if config.extension_mapping != None:
                 methodArgs.update({
                         "ext_delegate_id": config.extension_mapping.active_delegate_id,
-                        "ext_mr": config.extension_mapping.mapping_rule
+                        "ext_mr": self._mapping_rule_to_id(config.extension_mapping.mapping_rule)
                     })
 
             if config.name_id_format != None:
@@ -898,10 +974,10 @@ class FED_Configurator(object):
                 if sigSetting.key_info_elements != None:
                     methodArgs.update({
                             "sign_include_pub_key": sigSetting.key_info_elements.include_public_key,
-                            "sign_include_cert": sign_include_pub_key.include_x509_certificate_data,
-                            "sign_include_issuer": sign_include_pub_key.include_x509_issuer_details,
-                            "sign_include_ski": sign_include_pub_key.include_x509_subject_key_identifier,
-                            "sign_include_subject": sign_include_pub_key.include_x509_subject_name
+                            "sign_include_cert": sigSetting.key_info_elements.include_x509_certificate_data,
+                            "sign_include_issuer": sigSetting.key_info_elements.include_x509_issuer_details,
+                            "sign_include_ski": sigSetting.key_info_elements.include_x509_subject_key_identifier,
+                            "sign_include_subject": sigSetting.key_info_elements.include_x509_subject_name
                         })
                 if sigSetting.signing_key_identifier != None:
                     methodArgs.update({
@@ -967,40 +1043,52 @@ class FED_Configurator(object):
         if partner.configuration != None:
             config = partner.configuration
             methodArgs.update({
-                    "redirect_uri_prefix": config.redirect_uri_prefix,
-                    "response_type": config.response_types,
-                    "attribute_mapping": config.attribute_mapping
+                    "client_id": config.client_id,
+                    "client_secret": config.client_secret,
+                    "signature_alg": config.signature_algorithm,
+                    "verification_keystore": config.verification_keystore,
+                    "verification_key_alias": config.verification_key_alias,
+                    "jwks_url": config.jwks_endpoint_url,
+                    "key_mgmt_alg": config.key_management_algorithm,
+                    "content_encrypt_alg": config.content_encryption_algorithm,
+                    "decryption_keystore": config.decryption_keystore,
+                    "decryption_key_alias": config.decryption_key_alias,
+                    "scope": config.scope,
+                    "perform_user_info": config.perform_user_info,
+                    "token_endpoint_auth": config.token_endpoint_auth_method,
+                    "attribute_mappings": config.attribute_mappings
                 })
             if config.basic_configuration:
                 methodArgs.update({
-                        "active_delegate_id": config.basic_configuration.active_delegate_id,
-                        "metadata_endpoint_url": config.basic_configuration.metadata_endpoint_url,
-                        "issuer_identifier": config.basic_configuration.issuer_identifier,
+                        "basic_delegate_id": config.basic_configuration.active_delegate_id,
+                        "metadata_endpoint": config.basic_configuration.metadata_endpoint_url,
+                        "issuer_uri": config.basic_configuration.issuer_identifier,
                         "response_types": config.basic_configuration.response_types,
-                        "authorization_endpoint": config.basic_configuration.authorization_endpoint_url,
+                        "auth_endpoint": config.basic_configuration.authorization_endpoint_url,
                         "token_endpoint": config.basic_configuration.token_endpoint_url,
                         "user_info_endpoint": config.basic_configuration.user_info_endpoint_url
                     })
-            if config.identity_mapping and config.identity_mapping.properties:
-                methodArgs.update({
-                        "identity_delegate_id": config.identity.active_delegate_id,
-                        "identity_mapping_rule": config.identity.properties.mapping_rule,
-                        "identity_auth_type": config.identity_mapping.properties.auth_type,
-                        "identity_ba_user": config.identity_mapping.properties.basic_auth_username,
-                        "identity_ba_password": config.identity_mapping.properties.basic_auth_password,
-                        "identity_client_keystore": config.identity_mapping.properties.client_key_store,
-                        "identity_client_key_alias": config.identity_mapping.properties.client_key_alias,
-                        "identity_issuer_uri": config.identity_mapping.properties.issuer_uri,
-                        "identity_msg_fmt": config.identity_mapping.properties.message_format,
-                        "identity_ssl_keystore": config.identity_mapping.properties.ssl_keystore,
-                        "identity_uri": config.identity_mapping.properties.uri
-                    })                    
+            if config.identity_mapping:
+                methodArgs["identity_delegate_id"] = config.identity_mapping.active_delegate_id,
+                if config.identity_mapping.properties:
+                    methodArgs.update({
+                            "identity_mapping_rule": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule),
+                            "identity_auth_type": config.identity_mapping.properties.auth_type,
+                            "identity_ba_user": config.identity_mapping.properties.basic_auth_username,
+                            "identity_ba_password": config.identity_mapping.properties.basic_auth_password,
+                            "identity_client_keystore": config.identity_mapping.properties.client_key_store,
+                            "identity_client_key_alias": config.identity_mapping.properties.client_key_alias,
+                            "identity_issuer_uri": config.identity_mapping.properties.issuer_uri,
+                            "identity_msg_fmt": config.identity_mapping.properties.message_format,
+                            "identity_ssl_keystore": config.identity_mapping.properties.ssl_keystore,
+                            "identity_uri": config.identity_mapping.properties.uri
+                        })                    
 
-            if config.advanced_configuration != None:
+            if config.advance_configuration != None:
                 methodArgs.update({
-                        "advanced_configuration_active_delegate": config.advanced_configuration.active_delegate_id,
-                        "advanced_configuration_rule_id": config.advanced_configuration.mapping_rule,
-                        "advanced_configuration_rule_type": config.advanced_configuration.rule_type if config.advanced_configuration.rule_type else "JAVASCRIPT"
+                        "adv_config_delegate_id": config.advance_configuration.active_delegate_id,
+                        "adv_config_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule),
+                        "adv_config_rule_type": config.advance_configuration.rule_type if config.advance_configuration.rule_type else "JAVASCRIPT"
                     })
 
         rsp = self.fed.federations.create_oidc_rp_partner(fedId, **methodArgs)
@@ -1012,13 +1100,13 @@ class FED_Configurator(object):
                 partner.name, json.dumps(partner, indent=4), rsp.data))
 
     def _configure_federation_partner(self, fed_id, partner):
-        method = {"ip": _configure_saml_partner,
-                  "sp": _configure_saml_partner,
-                  "rp": _configure_oidc_partner
+        method = {"ip": self._configure_saml_partner,
+                  "sp": self._configure_saml_partner,
+                  "rp": self._configure_oidc_partner
                 }.get(partner.role, None)
         if method == None:
             _logger.error("Federation partner {} does not specify a valid configuration: {}\n\tskipping . . .".format(
-                partner.name, json.dumps(partner, indent=4)))
+                            partner.name, json.dumps(partner, indent=4)))
         else:
             method(fed_id, partner)
 
@@ -1035,7 +1123,7 @@ class FED_Configurator(object):
                         "access_policy": config.access_policy,
                         "artifact_lifetime": config.artifact_lifetime,
                         "artifact_resolution_service": config.artifact_resolution_services,
-                        "attribute_mapping": config.attribute_mappings,
+                        "attribute_mappings": config.attribute_mappings,
                         "company_name": config.company_name,
                         "manage_name_id_services": config.manage_name_id_services,
                         "msg_valid_time": config.message_valid_time,
@@ -1066,8 +1154,8 @@ class FED_Configurator(object):
                             "encrypt_name_id": config.encryption_settings.encrypt_name_id,
                             "encrypt_assertions": config.encryption_settings.encrypt_assertions,
                             "encrypt_assertion_attrs": config.encryption_settings.encrypt_assertion_attributes,
-                            "decrypt_key_alias": config.encryption_settings.decryption_key_identifier.label if encryption.decryption_key_identifier else None,
-                            "decrypt_key_store": config.encryption_settings.decryption_key_identifier.store if encryption.decryption_key_identifier else None
+                            "decrypt_key_alias": config.encryption_settings.decryption_key_identifier.label if config.encryption_settings.decryption_key_identifier else None,
+                            "decrypt_key_store": config.encryption_settings.decryption_key_identifier.store if config.encryption_settings.decryption_key_identifier else None
                         })
 
                 if config.assert_settings != None:
@@ -1081,7 +1169,7 @@ class FED_Configurator(object):
                 if config.identity_mapping != None and config.identity_mapping.properties != None:
                     methodArgs.update({
                             "identity_delegate_id": config.identity_mapping.active_delegate_id,
-                            "identity_rule_id": config.identity_mapping.properties.mapping_rule,
+                            "identity_rule_id": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule),
                             "identity_rule_type": config.identity_mapping.properties.rule_type if config.identity_mapping.properties.rule_type else 'JAVASCRIPT',
                             "identity_applies_to": config.identity_mapping.properties.applies_to,
                             "identity_auth_type": config.identity_mapping.properties.auth_type,
@@ -1097,7 +1185,7 @@ class FED_Configurator(object):
                 if config.extension_mapping != None:
                     methodArgs.update({
                             "ext_delegate_id": config.extension_mapping.active_delegate_id,
-                            "ext_mapping_rule": config.extension_mapping.mapping_rule
+                            "ext_mapping_rule": self._mapping_rule_to_id(config.extension_mapping.mapping_rule)
                         })
                 if config.signature_settings != None:
                     sigSetting = config.signature_settings
@@ -1105,47 +1193,47 @@ class FED_Configurator(object):
                             "sign_alg": sigSetting.signature_algorithm,
                             "sign_digest_alg": sigSetting.digest_algorithm,
                             "transform_include_namespace": sigSetting.include_inclusive_namespaces,
-                            "validate_assertion": sigSetting.validate_assertion
+                            "validate_assert": sigSetting.validate_assertion
                         })
-                    if sigSettings.key_info_elements != None:
+                    if sigSetting.key_info_elements != None:
                         methodArgs.update({
-                                "sign_include_cert": sigSettings.key_info_elements.include_x509_certificate_data,
-                                "sign_include_subject": sigSettings.key_info_elements.include_x509_subject_name,
-                                "sign_include_ski": sigSettings.key_info_elements.include_x509_subject_key_identifier,
-                                "sign_include_issuer": sigSettings.key_info_elements.include_x509_issuer_details,
-                                "sign_include_pubkey": sigSettings.key_info_elements.include_public_key
+                                "sign_include_cert": sigSetting.key_info_elements.include_x509_certificate_data,
+                                "sign_include_subject": sigSetting.key_info_elements.include_x509_subject_name,
+                                "sign_include_ski": sigSetting.key_info_elements.include_x509_subject_key_identifier,
+                                "sign_include_issuer": sigSetting.key_info_elements.include_x509_issuer_details,
+                                "sign_include_pubkey": sigSetting.key_info_elements.include_public_key
                             })
-                    if sigSettings.signing_key_identifier != None:
+                    if sigSetting.signing_key_identifier != None:
                         methodArgs.update({
-                                "signing_keystore": sigSettings.signing_key_identifier.keystore,
-                                "sign_key_alias": sigSettings.signing_key_identifier.certificate
+                                "sign_keystore": sigSetting.signing_key_identifier.keystore,
+                                "sign_key_alias": sigSetting.signing_key_identifier.certificate
                             })
                     if sigSetting.validation_key_identifier != None:
                         methodArgs.update({
-                                "sign_valid_key_store": sigSettings.validation_key_identifier.keystore,
-                                "sign_valid_key_alias": sigSettings.validation_key_identifier.certificate
+                                "sign_valid_key_store": sigSetting.validation_key_identifier.keystore,
+                                "sign_valid_key_alias": sigSetting.validation_key_identifier.certificate
                             })
-                    if sigSettings.signing_options != None:
+                    if sigSetting.signing_options != None:
                         methodArgs.update({
-                                "sign_assertion": sigSettings.signing_options.sign_assertion,
-                                "sign_auth_rsp": sigSettings.signing_options.sign_authn_response,
-                                "sign_arti_req": sigSettings.signing_options.sign_artifact_request,
-                                "sign_arti_rsp": sigSettings.signing_options.sign_artifact_response,
-                                "sign_logout_req": sigSettings.signing_options.sign_logout_request,
-                                "sign_logout_rsp": sigSettings.signing_options.sign_logout_response,
-                                "sign_name_id_req": sigSettings.signing_options.sign_name_id_management_request,
-                                "sign_name_id_rsp": sigSettings.signing_options.sign_name_id_management_response
+                                "sign_assertion": sigSetting.signing_options.sign_assertion,
+                                "sign_authn_rsp": sigSetting.signing_options.sign_authn_response,
+                                "sign_arti_req": sigSetting.signing_options.sign_artifact_request,
+                                "sign_arti_rsp": sigSetting.signing_options.sign_artifact_response,
+                                "sign_logout_req": sigSetting.signing_options.sign_logout_request,
+                                "sign_logout_rsp": sigSetting.signing_options.sign_logout_response,
+                                "sign_name_id_req": sigSetting.signing_options.sign_name_id_management_request,
+                                "sign_name_id_rsp": sigSetting.signing_options.sign_name_id_management_response
                             })
-                    if sigSettings.validation_options != None:
+                    if sigSetting.validation_options != None:
                         methodArgs.update({
-                                "validate_auth_req": sigSettings.validation_options.validate_authn_request,
-                                "validate_assert": sigSettings.validation_options.validate_assertion,
-                                "validate_arti_req": sigSettings.validation_options.validate_artifact_request,
-                                "validate_arti_rsp": sigSettings.validation_options.validate_artifact_response,
-                                "validate_logout_req": sigSettings.validation_options.validate_logout_request,
-                                "validate_logout_rsp": sigSettings.validation_options.validate_logout_response,
-                                "validate_name_id_req": sigSettings.validation_options.validate_name_id_management_request,
-                                "validate_name_id_rsp": sigSettings.validation_options.validate_name_id_management_response
+                                "validate_auth_req": sigSetting.validation_options.validate_authn_request,
+                                "validate_assert": sigSetting.validation_options.validate_assertion,
+                                "validate_arti_req": sigSetting.validation_options.validate_artifact_request,
+                                "validate_arti_rsp": sigSetting.validation_options.validate_artifact_response,
+                                "validate_logout_req": sigSetting.validation_options.validate_logout_request,
+                                "validate_logout_rsp": sigSetting.validation_options.validate_logout_response,
+                                "validate_name_id_req": sigSetting.validation_options.validate_name_id_management_request,
+                                "validate_name_id_rsp": sigSetting.validation_options.validate_name_id_management_response
                             })
                 if config.alias_service_settings != None:
                     methodArgs.update({
@@ -1157,12 +1245,13 @@ class FED_Configurator(object):
                 if config.authn_req_mapping != None:
                     methodArgs.update({
                             "authn_req_delegate_id": config.authn_req_mapping.active_delegate_id,
-                            "authn_req_mr": config.authn_req_mapping.mapping_rule
+                            "authn_req_mr": self._mapping_rule_to_id(config.authn_req_mapping.mapping_rule)
                         })
                 
             rsp = self.fed.federations.create_saml_federation(**methodArgs)
             if rsp.success == True:
                 _logger.info("Successfully created {} SAML2.0 Federation".format(federation.name))
+                self.needsRestart = True
             else:
                 _logger.error("Failed to create {} SAML2.0 Federation with config:\n{}\n{}".format(
                     federation.name, json.dumps(federation, indent=4), rsp.data))
@@ -1172,9 +1261,6 @@ class FED_Configurator(object):
         if federation.partners != None:
             for partner in federation.partners:
                 self._configure_federation_partner(fed_id, partner)
-        if federation.import_partners != None:
-            for partner in federation.import_partners:
-                self._import_partner(fed_id, partner)
 
 
     def _configure_oidc_federation(self, federation):
@@ -1182,19 +1268,19 @@ class FED_Configurator(object):
             methodArgs = {
                     "name": federation.name,
                     "role": federation.role,
-                    "template": federation.template
+                    "template_name": federation.template
                 }
             if federation.configuration != None:
                 config = federation.configuration
                 methodArgs.update({
                         "redirect_uri_prefix": config.redirect_uri_prefix,
-                        "response_type": config.response_types,
-                        "attribute_mapping": config.attribute_mappings
+                        "response_types_supported": config.response_types,
+                        "attribute_mappings": config.attribute_mappings,
                     })
                 if config.identity_mapping != None and config.identity_mapping.properties != None:
                     methodArgs.update({
-                            "identity_mapping_delegate_id": config.identity_mapping.active_delegate_id,
-                            "identity_mapping_rule": config.identity_mapping.properties.mapping_rule,
+                            "identity_delegate_id": config.identity_mapping.active_delegate_id,
+                            "identity_mapping_rule": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule),
                             "identity_auth_type": config.identity_mapping.properties.auth_type,
                             "identity_ba_user": config.identity_mapping.properties.basic_auth_username,
                             "identity_ba_password": config.identity_mapping.properties.basic_auth_password,
@@ -1208,10 +1294,10 @@ class FED_Configurator(object):
                 if config.advance_configuration != None:
                     methodArgs.update({
                             "adv_delegate_id": config.advance_configuration.active_delegate_id,
-                            "adv_mapping_rule": config.advance_configuration.mapping_rule,
+                            "adv_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule),
                             "adv_rule_type": config.advance_configuration.rule_type if config.advance_configuration.rule_type != None else "JAVASCRIPT"
                         })
-            rsp = self.fed.federations.create_oidc_rp_federation(**methodArgs)
+            rsp = self.fed.federations.create_oidc_federation(**methodArgs)
             if rsp.success == True:
                 _logger.info("Successfully created {} OIDC RP Federation".format(federation.name))
             else:
@@ -1222,9 +1308,6 @@ class FED_Configurator(object):
         if federation.partners != None:
             for partner in federation.partners:
                 self._configure_federation_partner(fed_id, partner)
-        if federation.import_partners != None:
-            for partner in federation.import_partners:
-                self._import_partner(fed_id, partner)
 
 
     class Federations(typing.TypedDict):
@@ -1247,12 +1330,12 @@ class FED_Configurator(object):
                     port: str
                     'The port of the runtime. Must be the SSL port.'
 
-                federation: str
-                'The name or ID of the federation to run the wizard for.'
                 reuse_acls: bool
                 'A flag to indicate that any existing ACLs with the same name should be reused. If they are not reused, they will be replaced.'
                 reuse_certs: bool
                 'If the SSL certificate has already been saved, this flag indicates that the certificate should be reused instead of overwritten.'
+                runtime: Runtime
+                'Runtime server properties.'
 
             class Partner(typing.TypedDict):
                 name: str
@@ -1441,7 +1524,8 @@ class FED_Configurator(object):
                 'The advanced configuration data.'
 
             class OIDC_Relying_Party_Partner(typing.TypedDict):
-
+                name: str
+                'Name of the OIDC Relying Party partner.'
                 client_id: str
                 'The ID that identifies this client to the provider.'
                 client_secret: typing.Optional[str]
@@ -1577,28 +1661,38 @@ class FED_Configurator(object):
 
     def configure_federations(self, federation_config):
         if federation_config.federations != None:
-            for federation in federations:
-                method = {"SAML2_0": _configure_saml_federation,
-                          "OIDC10": _configure_oidc_federation
+            for federation in federation_config.federations:
+                method = {"SAML2_0": self._configure_saml_federation,
+                          "OIDC10": self._configure_oidc_federation
                           }.get(federation.protocol, None)
-                if method == None :
-                    _logger.error("Federation {} does not specify a valid configuration: {}\n\tskipping . . .".format(
-                        federation.name, json.dumps(federation, indent=4)))
+                if method == None:
+                    _logger.error("Federation {} does not specify a valid configuration: {}\n\tskipping create federation. . .".format(
+                                federation.name, json.dumps(federation, indent=4)))
                 else:
                     method(federation)
+                if federation.import_partners != None:
+                    feds = optional_list(self.fed.federations.list_federations().json)
+                    fed_id = optional_list(filter_list("name", federation.name, feds))[0].get("id", "MISSING_ID")
+                    for partner in federation.import_partners:
+                        self._import_partner(fed_id, partner)
                 if federation.export_metadata:
                     #Export the metadata to the given file
                     fed_objs = optional_list(self.fed.federations.list_federations().json)
                     fed_obj = optional_list(filter_list("name", federation.name, fed_objs))[0]
                     if fed_obj:
-                        rsp = self.fed.federations.export_metadata(fed_obj.get('id', "ID_MISSING"), federation.export_metadata)
+                        export_file_path = config_base_dir() + '/' + federation.export_metadata
+                        rsp = self.fed.federations.export_federation_metadata(
+                                fed_id=fed_obj.get('id', "ID_MISSING"), metadata_file=export_file_path)
                         if rsp.success == True:
-                            _logger.info("Exported {} metadata to {}".format(federation.name, federation.export_metadata))
+                            _logger.info("Exported {} metadata to {}".format(federation.name, export_file_path))
                         else:
                             _logger.error("Failed to export {} federation metadata:\n{}".format(
                                                         federation.name, rsp.data))
                     else:
                         _logger.error("Could not find {} federation to export metadata".format(federation.name))
+                if self.needsRestart == True:
+                    deploy_pending_changes(self.factory, self.config) # Federations must be deployed before the WRP wizard can be run
+                    self.needsRestart = False
                 if federation.webseal:
                     fed_objs = optional_list(self.fed.federations.list_federations().json)
                     fed_obj = optional_list(filter_list("name", federation.name, fed_objs))[0]
@@ -1618,10 +1712,11 @@ class FED_Configurator(object):
                     rsp = self.factory.get_web_settings().reverse_proxy.configure_fed(
                                                                                 federation.webseal.name, **methodArgs)
                     if rsp.success == True:
+                        self.needsRestart = True
                         _logger.info("Successfully ran WebSEAL configuration for {} Federation on the {} reverse"
                                      "proxy instance".format(federation.name, federation.webseal.name))
                     else:
-                        _logger.error("Failed to run WebSEAL fed config  wizard for {} on reverse proxy instance {}"
+                        _logger.error("Failed to run WebSEAL fed config  wizard for {} on reverse proxy instance {} "
                                     "with config:\n{}\n{}".format(federation.name, federation.webseal.name, 
                                                                   json.dumps(federation, indent=4), rsp.data))
 
@@ -1631,11 +1726,11 @@ class FED_Configurator(object):
         if self.config.federation == None:
             _logger.info("No Federation configuration detected, skipping")
             return
-        self.configure_poc(self.config.federation)
+        #self.configure_poc(self.config.federation)
         self.configure_sts(self.config.federation)
-        self.configure_access_policies(self.config.federation)
+        #self.configure_access_policies(self.config.federation)
         self.configure_alias_service(self.config.federation)
-        self.configure_attribute_sources(self.config.federation)
+        #self.configure_attribute_sources(self.config.federation)
         self.configure_federations(self.config.federation)
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config)

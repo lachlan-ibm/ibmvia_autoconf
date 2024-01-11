@@ -21,10 +21,12 @@ def config_yaml(config_file=None):
         _logger.info("Reading file from provided path {}".format(config_file))
         config = data_util.Map(yaml.load(open(config_file, 'r'), Loader=CustomLoader))
     elif const.CONFIG_YAML_ENV_VAR in os.environ.keys():
+        cfg_file = os.environ.get(const.CONFIG_YAML_ENV_VAR)
+        if not cfg_file.startswith("/"):
+            cfg_file = config_base_dir() + '/' + os.environ.get(const.CONFIG_YAML_ENV_VAR)
         _logger.info("Reading file from env var {} = {}".format(
-            const.CONFIG_YAML_ENV_VAR, os.environ.get(const.CONFIG_YAML_ENV_VAR)))
-        return Map(yaml.load(open(
-            os.environ.get(const.CONFIG_YAML_ENV_VAR), 'r'), Loader=CustomLoader))
+            const.CONFIG_YAML_ENV_VAR, cfg_file))
+        return Map(yaml.load(open(cfg_file, 'r'), Loader=CustomLoader))
     elif config_base_dir() and const.CONFIG_YAML in os.listdir(config_base_dir()):
         _logger.info("Reading config file from {} env var: {}/config.yaml".format(
             const.CONFIG_BASE_DIR, os.environ.get(const.CONFIG_BASE_DIR)))

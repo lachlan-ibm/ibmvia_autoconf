@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fed-config
+spec:
+  template:
+    spec:
+      containers:
+      - name: verify-access-configurator
+        image: autoconf:latest
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: fedconfigvol
+          mountPath: /verify_access_config
+        command:
+        - "bash"
+        - "-c"
+        - |
+          echo "Starting SP Config"
+          ISVA_CONFIG_YAML=federation_idp.yaml ISVA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m verify_access_autoconf;
+          echo "Starting SP Config" && sleep 10;
+          ISVA_CONFIG_YAML=federation_sp.yaml ISVA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m verify_access_autoconf;
+          echo "Starting IDP partner Config" && sleep 10;
+          ISVA_CONFIG_YAML=federation_idp_partner.yaml ISVA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m verify_access_autoconf;
+        envFrom:
+        - secretRef:
+            name: fed-env
+      restartPolicy: Never
+      volumes:
+      - name: fed-config
+        configMap:
+          name: fed-config
+      - name: fedconfigvol
+        emptyDir: {}
+      initContainers:
+      - name: config-volume-builder
+        image: autoconf:latest
+        imagePullPolicy: Never
+        volumeMounts:
+        - mountPath: /verify_access_config
+          name: fedconfigvol
+        - mountPath: /tmp/fed_config
+          name: fed-config
+        command:
+        - "bash"
+        - "-c"
+        - |
+          cp /tmp/fed_config/*.{p12,pem,yaml} /verify_access_config/
+          unzip /tmp/fed_config/mapping_rules.zip -d /verify_access_config/
+  backoffLimit: 2

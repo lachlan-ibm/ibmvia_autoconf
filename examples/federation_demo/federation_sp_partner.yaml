@@ -1,0 +1,13 @@
+container:
+  k8s_deployments:
+    deployments:
+    - "isva-sp-webseal"
+    - "isva-sp-runtime"
+    namespace: "default"
+federation:
+  federations:
+  - name: "saml20sp"
+    protocol: "saml20"
+    import_metadata:
+    - name: "idp_partner"
+      metadata: "idpmetadata.xml"

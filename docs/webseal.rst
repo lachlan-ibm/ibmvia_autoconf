@@ -91,8 +91,8 @@ Runtime Configuration Wizards
 _____________________________
 Every WebSEAL instance can optional provide more advanced authentication and authorization logic by integrating 
 the Advanced Access Control runtime server as an External Authentication Interface (EAI). To simplify this configuration,
-a number of wizards are available for :ref:`Access Control<>access-control.rst#Context Based Access Control`,
- :ref:`Federations<federations.rst#Federations>` and :ref:`Mobile Multi-Factor Authentication<access-control.rst#Mobile Multi-Factor Authentication>`
+a number of wizards are available for :ref:`Access Control<>access-control.rst#Context Based Access Control`, :ref:`Federations<federations.rst#Federations>` 
+and :ref:`Mobile Multi-Factor Authentication<access-control.rst#Mobile Multi-Factor Authentication>`
 
 
 .. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.Reverse_Proxy
