@@ -115,3 +115,12 @@ Database Configuration
 The database configuration for container deployments can be done using the :ref:`cluster-configuration` entry.
 
 .. autoclass:: src.verify_access_autoconf.container.Docker_Configurator.Cluster_Configuration
+
+
+Global Configuration
+====================
+These configuration properties are common to the Access Control and Federation modules. You must have at least one of 
+these modules activated in order to set these configuration properties.
+
+
+.. include:: global_config.rst

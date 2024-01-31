@@ -5,3 +5,9 @@ src/isva_configurator.egg-info
 html
 *.egg-info
 dist
+build
+*.key
+*.pem
+*.p12
+*.env
+*.whl

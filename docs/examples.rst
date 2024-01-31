@@ -105,29 +105,38 @@ for JDK 11. The configuration steps performed include:
    :literal:
 
 
-Mobile Multi-Factor Authentication
-==================================
+Mobile Multi-Factor Authentication Cookbook
+===========================================
 
 The MMFA example follows the legacy cookbook deployment guide.
 
 *TODO*
 
 
-Federation
-==========
+Federation Cookbook
+===================
 
 The Federation example follows the legacy cookbook deployment guide
 
 There are a few steps which are required for running this configuration. You must:
-- Create PKI for IDP and SP deployments [self-signed demonstration provide]
-- Deploy the IdP and SP container deployments from the :ref:`IAMExploring<https://www.github.com/iamexploring/container-deployment>` 
-- Obtain an version appropriate copy of the required JavaScript mapping rules
-- Run the :ref:`IdP<example_idp_yaml>` and :ref:`SP<example_sp_yaml>` configurations to create the Federations
-- Run the :ref:`IdP partner<example_idp_partner_yaml>` and :ref:`SP partner<example_sp_partner_yaml>` configurations to create the Federation Partners
-- Create a test user using the demo User Self Care enrollment policy on the IdP deployment
-- Test the Federated authentication:
-    - IdP initiated SSO
-    - SP initiated SSO
+
+* Create PKI for IDP and SP deployments [self-signed demonstration provide]
+
+* Deploy the IdP and SP container deployments from the :ref:`IAMExploring<https://www.github.com/iamexploring/container-deployment>`
+
+* Obtain an version appropriate copy of the required JavaScript mapping rules
+
+* Run the :ref:`IdP<example_idp_yaml>` and :ref:`SP<example_sp_yaml>` configurations to create the Federations
+
+* Run the :ref:`IdP partner<example_idp_partner_yaml>` and :ref:`SP partner<example_sp_partner_yaml>` configurations to create the Federation Partners
+
+* Create a test user using the demo User Self Care enrollment policy on the IdP deployment
+
+* Test the Federated authentication:
+
+  * IdP initiated SSO
+  
+  * SP initiated SSO
 
 
 .. _example_idp_yaml:
@@ -135,7 +144,7 @@ There are a few steps which are required for running this configuration. You mus
 IdP Configuration:
 __________________
 
-.. include:: ../examples/federation_idp.yaml
+.. include:: ../examples/federation_demo/federation_idp.yaml
    :literal:
 
 .. _example_sp_yaml:
@@ -143,7 +152,7 @@ __________________
 SP Configuration:
 _________________
 
-.. include:: ../examples/federation_sp.yaml
+.. include:: ../examples/federation_demo/federation_sp.yaml
    :literal:
 
 .. _example_idp_partner_yaml:
@@ -151,7 +160,7 @@ _________________
 IdP Partner Configuration:
 __________________________
 
-.. include:: ../examples/federation_idp_partner.yaml
+.. include:: ../examples/federation_demo/federation_idp_partner.yaml
    :literal:
 
 .. _example_sp_partner_yaml:
@@ -159,5 +168,5 @@ __________________________
 SP Partner Configuration:
 _________________________
 
-.. include:: ../examples/federation_sp_partner.yaml
+.. include:: ../examples/federation_demo/federation_sp_partner.yaml
    :literal:
