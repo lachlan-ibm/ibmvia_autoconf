@@ -1005,7 +1005,7 @@ class WEB_Configurator(object):
             'Hostname use by the reverse proxy in the Policy Server\'s namespace.'
             instance: str
             'WebSEAL instance name if the Policy Server\'s namespace.'
-            junction:
+            junction: str
             'WebSEAL junction to modify.'
             attributes: typing.List[Attribute]
             'List of attributes to add to junction object.'
