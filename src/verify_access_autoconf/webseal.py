@@ -507,7 +507,7 @@ class WEB_Configurator(object):
         else:
             _logger.error("Configuration of {} proxy failed with config:\n{}\n{}".format(
                 proxy.name, json.dumps(proxy, indent=4), rsp.data))
-        if proxy.management_root: None:
+        if proxy.management_root != None:
             for zip_file in proxy.management_root:
                 self._import_management_root(proxy.name, zip_file)
 
