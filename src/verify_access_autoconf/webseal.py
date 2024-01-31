@@ -8,7 +8,8 @@ import json
 import typing
 
 from .util.configure_util import deploy_pending_changes
-from .util.data_util import Map, FILE_LOADER, optional_list, filter_list
+from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, KUBE_CLIENT_SLEEP
+
 
 _logger = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ class WEB_Configurator(object):
             methodArgs.update({
                                 "runtime_hostname": aac_config.runtime.hostname,
                                 "runtime_port": aac_config.runtime.port,
-                                "runtime_username": aac_config.runtime.user,
+                                "runtime_username": aac_config.runtime.username,
                                 "runtime_password": aac_config.runtime.password
                             })
         rsp = self.web.reverse_proxy.configure_aac(proxy_id, **methodArgs)
@@ -136,6 +137,26 @@ class WEB_Configurator(object):
             _logger.error("Federation configuration wizard did not run successfully with config:\n{}\n{}".format(
                 json.dumps(fed_config, indent=4), rsp.data))
 
+
+    def _configure_api_protection(self, proxy_id, api_config):
+        methodArgs = {
+                "junction": api_config.junction,
+                "reuse_acls": api_config.reuse_acls,
+                "reuse_certs": api_config.reuse_certs,
+                "api": api_config.api,
+                "browser": api_config.browser,
+                "auth_register": api_config.auth_register,
+                "fapi_compliant": api_config.fapi_compliant
+        }
+        if api_config.runtime:
+            runtime = api_config.runtime
+            methodArgs.update({
+                    "hostname": runtime.hostname,
+                    "port": runtime.port,
+                    "username": runtime.username,
+                    "password": runtime.password
+            })
+        rsp = self.web.reverse_proxy.configure_api_protection(proxy_id, **methodArgs)
 
     def _add_junction(self, proxy_id, junction):
         forceJunction = False
@@ -258,6 +279,34 @@ class WEB_Configurator(object):
             reuse_certs: bool
             'Re-use existing certificates in the SSL database.'
 
+        class ApiProtectionConfiguration(typing.TypedDict):
+            class Liberty_Server(typing.TypedDict):
+                hostname: str
+                'Hostname or address of server.'
+                port: int
+                'Port server is listening on.'
+                username: str
+                'Username to use for basic authentication.'
+                password: str
+                'Password to use for basic authentication.'
+
+            junction: str
+            'Name of the API Protection Junction.'
+            runtime: Liberty_Server
+            'Liberty runtime server properties.'
+            reuse_acls: bool
+            'Re-use existing Policy Server ACL\'s'
+            reuse_certs: bool
+            'Re-use existing certificates in the SSL database.'
+            api: typing.Optional[bool]
+            'Should this reverse proxy be configured for API protection. Default is false.'
+            browser: typing.Optional[bool]
+            'Should this reverse proxy be configured for Browser interaction. Default is false.'
+            auth_register: typing.Optional[bool]
+            'Will the client registration endpoint require authentication. Default is false.'
+            fapi_compliant: typing.Optional[bool]
+            'Configures reverse proxy instance to be FAPI Compliant. Default is false.'
+            
         class Stanza_Configuration(typing.TypedDict):
             operation:str
             'Operation to perform on configuration file. "add" | "delete" | "update".'
@@ -406,8 +455,12 @@ class WEB_Configurator(object):
         'Properties for configuring this reverse proxy instance to deliver MMFA capabilities.'
         federation_configuration: typing.Optional[Federation_Configuration]
         'Properties for integrating with a running Federation runtime.'
+        api_protection_configuration: typing.Optional[ApiProtectionConfiguration]
+        'Properties for integrating this reverse proxy with OIDC API Protection Clients.'
         stanza_configuration: typing.Optional[Stanza_Configuration]
         'List of modifications to perform on the ``webseald.conf`` configuration file for this reverse proxy instance.'
+        management_root: typing.Optional[typing.List[str]]
+        'List of zip files to import into the WebSEAL management root HTML pages.'
 
     def wrp(self, runtime, proxy):
         wrp_instances = optional_list(self.web.reverse_proxy.list_instances().json)
@@ -447,17 +500,20 @@ class WEB_Configurator(object):
                                 "cert_label": proxy.ldap.cert_file,
                                 "ssl_port": proxy.ldap.port,
                         })
+        _logger.debug("Configuring WRP with config {}".format(methodArgs))
         rsp = self.web.reverse_proxy.create_instance(**methodArgs)
         if rsp.success == True:
             _logger.info("Successfully configured proxy {}".format(proxy.name))
         else:
             _logger.error("Configuration of {} proxy failed with config:\n{}\n{}".format(
                 proxy.name, json.dumps(proxy, indent=4), rsp.data))
-            return
+        if proxy.management_root != None:
+            for zip_file in proxy.management_root:
+                self._import_management_root(proxy.name, zip_file)
 
         if proxy.junctions != None:
             for jct in proxy.junctions:
-                _add_junction(proxy.name, jct)
+                self._add_junction(proxy.name, jct)
 
         if proxy.aac_configuration != None:
             self._configure_aac(proxy.name, proxy.aac_configuration)
@@ -467,6 +523,9 @@ class WEB_Configurator(object):
 
         if proxy.federation_configuration != None:
             self._configure_federations(proxy.name, proxy.federation_configuration)
+
+        if proxy.api_protection_configuration != None:
+            self._configure_api_protection(proxy.name, proxy.api_protection_configuration)
 
         if proxy.stanza_configuration != None:
             self._configure_stanza(proxy.name, proxy.stanza_configuration)
@@ -598,11 +657,13 @@ class WEB_Configurator(object):
         'Verify Access policy server properties.'
         stanza_configuration: typing.Optional[typing.List[Stanza_Configuration]]
         'Optional list of modifications to configuration files.'
+        override_config: typing.Optional[bool]
+        'Optional property to attempt to force a reconfiguration of the runtime component if it is already configured. This is not possible if there are reverse proxy objects. Default is `false`'
 
     def runtime(self, runtime):
         rte_status = self.web.runtime_component.get_status()
         _logger.debug("ENTRY Runtime status: {}".format(rte_status.json))
-        if rte_status.json['status'] == "Available":
+        if rte_status.json['status'] == "Available" and runtime.override_config == True:
             rsp = self.web.runtime_component.unconfigure(ldap_dn=runtime.ldap_dn, ldap_pwd=runtime.ldap_dn,
                     clean=runtime.clean_ldap, force=True)
             if rsp.success == True:
@@ -610,6 +671,9 @@ class WEB_Configurator(object):
             else:
                 _logger.error("RTE cannot be unconfigured, will not override config")
                 return
+        if rte_status.json['status'] == "Available":
+            _logger.info("RTE already configured, skipping.")
+            return
 
         config = {"ps_mode": runtime.policy_server,
                   "user_registry": runtime.user_registry,
@@ -715,12 +779,12 @@ class WEB_Configurator(object):
         if proxy_config.acls:
             for acl in proxy_config.acls:
                 for junction in acl.junctions:
-                    pdadminCommands += ["acl attach /{}/{} {}".format(proxy_config.host, junction, acl.name)]
+                    pdadminCommands += ["acl attach /WebSEAL/{}-{}{} {}".format(proxy_config.host, proxy_config.instance, junction, acl.name)]
 
         if proxy_config.pops:
             for pop in proxy_config.pops:
                 for junction in pop.junctions:
-                    pdadminCommands += ["pop attach /{}/{} {}".format(proxy_config.host, junction, pop.name)]
+                    pdadminCommands += ["pop attach /WebSEAL/{}-{}{} {}".format(proxy_config.host, proxy_config.instance, junction, pop.name)]
 
         rsp = self.web.policy_administration.execute(runtime.admin_user, runtime.admin_password, pdadminCommands)
         if rsp.success == True:
@@ -730,21 +794,21 @@ class WEB_Configurator(object):
                     proxy_config.host, json.dumps(proxy_config, indent=4), rsp.data))
 
     def _pdadmin_user(self, runtime, user):
-        firstName = user.first_name if user.first_name else user.name
-        lastName = user.last_name if user.last_name else user.name
+        firstName = user.first_name if user.first_name else user.username
+        lastName = user.last_name if user.last_name else user.username
         pdadminCommands = [
                 "user create {} {} {} {} {}".format(
-                    user.name, user.dn, firstName, lastName, user.password),
-                "user modify {} account-valid yes".format(user.name)
+                    user.username, user.dn, firstName, lastName, user.password),
+                "user modify {} account-valid yes".format(user.username)
             ]
         rsp = self.web.policy_administration.execute(runtime.admin_user, runtime.admin_password, pdadminCommands)
         if rsp.success == True:
-            _logger.info("Successfully created user {}".format(user.name))
+            _logger.info("Successfully created user {}".format(user.username))
         else:
             _logger.error("Failed to create user {} with config:\n{}\n{}".format(
-                        user.name, json.dumps(user, indent=4), rsp.data))
+                        user.username, json.dumps(user, indent=4), rsp.data))
 
-    def _pdadmin_groups(self, runtime, group):
+    def _pdadmin_group(self, runtime, group):
         pdadminCommands = ["group create {} {} {}".format(group.name, group.dn, group.description)]
         if group.users:
             for user in group.users:
@@ -774,7 +838,8 @@ class WEB_Configurator(object):
                       password: !secret default/isva-secrets:ob_client_password
                       dn: "cn=ob_client,dc=iswga"
                   reverse_proxies:
-                    - host: "default-proxy"
+                    - host: "isva-wrp"
+                      instance: "default-proxy"
                       acls:
                         - name: "isam_mobile_anyauth"
                           junctions:
@@ -922,10 +987,28 @@ class WEB_Configurator(object):
 
             host: str
             'Hostname use by the reverse proxy in the Policy Server\'s namespace.'
+            instance: str
+            'WebSEAL instance name if the Policy Server\'s namespace.'
             acls: typing.Optional[typing.List[Reverse_Proxy_ACL]]
             'List of ACL\'s to attach to reverse proxy instance.'
             pops: typing.Optional[typing.List[Reverse_Proxy_POP]]
             'List of POP\'s to attach to reverse proxy instance.'
+        
+        class WebSEALObject(typing.TypedDict):
+            class Attribute(typing.TypedDict):
+                key: str
+                'Name of the attribute to attach to the junction object.'
+                value: str
+                'Value of the attribute to attach to the junction object.'
+
+            host: str
+            'Hostname use by the reverse proxy in the Policy Server\'s namespace.'
+            instance: str
+            'WebSEAL instance name if the Policy Server\'s namespace.'
+            junction: str
+            'WebSEAL junction to modify.'
+            attributes: typing.List[Attribute]
+            'List of attributes to add to junction object.'
 
         users: typing.Optional[typing.List[User]]
         'List of users to add to the User Registry. These will be created as "full" Verify Access users.'
@@ -935,6 +1018,8 @@ class WEB_Configurator(object):
         'List of ACL\'s to create in the Policy Server.'
         pops: typing.Optional[typing.List[Protected_Object_Policy]]
         'List of POP\'s to create in the Policy Server.'
+        objects: typing.Optional[typing.List[WebSEALObject]]
+        'List of objects to attach attributes to.'
         reverse_proxies: typing.Optional[typing.List[Reverse_Proxy]]
         'List of ACL\'s and POP\'s to attach to a WebSEAL reverse proxy instance.'
 
@@ -958,7 +1043,7 @@ class WEB_Configurator(object):
 
         if config.reverse_proxies != None:
             for proxy in config.reverse_proxies:
-                self._pdadmin_proxy(proxy)
+                self._pdadmin_proxy(runtime, proxy)
         #deploy_pending_changes(self.factory, self.config)
 
 

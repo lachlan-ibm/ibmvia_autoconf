@@ -148,11 +148,9 @@ Example
 
 Point Of Contact
 ================
-The point of contact profile is used to control how the runtime server communicates with the point of contact server (usually WebSEAL).
 
-
-.. autoclass:: src.verify_access_autoconf.federation.FED_Configurator.Point_Of_Contact_Profiles
-   :members:
+To configure Point of Contact profiles, see the entry in the `Appliance <appliance.html#point-of-contact>`_ or 
+`Container <container.html#point-of-contact>`_ documentation.
 
 
 Alias Service
@@ -168,24 +166,15 @@ a high-volume database or an LDAP database.
 
 Attribute Sources
 =================
-Identity attribute sources for federated identities.
 
-
-.. autoclass:: src.verify_access_autoconf.federation.FED_Configurator.Attribute_Sources
-    :members:
+To set Attribute sources, see the entry in the `Appliance <appliance.html#attribute-sources>`_ or 
+`Container <container.html#attribute-sources>`_ documentation.
 
 
 Access Policies
 ===============
-Access policies can be applied to the deployment types:
-- SAML 2.0 identity provider federation
-- SAML 2.0 service provider partner to an identity provider federation
-- OpenID Connect and API Protection Definition
-
-
-.. autoclass:: src.verify_access_autoconf.federation.FED_Configurator.Access_Policies
-    :members:
-
+To set Access policy configuration, see the entry in the `Appliance <appliance.html#access-policies>`_ or 
+`Container <container.html#access-policies>`_ documentation.
 
 
 Security Token Service
@@ -205,3 +194,38 @@ Federations
 
 .. autoclass:: src.verify_access_autoconf.federation.Federation_Common
     :members:
+
+
+Advanced Configuration Parameters
+=================================
+
+To set Advanced Configuration Properties, see the entry in the `Appliance <appliance.html#advanced-configuration-properties>`_ or 
+`Container <container.html#advanced-configuration-properties>`_ documentation.
+
+
+HTTP Template Files
+===================
+
+To upload HTTP template files, see the entry in the `Appliance <appliance.html#http-template-files>`_ or 
+`Container <container.html#http-template-files>`_ documentation.
+
+
+JavaScript Mapping Rules
+========================
+
+To upload JavaScript mapping rules, see the entry in the `Appliance <appliance.html#javascript-mapping-rules>`_ or 
+`Container <container.html#javascript-mapping-rules>`_ documentation.
+
+
+Server Connections
+==================
+
+To configure third party Server Connections, see the entry in the `Appliance <appliance.html#server-connections>`_ or 
+`Container <container.html#server-connections>`_ documentation.
+
+
+Runtime Server Configuration
+============================
+
+To set Runtime Server properties, see the entry in the `Appliance <appliance.html#runtime-server-configuration>`_ or 
+`Container <container.html#runtime-server-configuration>`_ documentation.

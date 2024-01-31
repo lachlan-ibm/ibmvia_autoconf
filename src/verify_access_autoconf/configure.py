@@ -211,16 +211,20 @@ class ISVA_Configurator(object):
                 str(server) + ":" + str(port), database, rsp.data))
 
 
-    def _import_personal_certs(self, database, parsed_file):
+    def _import_personal_cert(self, db_name, cert):
         ssl = self.factory.get_system_settings().ssl_certificates
-        rsp = ssl.import_personal(database, os.path.abspath(parsed_file['path']))
+        personal_parsed_file = optional_list(FILE_LOADER.read_file(cert.p12_file))[0]
+        rsp = ssl.import_personal(db_name, 
+                                    file_path=os.path.abspath(personal_parsed_file['path']), 
+                                    password=cert.get("password", ""))
         if rsp.success == True:
             _logger.info("Successfully uploaded {} personal certificate to {}".format(
-                parsed_file['name'], database))
+                personal_parsed_file['name'], db_name))
             self.needsRestart = True
         else:
             _logger.error("Failed to upload {} personal certificate to {}/n{}".format(
-                parsed_file['name'], database, rsp.data))
+               personal_parsed_file['path'], db_name, rsp.data))
+
 
     class SSL_Certificates(typing.TypedDict):
         '''
@@ -248,6 +252,14 @@ class ISVA_Configurator(object):
             secret: typing.Optional[str]
             'Optional secret to decrypt personal certificate'
 
+        class Load_Certificate(typing.TypedDict):
+            server: str
+            'Domain name or address of web service.'
+            port: int
+            'Port Web service is listening on.'
+            label: str
+            'Name of retrieved X509 certificate alias in SSL database.'
+
         name: typing.Optional[str]
         'Name of SSL database to configure. If database does not exist it will be created. Either `name` or `kdb_file` must be defined.'
         kdb_file: typing.Optional[str]
@@ -258,6 +270,8 @@ class ISVA_Configurator(object):
         'List of file paths for signer certificates (PEM or DER) to import.'
         personal_certificates: typing.Optional[typing.List[Personal_Certificate]]
         'List of file paths for personal certificates (PKCS#12) to import.'
+        load_certificates: typing.Optional[typing.List[Load_Certificate]]
+        'Load X509 certificates from a TCPS endpoints.'
 
     def import_ssl_certificates(self, config):
         ssl_config = config.ssl_certificates
@@ -267,7 +281,7 @@ class ISVA_Configurator(object):
             for database in ssl_config:
                 if database.name != None: # Create the database
                     if database.name not in old_databases:
-                        rsp = ssl.create_database(database.name, type='kdb')
+                        rsp = ssl.create_database(database.name, db_type='kdb')
                         if rsp.success == True:
                             _logger.info("Successfully created {} SSL Certificate database".format(
                                 database.name))
@@ -276,8 +290,8 @@ class ISVA_Configurator(object):
                                 database.name))
                             continue
                 elif database.kdb_file != None: #Import the database
-                    kdb_f = FILE_LOADER.read_file(database.kdb_file)
-                    sth_f = FILE_LOADER.read_file(database.sth_file)
+                    kdb_f = optional_list(FILE_LOADER.read_file(database.kdb_file))[0]
+                    sth_f = optional_file(FILE_LOADER.read_file(database.sth_file))[0]
                     rsp = ssl.import_database(kdb_file=kdb_f.get("path"), sth_file=sth_f.get("path"))
                     if rsp.success == True:
                         _logger.info("Successfully imported a SSL KDB file")
@@ -287,19 +301,17 @@ class ISVA_Configurator(object):
                 else:
                     _logger.error("SSL Database config provided but cannot be identified: {}".format(
                                                                                 json.dumps(database, indent=4)))
+                if database.personal_certificates:
+                    for cert in database.personal_certificates:
+                        self._import_personal_cert(database.name, cert)
                 if database.signer_certificates:
                     for fp in database.signer_certificates:
                         signer_parsed_files = FILE_LOADER.read_files(fp)
                         for parsed_file in signer_parsed_files:
                             self._import_signer_certs(database.name, parsed_file)
-                if database.personal_certificates:
-                    for fp in database.personal_certificates:
-                        personal_parsed_files = FILE_LOADER.read_files(fp)
-                        for parsed_file in personal_parsed_files:
-                            self._import_personal_certs(database.name, base_dir, parsed_file)
                 if database.load_certificates:
                     for item in database.load_certificates:
-                        self._load_signer_cert(database.name, item.server, item.port, item.label)
+                        self._load_signer_certificates(database.name, item.server, item.port, item.label)
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config)
             self.needsRestart == False
@@ -712,6 +724,50 @@ class ISVA_Configurator(object):
         self.activate_appliance(base_config)
         self.install_extensions(base_config)
 
+    def _check_aac_fed_licenses(self):
+        activations = self.factory.get_system_settings().licensing.get_activated_modules().json
+        result = False
+        _logger.debug("Existing activations: {}".format(activations))
+        if any(module.get('id', None) == 'mga' and module.get('enabled', "False") == "True" for module in activations):
+            result = True
+        if any(module.get('id', None) == 'federation' and module.get('enabled', "False") == "True" for module in activations):
+            result = True
+        return result
+
+    def global_config(self, aac, fed):
+        config = None
+        if self.config.appliance is not None:
+            config = self.config.appliance
+        elif self.config.container is not None:
+            config = self.config.container
+        else:
+            _logger.error("Deployment model cannot be found in config.yaml, skipping global configuration.")
+            return
+
+        options = ['template_files', 'mapping_rules', 'server_connections', 'runtime_properties', 
+                        'point_of_contact', 'advanced_configuration', 'access_policies', 'attribute_sources']
+        configRequired = False
+        for k in config.keys():
+            if k in options:
+                configRequired = True
+                break
+        if configRequired == True and self._check_aac_fed_licenses() == False:
+            _logger.error("You must activate the Advanced Access Control or Federation modules to")
+            return
+        elif configRequired == False:
+            _logger.info("Skipping global configuration")
+            return
+
+        aac.upload_files(config)
+        aac.server_connections(config)
+        aac.runtime_configuration(config)
+        fed.configure_poc(config)
+        aac.advanced_config(config)
+        fed.configure_access_policies(config)
+        fed.configure_attribute_sources(config)
+
+        deploy_pending_changes(self.factory, self.config)
+
 
     def get_modules(self):
         appliance = APPLIANCE(self.config, self.factory)
@@ -744,6 +800,7 @@ class ISVA_Configurator(object):
             self.complete_setup()
         appliance, container, web, aac, fed = self.get_modules()
         self.configure_base(appliance, container)
+        self.global_config(aac, fed)
         web.configure()
         aac.configure()
         fed.configure()

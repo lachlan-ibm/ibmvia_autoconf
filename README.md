@@ -3,6 +3,11 @@ This repository is used to configure IBM Security Verify Access (ISVA) using a y
 
 This project aims to be idempotent, ie if the configuration is run multiple times on the same appliance it should not break and should pick up any configuration changes in the yaml configuration file.
 
+
+## Documentation
+Documentation for using this library can be found on [Verify Access Automated Configurator's GitHub pages](https://lachlan-ibm.github.io/verify_access_autoconf/index.html).
+
+
 ## Example deployments
 To get started several example deployments are available in the [Examples](examples/) directory. The example yaml files must be updated with deployment specific parameters, usually this is network addresses and ISVA activation codes.
 
@@ -23,10 +28,9 @@ To get started several example deployments are available in the [Examples](examp
 IBM Security Verify Access Configuration Automation is simple to run locally. 
 1. First the required python packages are installed from [PyPi](https://pypi.org/project/verify-access-autoconf/). 
 2. Set the required environment variables
-3. a python interactive shell or python script can be used to configure appliances:
-```python
->>> import verify_access_autoconf
->>> verify_access_autoconf.configurator.configure()
+3. Invoke the python module from the command line.
+```bash
+python -m verify_access_autoconf
 ```
 
 ### Docker
@@ -45,7 +49,7 @@ docker run --volume /path/to/config/yaml:/config --env "ISVA_CONFIGURATION_BASE_
 IBM Security Verify Access Automated Configurator can be run from within a Kubernetes cluster. This is useful if there are routing issues between the deployment host and the kubernetes external addresses this option will allow for configuration using the kubernetes internal network.
 
 Here is an example Kubernetes batch" object which deploys a container to apply a configuration to a cluster.
-> note This requires a user to create the `verify-config` ConfigMap object with the required configuration files plus any additional Secrets which are referenced.
+> note This requires a user to create the `verify-config` ConfigMap object with the required configuration files plus any additional Secrets which are referenced as environment variables.
 
 ```
 apiVersion: batch/v1
@@ -57,31 +61,51 @@ spec:
     spec:
       containers:
       - name: verify-access-configurator
-        image: python3:latest
-        command: ["python3", "-m", "verify_access_autoconf"]
+        image: python:latest
+        command: 
+        - "bash"
+        - "-c"
+        - |
+          pip install verify-access-autoconf
+          python3 -m verify_access_autoconf
         volumeMounts:
-        - name: verify-access-config
+        - name: verify-access-config-vol
           mountPath: /verify_access_config
-        env:
-        - name: ISVA_CONFIG_BASE
-          value: "/verify_access_config"
-        - name: ISVA_MGMT_BASE_URL
-          value: "https://isamconfig:9443"
-        - name: ISVA_MGMT_PASSWORD
-          value: "Passw0rd1!"
-        - name: ISVA_CONFIGURATOR_LOG_LEVEL
-          value: "ALL"
+        envFrom:
+        - secretRef:
+            name: verify-access-autoconf-env
       restartPolicy: Never
       volumes:
-      - name: verify-access-config
+      - name: verify-config
         configMap:
-          name: verify-access-config
+      - name: verify-access-config-vol
+        emptyDir: {}
       initContainers:
-        - name: install-verify-access-autoconf
-          image: python3:latest
-          command: ["bash", "-c", "pip3 install verify-access-autoconf"]
+      - name: config-volume-builder
+        image: python:latest
+        volumeMounts:
+        - mountPath: /verify_access_config
+          name: verify-access-config-vol
+        - mountPath: /tmp/verify_access_config
+          name: verify-config
+        command:
+        - "bash"
+        - "-c"
+        - |
+          apt update && apt install -y unzip;
+          cp /tmp/verify_access_config/*.{p12,pem,yaml} /verify_access_config/
+          unzip /tmp/verify_access_config/mapping_rules.zip -d /verify_access_config/
   backoffLimit: 4
 ```
 
-## Documentation
-Documentation for using this library can be found on [Verify Access Automated Configurator's GitHub pages](https://lachlan-ibm.github.io/verify_access_autoconf/index.html).
+# Building
+
+To build locally:
+```sh
+mkdir .pyenv
+virtualenv .pyenv
+source .pyenv/bin/activate
+pip install -r dev-requirements.txt
+python setup.py sdist bdist_wheel
+```
+The generated wheel can then be installed into a docker container and used in any supported container runtime.
