@@ -743,6 +743,7 @@ class ISVA_Configurator(object):
         else:
             _logger.error("Deployment model cannot be found in config.yaml, skipping global configuration.")
             return
+
         options = ['template_files', 'mapping_rules', 'server_connections', 'runtime_properties', 
                         'point_of_contact', 'advanced_configuration', 'access_policies', 'attribute_sources']
         configRequired = False
