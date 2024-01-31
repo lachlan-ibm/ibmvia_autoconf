@@ -459,6 +459,8 @@ class WEB_Configurator(object):
         'Properties for integrating this reverse proxy with OIDC API Protection Clients.'
         stanza_configuration: typing.Optional[Stanza_Configuration]
         'List of modifications to perform on the ``webseald.conf`` configuration file for this reverse proxy instance.'
+        management_root: typing.Optional[typing.List[str]]
+        'List of zip files to import into the WebSEAL management root HTML pages.'
 
     def wrp(self, runtime, proxy):
         wrp_instances = optional_list(self.web.reverse_proxy.list_instances().json)
@@ -505,6 +507,9 @@ class WEB_Configurator(object):
         else:
             _logger.error("Configuration of {} proxy failed with config:\n{}\n{}".format(
                 proxy.name, json.dumps(proxy, indent=4), rsp.data))
+        if proxy.management_root: None:
+            for zip_file in proxy.management_root:
+                self._import_management_root(proxy.name, zip_file)
 
         if proxy.junctions != None:
             for jct in proxy.junctions:
@@ -988,6 +993,22 @@ class WEB_Configurator(object):
             'List of ACL\'s to attach to reverse proxy instance.'
             pops: typing.Optional[typing.List[Reverse_Proxy_POP]]
             'List of POP\'s to attach to reverse proxy instance.'
+        
+        class WebSEALObject(typing.TypedDict):
+            class Attribute(typing.TypedDict):
+                key: str
+                'Name of the attribute to attach to the junction object.'
+                value: str
+                'Value of the attribute to attach to the junction object.'
+
+            host: str
+            'Hostname use by the reverse proxy in the Policy Server\'s namespace.'
+            instance: str
+            'WebSEAL instance name if the Policy Server\'s namespace.'
+            junction:
+            'WebSEAL junction to modify.'
+            attributes: typing.List[Attribute]
+            'List of attributes to add to junction object.'
 
         users: typing.Optional[typing.List[User]]
         'List of users to add to the User Registry. These will be created as "full" Verify Access users.'
@@ -997,6 +1018,8 @@ class WEB_Configurator(object):
         'List of ACL\'s to create in the Policy Server.'
         pops: typing.Optional[typing.List[Protected_Object_Policy]]
         'List of POP\'s to create in the Policy Server.'
+        objects: typing.Optional[typing.List[WebSEALObject]]
+        'List of objects to attach attributes to.'
         reverse_proxies: typing.Optional[typing.List[Reverse_Proxy]]
         'List of ACL\'s and POP\'s to attach to a WebSEAL reverse proxy instance.'
 
