@@ -2154,7 +2154,7 @@ class AAC_Configurator(object):
             deploy_pending_changes(self.factory, self.config)
             self.needsRestart = False
 
-        self.risk_profiles(self.config.access_control)
+        #self.risk_profiles(self.config.access_control)
         self.access_control(self.config.access_control)
         self.api_protection_configuration(self.config.access_control)
         if self.needsRestart == True:
