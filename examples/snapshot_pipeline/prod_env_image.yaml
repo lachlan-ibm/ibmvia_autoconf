@@ -1,0 +1,13 @@
+container:
+  deployments:
+    - "isvawrp"
+    - "isvaruntime"
+  snapshot: "snapshots/isva_10.0.8.0.dev.snapshot"
+  ssl_certificates:
+  - name: "lmi_trust_store"
+    signer_certificates:
+    - "pki/prod/postgresql/postgres.crt"
+    - "pki/prod/openldap/ca.crt"
+  - name: "rt_profile_keys"
+    signer_certificates:
+    - "pki/prod/postgresql/postgres.crt"

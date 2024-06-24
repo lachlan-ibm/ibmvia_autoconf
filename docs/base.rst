@@ -91,6 +91,17 @@ configuration is:
    :members:
 
 
+Management Authentication
+=========================
+Administrators are able to configure how users are able to authenticate to the Verify Access management interface. By
+default the management interface uses a local user registry, but administrators can configure a LDAP server or integrate
+a third party identity provider using the OIDC specification.
+
+
+.. autoclass:: src.verify_access_autoconf.configure.ISVA_Configurator.Management_Authentication
+   :members:
+
+
 .. _module-activation:
 
 Module Activation

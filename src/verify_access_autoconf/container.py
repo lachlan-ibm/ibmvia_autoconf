@@ -95,4 +95,5 @@ class Docker_Configurator(object):
             deploy_pending_changes(self.factory, self.config, restartContainers=False)
 
 if __name__ == "__main__":
-    configure()
+    c = Docker_Configurator()
+    c.configure()

@@ -7,7 +7,6 @@ import os
 import logging
 import json
 import requests
-import yaml
 import pyisva
 import time
 import typing
@@ -17,9 +16,9 @@ from .container import Docker_Configurator as CONTAINER
 from .access_control import AAC_Configurator as AAC
 from .webseal import WEB_Configurator as WEB
 from .federation import FED_Configurator as FED
-from .util.data_util import Map, FILE_LOADER, optional_list, filter_list
-from .util.configure_util import deploy_pending_changes, creds, old_creds, config_base_dir, mgmt_base_url, config_yaml
-from .util.constants import API_HEADERS, HEADERS, LOG_LEVEL
+from .util.data_util import FILE_LOADER, optional_list
+from .util.configure_util import deploy_pending_changes, creds, old_creds, mgmt_base_url, config_yaml
+from .util.constants import HEADERS, LOG_LEVEL
 
 logging.basicConfig(stream=sys.stdout, level=os.environ.get(LOG_LEVEL, logging.DEBUG))
 _logger = logging.getLogger(__name__)
@@ -59,7 +58,7 @@ class ISVA_Configurator(object):
             mgmt_pwd: 'S3cr37Pa55w0rd!'
             mgmt_old_pwd: 'administrator'
 
-        *note:* These properties are overridden by ``ISVA_MGMT_*`` environment variables
+        .. note:: These properties are overridden by ``ISVA_MGMT_*`` environment variables
 
         '''
 
@@ -114,7 +113,7 @@ class ISVA_Configurator(object):
                 config.appliance.fips.fips_enabled == True:
             fips_settings = self.factory.get_system_settings().fips.get_settings().json
             if fips_settings.get("fipsEnabled", False) == False:
-                response = self.factory.get_system_settings().fips.update_settigns(**config.appliance.fips)
+                response = self.factory.get_system_settings().fips.update_settings(**config.appliance.fips)
 
 
     def complete_setup(self):
@@ -291,7 +290,7 @@ class ISVA_Configurator(object):
                             continue
                 elif database.kdb_file != None: #Import the database
                     kdb_f = optional_list(FILE_LOADER.read_file(database.kdb_file))[0]
-                    sth_f = optional_file(FILE_LOADER.read_file(database.sth_file))[0]
+                    sth_f = optional_list(FILE_LOADER.read_file(database.sth_file))[0]
                     rsp = ssl.import_database(kdb_file=kdb_f.get("path"), sth_file=sth_f.get("path"))
                     if rsp.success == True:
                         _logger.info("Successfully imported a SSL KDB file")
@@ -329,16 +328,62 @@ class ISVA_Configurator(object):
 
         The complete list of properties that can be set by this key can be found at :ref:`pyisva:systemsettings#administrator-settings`
         '''
-
+        min_heap_size: typing.Optional[int]
+        'The minimum heap size, in megabytes, for the JVM.'
+        max_heap_size: typing.Optional[int]
+        'The minimum heap size, in megabytes, for the JVM.'
         session_timeout: typing.Optional[int]
+        'The length of time, in minutes, that a session can remain idle before it is deleted (valid values``0 - 720``). A default value of ``120`` is used.'
+        session_inactive_timeout: typing.Optional[int]
+        'The length of time, in minutes, that a session can remain idle before it is deleted (valid values = ``-1 - 720``). A default value of ``30`` is used. A value of ``-1`` disables the inactivity timeout.'
+        http_port: typing.Optional[int]
+        'The TCP port on which the LMI will listen.'
+        https_port: typing.Optional[int]
+        'The SSL port on which the LMI will listen. A default value of ``443`` is used.'
+        sshd_port: typing.Optional[int]
+        'The port on which the SSH daemon will listen. A default value of ``22`` is used. Please note that if using the appliance clustering capability all nodes in the cluster must be configured to use the same port for the SSH daemon.'
         sshd_client_alive: typing.Optional[int]
+        'The number of seconds that the server will wait before sending a null packet to the client. A value of ``-1`` means using the default timeout settings.'
+        swap_size: typing.Optional[int]
+        'The amount of allocated swap space, in Megabytes. There must be enough disk space on the active partition to store the swap file, otherwise an error will be logged in the system log file and the default amount of swap space will be used. (only present in the response if a value has been set).'
+        min_threads: typing.Optional[int]
+        'The minimum number of threads which will handle LMI requests. A default value of 6 is used.'
+        max_threads: typing.Optional[int]
+        'The maximum number of threads which will handle LMI requests. A default value of 6 is used.'
+        max_pool_size: typing.Optional[int]
+        'The maximum number of connections for the connection pool. The default value is ``100``.'
+        lmi_debugging_enabled: typing.Optional[bool]
+        'A boolean value which is used to control whether LMI debugging is enabled or not. By default debugging is disabled.'
+        validate_client_cert_identity: typing.Optional[bool]
+        'The console messaging level of the LMI (valid values include ``INFO``, ``AUDIT``, ``WARNING``, ``ERROR`` and ``OFF``). A default value of ``OFF`` is used.'
+        exclude_csrf_checking: typing.Optional[str]
+        'A comma-separated string which lists the users for which CSRF checking should be disabled. Regular expressions are accepted, and any embedded commas should be escaped with the " character. This option is required if you wish to access a Web service, using client certificates for authentication, from a non-browser based client. An example might be ``cn=scott,o=ibm,c=us,cn=admin,o=dummyCorp,c=*``.'
+        enabled_server_protocols: typing.Optional[int]
+        'Specifies which secure protocols will be accepted when connecting to the LMI. The supported options include: ``TLS``, ``TLSv1``, ``TLSv1.1`` and ``TLSv1.2``.'
         enabled_tls: typing.Optional[typing.List[str]]
+        'List of Enabled TLS protocols for the local management interface. Valid values include ``TLSv1``, ``TLSv1.1`` and ``TLSv1.2``.'
         console_log_level: typing.Optional[str]
+        'The console messaging level of the LMI (valid values include ``INFO``, ``AUDIT``, ``WARNING``, ``ERROR`` and ``OFF``). A default value of ``OFF`` is used.'
         accept_client_certs: typing.Optional[bool]
+        'A boolean value which is used to control whether SSL client certificates are accepted by the local management interface. By default SSL client certificates are accepted.'
         log_max_files: typing.Optional[int]
+        'The maximum number of log files that are retained. The default value is ``2``.'
         log_max_size: typing.Optional[int]
+        'The maximum size (in MB) that a log file can grow to before it is rolled over. The default value is ``20``'
         http_proxy: typing.Optional[str]
+        'The proxy ``<host>:<port>`` to be used for HTTP communication from the LMI. The port component is optional and will default to ``80``.'
         https_proxy: typing.Optional[str]
+        'The proxy ``<host>:<port>`` to be used for HTTPS communication from the LMI. The port component is optional and will default to ``443``.'
+        login_header: typing.Optional[str]
+        'This is a customizable header that is displayed when accessing the login page in a web browser and after logging in via SSH. Multiple lines of text can be specified by using the sequence "n", which will be interpreted as a line break.'
+        login_msg: typing.Optional[str]
+        'This is a customizable message that is displayed when accessing the login page in a web browser and after logging in via SSH. Multiple lines of text can be specified by using the sequence "n", which will be interpreted as a line break.'
+        access_log_fmt: typing.Optional[str]
+        'The template string to use for the LMI access.log file. If not set the access log is disabled (default).'
+        lmi_msg_timeout: typing.Optional[int]
+        'This is a timeout (in seconds) for notification messages that appear in the LMI. A value of ``0`` indicates that the messages should not timeout. The default value is ``5`` seconds.'
+        valid_verify_domains: typing.Optional[str]
+        'This is a space separated list of valid domains for IBM Security Verify. These domains are used by the IBM Security Verify wizard to ensure that only valid hostnames are used.'
 
     def admin_config(self, config):
         if config.admin_config != None:
@@ -384,7 +429,7 @@ class ISVA_Configurator(object):
                         user.name, rsp.data))
 
     def _system_groups(self, groups):
-        for group in config.account_management.groups:
+        for group in groups:
             rsp = None
             if group.operation == "add" or group.operation == "update":
                 rsp = self.factory.get_system_settings().sysaccount.create_group(group.id)
@@ -445,8 +490,7 @@ class ISVA_Configurator(object):
 
         class Management_Group(typing.TypedDict):
             '''
-            *note*: Groups are created before users; therefore if a user is being created and added to a group then
-                    this should be done in the user configuration entry.
+            .. note:: Groups are created before users; therefore if a user is being created and added to a group then this should be done in the user configuration entry.
             '''
             operation: str
             'Operation to perform with group. "add" | "update" | delete".'
@@ -569,6 +613,136 @@ class ISVA_Configurator(object):
                     _logger.error("Failed to enable role based authorization:\n{}".format(rsp.data))
 
 
+    class Management_Authentication(typing.TypedDict):
+        '''
+        Example::
+
+                management_authentication:
+                  auth_type: "federation"
+                  oidc:
+                    client_id: "27d55f1c-285a-11ef-81ec-14755ba358db"
+                    client_secret: "SDFGc3ffFSD3m4Xtg1"
+                    discovery_endpoint: "https://verify.ibm.com/.well-known/openid-configuration"
+                    require_pkce: true
+                    enable_admin_group: false
+                    enable_tokenmapping: false
+
+        '''
+
+        class LDAP(typing.TypedDict):
+            host: str
+            'Specifies the name of the LDAP server. '
+            port: str
+            'Specifies the port over which to communicate with the LDAP server. '
+            ssl: bool
+            'Specifies whether SSL is used when the system communicates with the LDAP server.'
+            key_database: str
+            'Specifies the name of the key database file (without any path information). This parameter is required if ``ssl`` is ``true``'
+            cert_label: str
+            'Specifies the name of the certificate within the Key database that is used if client authentication is requested by the LDAP server.'
+            user_attribute: str
+            'Specifies the name of the LDAP attribute which holds the supplied authentication user name of the user. '
+            group_member_attribute: str
+            'Specifies the name of the LDAP attribute which is used to hold the members of a group. '
+            base_dn: str
+            'Specifies the base DN which is used to house all administrative users.'
+            admin_group_dn: str
+            'Specifies the DN of the group to which all administrative users must belong.'
+            anon_bind: bool
+            'Specifies whether the LDAP user registry supports anonymous bind. If set to false, ``bind_dn`` and ``bind_password`` are required.'
+            bind_dn: typing.Optional[str]
+            'Specifies the DN of the user which will be used to bind to the registry. This user must have read access to the directory. This parameter is required if anon_bind is ``false``'
+            bind_password:typing.Optional[str]
+            'Specifies the password which is associated with the bind_dn. This parameter is required if anon_bind is ``false``.'
+            debug: bool
+            'Specifies whether the capturing of LDAP debugging information is enabled or not.'
+            enable_usermapping: bool
+            'Specifies whether mapping of the incoming client certificate DN is enabled.'
+            usermapping_script: str
+            'Specifies the javascript script that will map the incoming client certificate DN. The script will be passed a Map containing the certificate dn, rdns, principal, cert, san and the user_attribute, group_member_attribute and base_dn from this configuration. If not specified a default script is used. Only valid if ``enable_usermapping`` is ``true``.'
+            enable_ssh_pubkey_auth: typing.Optional[bool]
+            'Specifies whether or not users in the LDAP server can log in via SSH using SSH public key authentication. If this value is not provided, it will default to false.'
+            ssh_pubkey_auth_attribute: str
+            'Specifies the name of the LDAP attribute which contains a user\'s public key data. This field is required if SSH public key authentication is enabled.'
+
+        class OIDC(typing.TypedDict):
+            client_id: str
+            'The OIDC Client Identifier.'
+            client_secret: str
+            'The OIDC Client Secret.'
+            discovery_endpoint: str
+            'The OIDC Discovery (well-known) endpoint.'
+            enable_pkce: bool
+            'Specifies whether the Public key Code Exchange extension is enforced.'
+            enable_admin_group: bool
+            'Specifies whether a user must be a member of a particular group to be considered an administrator user.'
+            group_claim: typing.Optional[str]
+            'The OIDC token claim to use as group membership. This claim can either be a String, or a list of Strings. The default value is "groups".'
+            admin_group: typing.Optional[str]
+            'The name of the group which a user must be a member of to be considered an administrator user. The default value is "adminGroup".'
+            user_claim: typing.Optional[str]
+            'Specifies the OIDC token claim to use as the username. The default value is "sub".'
+            keystore: typing.Optional[str]
+            'The SSL Truststore to verify connections the the OIDC OP. The default value if "lmi_trust_store".'
+            enable_tokenmapping: bool
+            'Specifies whether custom claim to identity mapping is performed using a JavaScript code fragment.'
+            tokenmapping_script: str
+            'The custom JavaScript code fragment to map an identity token to a username/group membership.'
+
+        auth_type: str
+        'Specifies whether the local user database or the remote LDAP user registry is used for authentication. If this parameter is set to local, then all other fields are ignored. Valid values include ``local``, ``federation`` and ``remote``.'
+        ldap: typing.Optional[LDAP]
+        'LDAP specific configuration properties. Only one of LDAP or OIDC should be defined'
+        oidc: typing.Optional[OIDC]
+        'OIDC specific configuration properties. Only one of LDAP or OIDC should be defined'
+
+    def management_authentication(self, config):
+        if config.management_authentication != None:
+            ma = config.management_authentication
+            methodArgs = {}
+            if ma.ldap:
+                methodArgs.update({
+                    "ldap_host": ma.ldap.host,
+                    "ldap_port": ma.ldap.port, 
+                    "enable_ssl": ma.ldap.ssl, 
+                    "key_database": ma.ldap.key_database,
+                    "cert_label": ma.ldap.cert_label,
+                    "user_attribute": ma.ldap.user_attribute,
+                    "group_member_attribute": ma.ldap.group_member_attribute,
+                    "base_dn": ma.ldap.base_dn,
+                    "admin_group_dn": ma.ldap.admin_group_dn,
+                    "anon_bind": ma.ldap.anon_bind,
+                    "bind_dn": ma.ldap.bind_dn,
+                    "bind_password": ma.ldap.bind_password,
+                    "ldap_debug": ma.ldap.ldap_debug,
+                    "enable_usermapping": ma.ldap.enable_usermapping,
+                    "usermapping_script": ma.ldap.usermapping_script,
+                    "enable_ssh_pubkey_auth": ma.ldap.enable_ssh_pubkey_auth,
+                    "ssh_pubkey_auth_attribute": ma.ldap.ssh_pubkey_auth_attribute, 
+                    })
+            elif ma.oidc:
+                methodArgs.update({
+                    "oidc_client_id": ma.oidc.oidc_client_id,
+                    "oidc_client_secret": ma.oidc.oidc_client_secret,
+                    "oidc_discovery_endpoint": ma.oidc.oidc_discovery_endpoint,
+                    "oidc_enable_pkce": ma.oidc.oidc_enable_pkce,
+                    "oidc_enable_admin_group": ma.oidc.oidc_enable_admin_group,
+                    "oidc_group_claim": ma.oidc.oidc_group_claim,
+                    "oidc_admin_group": ma.oidc.oidc_admin_group,
+                    "oidc_user_claim": ma.oidc.oidc_user_claim,
+                    "oidc_keystore": ma.oidc.oidc_keystore,
+                    "enable_tokenmapping": ma.oidc.enable_tokenmapping, 
+                    "tokenmapping_script": ma.oidc.tokenmapping_script
+                })
+            ma = config.management_authentication
+            rsp = self.factory.get_system_settings().management_authentication.update(ma.auth_type, **methodArgs)
+            if rsp.success == True:
+                _logger.info("Successfully updated the management authentication configuration")
+            else:
+                _logger.error("Failed to update the management authentication configuration:\n{}\nconfig:\n{}".format(
+                                                                                    rsp.data, json.dumps(ma, indent=4)))
+
+
     class Advanced_Tuning_Parameter:
         '''
         Example::
@@ -590,7 +764,7 @@ class ISVA_Configurator(object):
 
     def advanced_tuning_parameters(self, config):
         if config.advanced_tuning_parameters != None:
-            params = self.factory.get_system-settings().advance_tining.list_params().json
+            params = self.factory.get_system_settings().advance_tining.list_params().json
             for atp in config.advanced_tuning_parameters:
                 if atp.operation == "delete":
                     uuid = None
@@ -717,6 +891,7 @@ class ISVA_Configurator(object):
         self.admin_config(base_config)
         self.import_ssl_certificates(base_config)
         self.account_management(base_config)
+        self.management_authentication(base_config) # This may cause an appliance to become un-contactable; eg. if auth changes from basic to bearer
         self.management_authorization(base_config)
         self.advanced_tuning_parameters(base_config)
         model.configure()
@@ -806,5 +981,5 @@ class ISVA_Configurator(object):
         fed.configure()
 
 if __name__ == "__main__":
-    from isva_configurator import configurator
-    configurator.configure()
+    ISVA_Configurator(config_yaml(), 
+                      pyisva.Factory(mgmt_base_url(config_yaml(),), *creds(config_yaml()))).configure()
