@@ -148,7 +148,7 @@ Detailed information on configuration object structure can be found in the submo
    appliance
    container
    webseal
-   access-control
+   access_control
    federations
 
 

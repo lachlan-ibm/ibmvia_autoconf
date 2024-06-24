@@ -1,5 +1,5 @@
 Deploying this example
-#####################
+######################
 
 This demonstrations documents the required configuration to use IBM Security Verify Access as either and 
 Identity Provider (IDP) or a Service Provider in a SAML2.0 federated identity scenario. This demonstration requires

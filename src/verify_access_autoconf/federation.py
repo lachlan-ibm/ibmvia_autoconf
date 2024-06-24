@@ -20,19 +20,19 @@ class Federation_Common(typing.TypedDict):
     '''
     class Basic_Configuration(typing.TypedDict):
         active_delegate_id: str
-        'The active module instance. Valid values are "noMetadata" and "metadataEndpointUrl".'
+        'The active module instance. Valid values are ``noMetadata`` and ``metadataEndpointUrl``.'
         metadata_endpoint_url: typing.Optional[str]
-        'The /metadata endpoint URL of the provider. Only valid if ``active_delegate_id`` is "metadataEndpointUrl".'
+        'The ``/metadata`` endpoint URL of the provider. Only valid if ``active_delegate_id`` is ``metadataEndpointUrl``.'
         issuer_identifier: typing.Optional[str]
-        'The issuer ("iss") value of the provider. Only valid if ``active_delegate_id`` is "noMetadata".'
+        'The issuer ``iss`` value of the provider. Only valid if ``active_delegate_id`` is ``noMetadata``.'
         response_types: typing.Optional[typing.List[str]]
-        'List of response type which determines which flow to be executed. Valid values to be included are "code", "token", "id_token". Only valid if ``active_delegate_id`` is "noMetadata".'
+        'List of response type which determines which flow to be executed. Valid values to be included are ``code``, ``token``, ``id_token``. Only valid if ``active_delegate_id`` is ``noMetadata``.'
         authorization_endpoint_url: typing.Optional[str]
-        'The /authorize endpoint URL of the provider. Only valid if ``active_delegate_id`` is "noMetadata".'
+        'The ``/authorize`` endpoint URL of the provider. Only valid if ``active_delegate_id`` is ``noMetadata``.'
         token_endpoint_url: typing.Optional[str]
-        'The /token endpoint URL of the provider. Required if "code" response type is selected. Only valid if ``active_delegate_id`` is "noMetadata".'
+        'The ``/token`` endpoint URL of the provider. Required if "code" response type is selected. Only valid if ``active_delegate_id`` is ``noMetadata``.'
         user_info_endpoint_url: typing.Optional[str]
-        'The /userinfo endpoint URL of the provider. Only valid if ``active_delegate_id`` is "noMetadata".'
+        'The ``/userinfo`` endpoint URL of the provider. Only valid if ``active_delegate_id`` is ``noMetadata``.'
 
     class Key_Identifier(typing.TypedDict):
         store: str
@@ -42,27 +42,27 @@ class Federation_Common(typing.TypedDict):
 
     class Advanced_Configuration(typing.TypedDict):
         active_delegate_id: str
-        'The active module instance. Valid values are "skip-advance-map" and "default-map".'
+        'The active module instance. Valid values are ``skip-advance-map`` and ``default-map``.'
         mapping_rule: str
         'A reference to an ID or name of an advance configuration mapping rule.'
         rule_type: str
-        'The type of the mapping rule. The only supported type currently is "JAVASCRIPT".'
+        'The type of the mapping rule. The only supported type currently is ``JAVASCRIPT``.'
 
     class Assertion_Settings(typing.TypedDict):
         attribute_types: typing.Optional[typing.List[str]]
-        'A setting that specifies the types of attributes to include in the assertion. An asterisk (*) indicates that all of the attribute types that are specified in the identity mapping file or by the custom mapping module will be included in the assertion. The default value is ["*"]. This configuration is applicable to an identity provider federation partner.'
+        'A setting that specifies the types of attributes to include in the assertion. An asterisk (*) indicates that all of the attribute types that are specified in the identity mapping file or by the custom mapping module will be included in the assertion. The default value is ``["*"]``. This configuration is applicable to an identity provider federation partner.'
         session_not_on_or_after: typing.Optional[int]
         'The number of seconds that the security context established for the principal should be discarded by the service provider. The default value is 3600. This configuration is applicable to an identity provider federation partner.'
         create_multiple_attribute_statements: typing.Optional[bool]
         'A setting that specifies whether to keep multiple attribute statements in the groups in which they were received. This option might be necessary if your custom identity mapping rules are written to operate on one or more specific groups of attribute statements.'
         valid_before: typing.Optional[int]
-        'The number of seconds before the issue date that an assertion is considered valid. This configuration is applicable to an identity provider federation. The default value is 60.'
+        'The number of seconds before the issue date that an assertion is considered valid. This configuration is applicable to an identity provider federation. The default value is ``60``.'
         valid_after: typing.Optional[int]
-        'The number of seconds the assertion is valid after being issued. This configuration is applicable to an identity provider federation. The default value is 60.'
+        'The number of seconds the assertion is valid after being issued. This configuration is applicable to an identity provider federation. The default value is ``60``.'
 
     class Assertion_Consumer_Service(typing.TypedDict):
         binding: str
-        'A setting that specifies the communication method used to transport the SAML messages. The valid values are "artifact", "post", and "redirect".'
+        'A setting that specifies the communication method used to transport the SAML messages. The valid values are ``artifact``, ``post``, and ``redirect``.'
         default: bool
         'A setting that specifies whether it is the default endpoint.'
         index: int
@@ -72,11 +72,11 @@ class Federation_Common(typing.TypedDict):
 
     class Artifact_Resolution_Service(typing.TypedDict):
         binding: str
-        'A setting that specifies the communication method used to transport the SAML messages. The valid value is "soap".'
+        'A setting that specifies the communication method used to transport the SAML messages. The valid value is ``soap``.'
         default: typing.Optional[bool]
         'A setting that specifies whether it is the default endpoint.  If not provided, the default value is ``false``.'
         index: typing.Optional[int]
-        'A reference to a particular endpoint. The default value is 0.'
+        'A reference to a particular endpoint. The default value is ``0``.'
         url: typing.Optional[str]
         'The URL of the endpoint. If not provided, the value is automatically generated from the point of contact URL.'
 
@@ -84,7 +84,7 @@ class Federation_Common(typing.TypedDict):
         name: str
         'Name of the source.'
         source: str
-        'Attribute Source ID. '
+        'Attribute Source ID.'
 
     class Encryption_Settings(typing.TypedDict):
 
@@ -95,13 +95,13 @@ class Federation_Common(typing.TypedDict):
             'The certificate or key label.'
 
         block_algorithm: typing.Optional[str]
-        'Block encryption algorithm used to encrypt and decrypt SAML message. Valid values are "AES-128", "AES-192", "AES-256", and "TRIPLEDES". If not provided, the default value is "AES-128".'
+        'Block encryption algorithm used to encrypt and decrypt SAML message. Valid values are ``AES-128``, ``AES-192``, ``AES-256``, and ``TRIPLEDES``. If not provided, the default value is ``AES-128``.'
         key_transport_algorithm: typing.Optional[str]
-        'Key transport algorithm used to encrypt and decrypt keys. Valid values are "RSA-v1.5" and "RSA-OAEP". If not provided, the default value is "RSA-OAEP". If the supplied encryptionKeyIdentifier corresponds to a network HSM device, the "RSA-OAEP" key transport is not allowed.'
+        'Key transport algorithm used to encrypt and decrypt keys. Valid values are ``RSA-v1.5`` and ``RSA-OAEP``. If not provided, the default value is ``RSA-OAEP``. If the supplied ``key_identifier`` corresponds to a network HSM device, the ``RSA-OAEP`` key transport is not allowed.'
         key_identifier: typing.Optional[Key_Identifier]
-        'The certificate for encryption of outgoing SAML messages. If not provided, the default value is null.'
+        'The certificate for encryption of outgoing SAML messages. If not provided, the default value is ``null``.'
         decryption_key_identifier: typing.Optional[Key_Identifier]
-        'A public/private key pair that the federation partners can use to encrypt certain message content. The default value is null.'
+        'A public/private key pair that the federation partners can use to encrypt certain message content. The default value is ``null``.'
         key_store: str
         'The certificate database name.'
         key_alias: str
@@ -117,60 +117,60 @@ class Federation_Common(typing.TypedDict):
     class Identity_Mapping(typing.TypedDict):
         class Default_Mapping_Properties(typing.TypedDict):
             rule_type: str
-            'The type of the mapping rule. The only supported type currently is "JAVASCRIPT".'
+            'The type of the mapping rule. The only supported type currently is ``JAVASCRIPT``.'
             mapping_rule: str
             'A reference to an ID or name of a mapping rule.'
         
         class Custom_Mapping_Properties(typing.TypedDict):
             applies_to: str
-            'Refers to STS chain that consumes call-out response. Required if "WSTRUST" ``message_format`` is specified, invalid otherwise.'
+            'Refers to STS chain that consumes call-out response. Required if ``WSTRUST`` ``message_format`` is specified, invalid otherwise.'
             auth_type: str
-            'Authentication method used when contacting external service. Supported values are "NONE", "BASIC" or "CERTIFICATE"'
+            'Authentication method used when contacting external service. Supported values are ``NONE``, ``BASIC`` or ``CERTIFICATE``'
             basic_auth_username: typing.Optional[str]
-            'Username for authentication to external service. Required if "BASIC" ``auth_type`` is specified, invalid otherwise.'
+            'Username for authentication to external service. Required if ``BASIC`` ``auth_type`` is specified, invalid otherwise.'
             basic_auth_password: typing.Optional[str]
-            'Password for authentication to external service. Required if "BASIC" ``auth_type`` is specified, invalid otherwise.'
+            'Password for authentication to external service. Required if ``BASIC`` ``auth_type`` is specified, invalid otherwise.'
             client_key_store: typing.Optional[str]
-            'Contains key for HTTPS client authentication. Required if "CERTIFICATE" ``auth_type`` is specified, invalid otherwise.'
+            'Contains key for HTTPS client authentication. Required if ``CERTIFICATE`` ``auth_type`` is specified, invalid otherwise.'
             client_key_alias: typing.Optional[str]
-            'Alias of the key for HTTPS client authentication. Required if "CERTIFICATE" ``auth_type`` is specified, invalid otherwise.'
+            'Alias of the key for HTTPS client authentication. Required if ``CERTIFICATE`` ``auth_type`` is specified, invalid otherwise.'
             issuer_uri: typing.Optional[str]
-            'Refers to STS chain that provides input for call-out request. Required if "WSTRUST" ``message_format`` is specified, invalid otherwise.'
+            'Refers to STS chain that provides input for call-out request. Required if ``WSTRUST`` ``message_format`` is specified, invalid otherwise.'
             message_format: str
-            'Message format of call-out request. Supported values are "XML" or "WSTRUST".'
+            'Message format of call-out request. Supported values are ``XML`` or ``WSTRUST``.'
             ssl_key_store: str
             'SSL certificate trust store to use when validating SSL certificate of external service.'
             uri: str
             'Address of destination server to call out to.'
 
         active_delegate_id: str
-        'The active mapping module instance. Valid values are "skip-identity-map", "default-map" and "default-http-custom-map".'
+        'The active mapping module instance. Valid values are ``skip-identity-map``, ``default-map`` and ``default-http-custom-map``.'
         properties: typing.Union[Default_Mapping_Properties, Custom_Mapping_Properties]
         'The mapping module specific properties.'
 
     class Extension_Mapping(typing.TypedDict):
         active_delegate_id: str
-        'The active mapping module instance. Valid values are "skip-extension-map" and "default-map". If this is a partner the value "federation-config" is also valid.'
+        'The active mapping module instance. Valid values are ``skip-extension-map`` and ``default-map``. If this is a partner the value ``federation-config`` is also valid.'
         mapping_rule: str
         'A reference to an ID or name of an extension mapping rule.'
 
     class Authn_Req_Mapping(typing.TypedDict):
         active_delegate_id: str
-        'The active mapping module instance. Valid values are "skip-authn-request-map" and "default-map". If this is a partner the value "federation-config" is also valid.'
+        'The active mapping module instance. Valid values are ``skip-authn-request-map`` and ``default-map``. If this is a partner the value ``federation-config`` is also valid.'
         mapping_rule: str
         'A reference to an ID or name of an authentication request mapping rule.'
 
     class Service_Data(typing.TypedDict):
         binding: str
-        'A setting that specifies the communication method used to transport the SAML messages. The valid values are "artifact", "post", "redirect" and "soap".'
+        'A setting that specifies the communication method used to transport the SAML messages. The valid values are ``artifact``, ``post``, ``redirect`` and ``soap``.'
         url: typing.Optional[str]
-        'The URL of the endpoint. Except for "soap" binding, the value is automatically generated from the point of contact URL and will not be updated by POST or PUT operation. For "soap" binding, if not provided, the value is automatically generated from the point of contact URL.'
+        'The URL of the endpoint. Except for "soap" binding, the value is automatically generated from the point of contact URL and will not be updated by POST or PUT operation. For ``soap`` binding, if not provided, the value is automatically generated from the point of contact URL.'
 
     class Name_Id_Format(typing.TypedDict):
         default: typing.Optional[str]
-        'The name identifier format to use when the format attribute is not set, or is set to "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified". If provided, it takes precedence over the value that is configured for this partner\'s federation. If not provided, the value that is configured for this partner\'s federation is used.'
+        'The name identifier format to use when the format attribute is not set, or is set to ``urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified``. If provided, it takes precedence over the value that is configured for this partner\'s federation. If not provided, the value that is configured for this partner\'s federation is used.'
         supported: typing.Optional[typing.List[str]]
-        'The list of supported name identifier formats. The default value is ["urn:oasis:names:tc:SAML:2.0:nameid-format:persistent","urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress","urn:oasis:names:tc:SAML:2.0:nameid-format:transient","urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"].'
+        'The list of supported name identifier formats. The default value is [``urn:oasis:names:tc:SAML:2.0:nameid-format:persistent``, ``urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress``, ``urn:oasis:names:tc:SAML:2.0:nameid-format:transient``, ``urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified``].'
 
     class Signature_Settings(typing.TypedDict):
         class Key_Identifier(typing.TypedDict):
@@ -228,9 +228,9 @@ class Federation_Common(typing.TypedDict):
             'A setting that specifies whether to include the subject name in the KeyInfo element in the digital signature when signing a SAML message or assertion. The default value is ``false``.'
 
         signature_algorithm: str
-        'The signature algorithm to sign and validate SAML messages and assertions. Valid values are "RSA-SHA1", "RSA-SHA256", and "RSA-SHA512". If not provided, the default value is "RSA-SHA256".'
+        'The signature algorithm to sign and validate SAML messages and assertions. Valid values are ``RSA-SHA1``, ``RSA-SHA256``, and ``RSA-SHA512``. If not provided, the default value is ``RSA-SHA256``.'
         digest_algorithm: str
-        'The hash algorithm to apply to the transformed resources and validate its integrity. Valid values are "SHA1", "SHA256" and "SHA512". If not provided, the default value matches the configured signature algorithm - "SHA1" for "RSA-SHA1", "SHA256" for "RSA-SHA256", and "SHA512" for "RSA-SHA512".'
+        'The hash algorithm to apply to the transformed resources and validate its integrity. Valid values are ``SHA1``, ``SHA256`` and ``SHA512``. If not provided, the default value matches the configured signature algorithm - ``SHA1`` for ``RSA-SHA1``, ``SHA256`` for ``RSA-SHA256``, and ``SHA512`` for ``RSA-SHA512``.'
         signing_options: typing.Optional[Signing_Options]
         'The signing options.'
         validation_options: typing.Optional[Validation_Options]
@@ -240,13 +240,13 @@ class Federation_Common(typing.TypedDict):
         key_info_elements: typing.Optional[Key_Info_Elements]
         'The KeyInfo elements to include in the digital signature.'
         signing_key_identifier: typing.Optional[Key_Identifier]
-        'A public/private key pair for signing the SAML messages and the assertion. If not provided, the default value is null.'
+        'A public/private key pair for signing the SAML messages and the assertion. If not provided, the default value is ``null``.'
         validation_key_identifier: typing.Optional[Key_Identifier]
-        'The certificate to use to validate the signatures on the incoming SAML assertions and messages. The default value is null.'
+        'The certificate to use to validate the signatures on the incoming SAML assertions and messages. The default value is ``null``.'
 
     class Single_Sign_On_Service(typing.TypedDict):
         binding: str
-        'A setting that specifies the communication method used to transport the SAML messages. The valid values are "artifact", "post" and "redirect".'
+        'A setting that specifies the communication method used to transport the SAML messages. The valid values are ``artifact``, ``post`` and ``redirect``.'
         url: str
         'The URL of the endpoint.'
 
@@ -267,7 +267,7 @@ class Federation_Common(typing.TypedDict):
 
         class Client_Auth_Data(typing.TypedDict):
             method: str
-            'The authentication method. To enable the basic authentication method, enter "ba". To enable the client certificate authentication, enter "cert". To disable client authentication, enter "none".'
+            'The authentication method. To enable the basic authentication method, enter ``ba``. To enable the client certificate authentication, enter ``cert``. To disable client authentication, enter ``none``.'
             basic_auth_username: typing.Optional[str]
             'The basic authentication username.'
             basic_auth_password: typing.Optional[str]
@@ -281,6 +281,16 @@ class Federation_Common(typing.TypedDict):
         'The server certificate validation data.'
         client_auth_data: Client_Auth_Data
         'The client authentication data.'
+
+    class Runtime(typing.TypedDict):
+        username: str
+        'The username used to authenticate with the runtime.'
+        password: str
+        'The password used to authenticate with the runtime. '
+        hostname: str
+        'The hostname of the runtime.'
+        port: str
+        'The port of the runtime. Must be the SSL port.'
 
 ############################################################################################################
 ############################################################################################################
@@ -398,10 +408,10 @@ class FED_Configurator(object):
             for poc in federation_config.point_of_contact.get('profiles', []):
                 old_poc = optional_list(filter_list('name', poc.name, old_pocs))[0]
                 methodArgs = copy.deepcopy(poc)
-                #Convert keys from snake to camel case
+                #Convert keys from snake to camel case, also renaming nested key if we find it
                 for prop in ["sign_in_callbacks", "local_id_callbacks", "sign_out_callbacks", "authn_policy_callbacks"]:
                     if prop in methodArgs:
-                        methodArgs[to_camel_case(prop)] = remap_dict(methodArgs.pop(prop), {"module_reference_id", "moduleReferenceId"})
+                        methodArgs[to_camel_case(prop)] = remap_keys(methodArgs.pop(prop), {"module_reference_id", "moduleReferenceId"})
 
                 rsp = None; verb = None
                 if old_poc:
@@ -515,16 +525,45 @@ class FED_Configurator(object):
         Example::
 
                 sts:
+                  chain_templates:
+                  - name: "UsernameTokentoSAML20"
+                      description: "Maps from UsernameToken to SAML20"
+                      modules:
+                      - id: "Default UserNameToken"
+                      mode: "validate"
+                      - id: "Default Map Module"
+                      mode: "map"
+                      - id: "Default SAML 2.0 Token"
+                      mode: "issue"
+                  - name: "STSUUtoSTSUU"
+                      description: "STSUU to STSUU"
+                      modules:
+                      - id: "Default STSUU"
+                      mode: "validate"
+                      - id: "Default Map Module"
+                      mode: "map"
+                      - id: "Default STSUU"
+                      mode: "issue"
                   chains:
-                  - id: "appliance-post-token-map-module"
-                    name: "OAuth20 Appliance Post Token Map Module"
-                    description: "appliance-post-token-map-module"
-                    moduleId: "OAuth20AppliancePostTokenMapModule"
-				      mode: "map"
-				      prefix: "uuid3dbf4c6a-013d-15d5-bb8b-c2665e02a402"
-				    - id: "default-dynamic_chain"
-				      mode": verify"
-				      prefix: "uuid3dbf4c6c-013d-1c48-85c8-c2665e02a402"
+                  - name: "SAML20ToSAML20Chain"
+                    description: "Chain for saml20 to saml20"
+                    chain_template: "SAML20tpSAML20"
+                    request_type: "validate"
+                    applies_to:
+                        address: "http://appliesto/saml20"
+                    issuer:
+                        address: "http://issuer/saml20"
+                    sign_responses: false
+                    properties:
+                        myself:
+                        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.replay.validation"
+                          index: 0
+                          value:
+                          - "false"
+                        - name: "map.rule.reference.name"
+                          index: 1
+                          value:
+                          - "saml20_to_saml20"
 
         '''
         class Chain_Template(typing.TypedDict):
@@ -586,10 +625,13 @@ class FED_Configurator(object):
                     properties::
                         index: 1
                         name: rule.type
-                        value: "JAVASCRIPT"
+                        value:
+                        - "JAVASCRIPT"
 
                     would result in a property of::
+
                         {"name": "071dcbe-93e3-11ee-a5af-14755ba358db.rule.type", "value": ["JAVASCRIPT"]}
+
                     '''
                     index: str
                     'The index in the chain template of the property being set.'
@@ -858,7 +900,7 @@ class FED_Configurator(object):
                 rsp = None; verb = None
                 if old_source:
                     rsp = self.fed.attribute_sources.update_attribute_source(old_source['id'], **methodArgs)
-                    verb = "updated" if rsp.success == true else "update"
+                    verb = "updated" if rsp.success == True else "update"
                 else:
                     rsp = self.fed.attribute_sources.create_attribute_source(**methodArgs)
                     verb = "created" if rsp.success == True else "create"
@@ -887,31 +929,33 @@ class FED_Configurator(object):
                 "role": partner.role,
                 "template_name": partner.template_name
             }
+        partnerConfig = None
         if partner.configuration != None:
+            partnerConfig = partner.configuration
             methodArgs.update({
-                "access_policy": config.access_policy,
-                "arti_resolution_svc": config.artifact_resolution_services,
-                "assert_consume_svc": config.assertion_consumer_services,
-                "attribute_mappings": config.attribute_mappings,
-                "include_fed_id_in_partner_id": config.include_fed_id_in_alias_partner_id,
-                "logout_request_lifetime": config.logout_request_lifetime,
-                "manage_name_id_services": config.manage_name_id_services,
-                "provider_id": config.provider_id,
-                "session_timeout": config.session_timeout,
-                "slo_svc": config.single_logout_service,
-                "sso_svc": config.single_sign_on_service,
-                "default_target_url": config.default_target_url,
-                "anon_user_name": config.anonymous_user_name,
-                "force_authn_to_federate": config.force_authn_to_federate,
-                "map_unknown_alias": config.map_unknown_aliases
+                "access_policy": partner.configuration.access_policy,
+                "arti_resolution_svc": partner.configuration.artifact_resolution_services,
+                "assert_consume_svc": partner.configuration.assertion_consumer_services,
+                "attribute_mappings": partner.configuration.attribute_mappings,
+                "include_fed_id_in_partner_id": partner.configuration.include_fed_id_in_alias_partner_id,
+                "logout_request_lifetime": partner.configuration.logout_request_lifetime,
+                "manage_name_id_services": partner.configuration.manage_name_id_services,
+                "provider_id": partner.configuration.provider_id,
+                "session_timeout": partner.configuration.session_timeout,
+                "slo_svc": partner.configuration.single_logout_service,
+                "sso_svc": partner.configuration.single_sign_on_service,
+                "default_target_url": partner.configuration.default_target_url,
+                "anon_user_name": partner.configuration.anonymous_user_name,
+                "force_authn_to_federate": partner.configuration.force_authn_to_federate,
+                "map_unknown_alias": partner.configuration.map_unknown_aliases
                 })
-            if config.authn_req_mapping != None:
+            if partnerConfig and partnerConfig.authn_req_mapping != None:
                 methodArgs.update({
-                        "authn_req_delegate_id": config.authn_req_mapping.active_delegate_id,
-                        "authn_req_mr": self._mapping_rule_to_id(config.authn_req_mapping.mapping_rule)
+                        "authn_req_delegate_id": partner.authn_req_mapping.active_delegate_id,
+                        "authn_req_mr": self._mapping_rule_to_id(partner.authn_req_mapping.mapping_rule)
                     })
-            if config.assertion_settings != None:
-                assert_settings = config.assertion_settings
+            if partnerConfig and partnerConfig.assertion_settings != None:
+                assert_settings = partnerConfig.assertion_settings
                 methodArgs.update({
                         "assert_valid_before": assert_settings.valid_before,
                         "assert_valid_after": assert_settings.valid_after,
@@ -919,8 +963,8 @@ class FED_Configurator(object):
                         "assert_session_not_after": assert_settings.session_not_after,
                         "assert_multi_attr_stmt": assert_settings.create_multiple_attribute_statements
                     })
-            if config.encryption_settings != None:
-                encryption = config.encryption_settings
+            if partnerConfig and partnerConfig.encryption_settings != None:
+                encryption = partnerConfig.encryption_settings
                 methodArgs.update({
                         "decrypt_key_store": encryption.decryption_key_identifier.store if encryption.decryption_key_identifier else None,
                         "decrypt_key_alias": encryption.decryption_key_identifier.label if encryption.decryption_key_identifier else None,
@@ -933,8 +977,8 @@ class FED_Configurator(object):
                         "encrypt_assertion_attrs": encryption.encrypt_assertion_attributes
                     })
 
-            if config.identity_mapping != None:
-                idMap = config.identity_mapping
+            if partnerConfig and partnerConfig.identity_mapping != None:
+                idMap = partnerConfig.identity_mapping
                 methodArgs.update({ "identity_delegate_id": idMap.active_delegate_id })
                 if idMap.properties.mapping_rule:
                     methodArgs.update({
@@ -954,19 +998,19 @@ class FED_Configurator(object):
                         "identity_ssl_key_store": idMap.properties.ssl_key_store,
                         "identity_uri": idMap.properties.uri
                     })
-            if config.extension_mapping != None:
+            if partnerConfig and partnerConfig.extension_mapping != None:
                 methodArgs.update({
-                        "ext_delegate_id": config.extension_mapping.active_delegate_id,
-                        "ext_mr": self._mapping_rule_to_id(config.extension_mapping.mapping_rule)
+                        "ext_delegate_id": partnerConfig.extension_mapping.active_delegate_id,
+                        "ext_mr": self._mapping_rule_to_id(partnerConfig.extension_mapping.mapping_rule)
                     })
 
-            if config.name_id_format != None:
+            if partnerConfig and partnerConfig.name_id_format != None:
                 methodArgs.update({
-                        "name_id_default": config.name_id_format.default,
-                        "name_id_supported": config.name_id_format.supported
+                        "name_id_default": partnerConfig.name_id_format.default,
+                        "name_id_supported": partnerConfig.name_id_format.supported
                     })
-            if config.signature_settings != None:
-                sigSetting = config.signature_settings
+            if partnerConfig and partnerConfig.signature_settings != None:
+                sigSetting = partnerConfig.signature_settings
                 methodArgs.update({
                         "sign_alg": sigSetting.signing_algorithm,
                         "sign_digest_alg": sigSetting.digest_algorithm,
@@ -1012,19 +1056,19 @@ class FED_Configurator(object):
                             "validate_name_id_req": sigSetting.validation_options.validate_name_id_management_request,
                             "validate_name_id_rsp": sigSetting.validation_options.validate_name_id_management_response
                         })
-                if config.soap_settings != None and isinstance(config.soap_settings.server_cert_validation, dict):
+                if partnerConfig and partnerConfig.soap_settings != None and isinstance(partnerConfig.soap_settings.server_cert_validation, dict):
                     methodArgs.update({
-                            "soap_key_store": config.soap_settings.server_cert_validation.store,
-                            "soap_key_alias":  config.soap_settings.server_cert_validation.label,
+                            "soap_key_store": partnerConfig.soap_settings.server_cert_validation.store,
+                            "soap_key_alias":  partnerConfig.soap_settings.server_cert_validation.label,
                             
                         })
-                if config.soap_settings != None and isinstance(config.soap_settings.client_auth_data, dict):
+                if partnerConfig and partnerConfig.soap_settings != None and isinstance(partnerConfig.soap_settings.client_auth_data, dict):
                     methodArgs.update({
-                            "soap_client_auth_method": config.soap_settings.client_auth_data.method,
-                            "soap_client_auth_ba_user": config.soap_settings.client_auth_data.basic_auth_username,
-                            "soap_client_auth_ba_password": config.soap_settings.client_auth_data.basic_auth_password,
-                            "soap_client_auth_key_store": config.soap_settings.client_auth_data.client_key_store,
-                            "soap_client_auth_key_alias": config.soap_settings.client_auth_data.client_key_alias
+                            "soap_client_auth_method": partnerConfig.soap_settings.client_auth_data.method,
+                            "soap_client_auth_ba_user": partnerConfig.soap_settings.client_auth_data.basic_auth_username,
+                            "soap_client_auth_ba_password": partnerConfig.soap_settings.client_auth_data.basic_auth_password,
+                            "soap_client_auth_key_store": partnerConfig.soap_settings.client_auth_data.client_key_store,
+                            "soap_client_auth_key_alias": partnerConfig.soap_settings.client_auth_data.client_key_alias
                         })
         rsp = self.fed.federations.create_saml_partner(fedId, **methodArgs)
         if rsp.success == True:
@@ -1314,27 +1358,74 @@ class FED_Configurator(object):
         '''
         Example::
 
-                TO: DO
+                federations:
+                - name: "saml20idp"
+                    protocol: "SAML2_0"
+                    role: "ip"
+                    export_metadata: "idpmetadata.xml"
+                    webseal:
+                      name: default
+                      runtime:
+                          username: easuser
+                          password: secret
+                          hostname: isva-idp-runtime
+                          port: 9443
+                      reuse_acls: true
+                      reuse_certs: true
+                    configuration:
+                      company_name: "IdP Company"
+                      point_of_contact_url: "https://www.myidp.ibm.com/isam"
+                      assertion_settings:
+                          valid_before: 300
+                          valid_after: 300
+                      need_consent_to_federate: false
+                      signature_settings:
+                          validation_options:
+                            validate_authn_request: true
+                          signing_options:
+                            sign_authn_response: true
+                            sign_logout_request: true
+                            sign_logout_response: true
+                            signing_key_identifier:
+                          store: "myidpkeys"
+                          label: "CN=idp,OU=Security,O=IBM,C=AU"
+                          key_info_elements:
+                            include_x509_certificate_data: true
+                            include_x509_subject_name: false
+                            include_x509_subject_key_identifier: false
+                            include_x509_issuer_details: false
+                            include_public_key: false
+                      identity_mapping:
+                          active_delegate_id: "default-map"
+                          properties:
+                            mapping_rule: "ip_saml20"
+                      extension_mapping:
+                        active_delegate_id: "skip-extension-map"
+                      name_id_format:
+                        default: "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+                      single_sign_on_service:
+                      - binding: "post"
+                      - binding: "redirect"
+                      exclude_session_index_in_single_logout_request: false
+                      single_logout_service:
+                      - binding: "post"
+                      - binding: "redirect"
+                      encryption_settings:
+                          decryption_key_identifier:
+                            store: "myidpkeys"
+                            label: "CN=idp,OU=Security,O=IBM,C=AU"
+                      message_valid_time: 300
+                      session_timeout: 7200
 
         '''
         class Federation(typing.TypedDict):
 
             class Webseal(typing.TypedDict):
-                class Runtime:
-                    username: str
-                    'The username used to authenticate with the runtime.'
-                    password: str
-                    'The password used to authenticate with the runtime. '
-                    hostname: str
-                    'The hostname of the runtime.'
-                    port: str
-                    'The port of the runtime. Must be the SSL port.'
-
                 reuse_acls: bool
                 'A flag to indicate that any existing ACLs with the same name should be reused. If they are not reused, they will be replaced.'
                 reuse_certs: bool
                 'If the SSL certificate has already been saved, this flag indicates that the certificate should be reused instead of overwritten.'
-                runtime: Runtime
+                runtime: Federation_Common.Runtime
                 'Runtime server properties.'
 
             class Partner(typing.TypedDict):
@@ -1368,7 +1459,7 @@ class FED_Configurator(object):
                 message_valid_time: typing.Optional[int]
                 'The number of seconds that a message is valid. The default value is 300.'
                 message_issuer_format: typing.Optional[str]
-                'The format of the issuer of SAML message. The default value is "urn:oasis:names:tc:SAML:2.0:nameid-format:entity".'
+                'The format of the issuer of SAML message. The default value is ``urn:oasis:names:tc:SAML:2.0:nameid-format:entity``.'
                 message_issuer_name_qualifier: typing.Optional[str]
                 'The name qualifier of the issuer of SAML messaged.'
                 name_id_format: typing.Optional[Federation_Common.Name_Id_Format]
@@ -1378,11 +1469,11 @@ class FED_Configurator(object):
                 exclude_session_index_in_single_logout_request: typing.Optional[bool]
                 'A setting that specifies whether the LogoutRequest messages sent out from this entity will exclude SessionIndex during IP init SLO flow. The default value is ``false``.'
                 point_of_contact_url: str
-                'The endpoint URL of the point of contact server. The point of contact server is a reverse proxy server that is configured in front of the runtime listening interfaces. The format is "http[s]://hostname[:portnumber]/[junction]/sps".'
+                'The endpoint URL of the point of contact server. The point of contact server is a reverse proxy server that is configured in front of the runtime listening interfaces. The format is ``http[s]://hostname[:portnumber]/[junction]/sps``.'
                 provider_id: typing.Optional[str]
-                'A unique identifier that identifies the provider to its partner provider. If not provided or an empty string is provided, the default value is "<point of contact URL>/<federation name>/saml20".'
+                'A unique identifier that identifies the provider to its partner provider. If not provided or an empty string is provided, the default value is ``<point of contact URL>/<federation name>/saml20``.'
                 session_timeout: typing.Optional[int]
-                'The number of seconds that the SAML session remains valid. The default value is 7200.'
+                'The number of seconds that the SAML session remains valid. The default value is ``7200``.'
                 signature_settings: typing.Optional[Federation_Common.Signature_Settings]
                 'The signing and validation configurations for SAML messages and assertions.'
                 single_sign_on_service: typing.Optional[typing.List[Federation_Common.Single_Sign_On_Service]]
@@ -1415,19 +1506,19 @@ class FED_Configurator(object):
                 manage_name_id_services: typing.Optional[typing.List[Federation_Common.Service_Data]]
                 'Endpoints that accept SAML name ID management requests or responses.'
                 message_valid_time: typing.Optional[int]
-                'The number of seconds that a message is valid. The default value is 300.'
+                'The number of seconds that a message is valid. The default value is ``300``.'
                 message_issuer_format: typing.Optional[str]
-                'The format of the issuer of SAML message. The default value is "urn:oasis:names:tc:SAML:2.0:nameid-format:entity".'
+                'The format of the issuer of SAML message. The default value is ``urn:oasis:names:tc:SAML:2.0:nameid-format:entity``.'
                 message_issuer_name_qualifier: typing.Optional[str]
                 'The name qualifier of the issuer of SAML messaged.'
                 name_id_format: typing.Optional[Federation_Common.Name_Id_Format]
                 'The name identifier format configurations.'
                 point_of_contact_url: str
-                'The endpoint URL of the point of contact server. The point of contact server is a reverse proxy server that is configured in front of the runtime listening interfaces. The format is "http[s]://hostname[:portnumber]/[junction]/sps".'
+                'The endpoint URL of the point of contact server. The point of contact server is a reverse proxy server that is configured in front of the runtime listening interfaces. The format is ``http[s]://hostname[:portnumber]/[junction]/sps``.'
                 provider_id: typing.Optional[str]
-                'A unique identifier that identifies the provider to its partner provider. If not provided or an empty string is provided, the default value is "<point of contact URL>/<federation name>/saml20".'
+                'A unique identifier that identifies the provider to its partner provider. If not provided or an empty string is provided, the default value is ``<point of contact URL>/<federation name>/saml20``.'
                 session_timeout: typing.Optional[int]
-                'The number of seconds that the SAML session remains valid. The default value is 7200.'
+                'The number of seconds that the SAML session remains valid. The default value is ``7200``.'
                 signature_settings: typing.Optional[Federation_Common.Signature_Settings]
                 'The signing and validation configurations for SAML messages and assertions.'
                 single_logout_service: typing.Optional[typing.List[Federation_Common.Service_Data]]
@@ -1456,7 +1547,7 @@ class FED_Configurator(object):
                 include_fed_id_in_alias_partner_id: typing.Optional[bool]
                 'A setting that specifies whether to append federation ID to partner ID when mapping user aliases. The default value is false.'
                 logout_request_lifetime: typing.Optional[int]
-                'A setting that specifies Logout request lifetime in number of seconds. If not provided, the default value is 120.'
+                'A setting that specifies Logout request lifetime in number of seconds. If not provided, the default value is ``120``.'
                 manage_name_id_services: typing.Optional[typing.List[Federation_Common.Service_Data]]
                 'Partner\'s endpoints that accept SAML name ID management requests or responses.'
                 name_id_format: typing.Optional[Federation_Common.Name_Id_Format]
@@ -1513,9 +1604,9 @@ class FED_Configurator(object):
             class OIDC_Relying_Party(typing.TypedDict):
 
                 redirect_uri_prefix: str
-                'The reverse proxy address to prepend to the redirect URI sent to the provider to communicate with this instance. An example is "https://www.reverse.proxy.com/mga". For the value "https://www.reverse.proxy.com/mga", the kickoff uri would be: "https://www.reverse.proxy.com/mga/sps/oidc/rp/<FEDERATION_NAME>/kickoff/<PARTNER_NAME>" and the redirect uri: "https://www.reverse.proxy.com/mga/sps/oidc/rp/<FEDERATION_NAME>/redirect/<PARTNER_NAME>"'
+                'The reverse proxy address to prepend to the redirect URI sent to the provider to communicate with this instance. An example is ``https://www.reverse.proxy.com/mga``. For the value ``https://www.reverse.proxy.com/mga``, the kickoff uri would be ``https://www.reverse.proxy.com/mga/sps/oidc/rp/<FEDERATION_NAME>/kickoff/<PARTNER_NAME>`` and the redirect uri ``https://www.reverse.proxy.com/mga/sps/oidc/rp/<FEDERATION_NAME>/redirect/<PARTNER_NAME>``'
                 response_types: typing.List[str]
-                'List of response types which determine the flow to be executed. Valid values to be included are "code", "token", "id_token". This selects the default flow to run when a metadata URL is specified in the partner configuration.'
+                'List of response types which determine the flow to be executed. Valid values to be included are ``code``, ``token``, ``id_token``. This selects the default flow to run when a metadata URL is specified in the partner configuration.'
                 attribute_mappings: typing.Optional[Federation_Common.Attribute_Mapping]
                 'The attribute mapping data.'
                 identity_mapping: Federation_Common.Identity_Mapping
@@ -1533,7 +1624,7 @@ class FED_Configurator(object):
                 basic_configuration: Federation_Common.Basic_Configuration
                 'The basic configuration data.'
                 signature_algorithm: typing.Optional[str]
-                'The signing algorithm to use. Supported values are "none", "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "PS256", "PS384", "PS512".'
+                'The signing algorithm to use. Supported values are ``none``, ``HS256``, ``HS384``, ``HS512``, ``RS256``, ``RS384``, ``RS512``, ``ES256``, ``ES384``, ``ES512``, ``PS256``, ``PS384``, ``PS512``.'
                 verification_keystore: typing.Optional[str]
                 'When signature algorithm requires a certificate, the keystore which contains the selected certificate to perform the signing.'
                 verification_key_label: typing.Optional[str]
@@ -1541,19 +1632,19 @@ class FED_Configurator(object):
                 jwks_endpoint_url: typing.Optional[str]
                 'When signature algorithm requires a certificate, the JWK endpoint of the provider. If a metadata endpoint is specified in BasicConfigurationData, the JWK URL will be read from metadata information. Cannot be specified if using a signingKeyLabel.'
                 key_management_algorithm: typing.Optional[str]
-                'The key management algorithm to use. Supported values are "none", "dir", "A128KW", "A192KW", "A256KW", "A128GCMKW", "A192GCMKW", "A256GCMKW", "ECDH-ES", "ECDH-ES+A128KW", "ECDH-ES+A192KW", "ECDH-ES+A256KW", "RSA1_5", "RSA-OAEP", "RSA-OAEP-256".'
+                'The key management algorithm to use. Supported values are ``none``, ``dir``, ``A128KW``, ``A192KW``, ``A256KW``, ``A128GCMKW``, ``A192GCMKW``, ``A256GCMKW``, ``ECDH-ES``, ``ECDH-ES+A128KW``, ``ECDH-ES+A192KW``, ``ECDH-ES+A256KW``, ``RSA1_5``, ``RSA-OAEP`` and ``RSA-OAEP-256``.'
                 content_encryption_algorithm: typing.Optional[str]
-                'The content encryption algorithm to use. Supported values are "none", "A128CBC-HS256", "A192CBC-HS384", "A256CBC-HS512", "A128GCM", "A192GCM", "A256GCM".'
+                'The content encryption algorithm to use. Supported values are ``none``, ``A128CBC-HS256``, ``A192CBC-HS384``, ``A256CBC-HS512``, ``A128GCM``, ``A192GCM``, ``A256GCM``.'
                 decryption_keystore: typing.Optional[str]
                 'When key management algorithm requires a certificate, the keystore which contains the selected certificate to perform JWT decryption.'
                 decryption_key_label: typing.Optional[str]
                 'When key management algorithm requires a certificate, the alias of the private key in the selected keystore to perform JWT decryption.'
                 scope: typing.Optional[typing.List[str]]
-                'An array of strings that identify the scopes to request from the provider. Defaults to ["openid"].'
+                'An array of strings that identify the scopes to request from the provider. Defaults to ``["openid"]``.'
                 perform_user_info: typing.Optional[bool]
                 'A setting that specifies whether to perform user info request automatically whenever possible.'
                 token_endpoint_auth_method: str
-                'The token endpoint authentication method. Valid values are "client_secret_basic" and "client_secret_post".'
+                'The token endpoint authentication method. Valid values are ``client_secret_basic`` and ``client_secret_post``.'
                 attribute_mappings: typing.Optional[Federation_Common.Attribute_Mapping]
                 'The attribute mapping data.'
                 identity_mapping: typing.Optional[Federation_Common.Identity_Mapping]
@@ -1570,7 +1661,7 @@ class FED_Configurator(object):
                 identity_mapping: Federation_Common.Identity_Mapping
                 'The identity mapping data.'
                 point_of_contact_url: str
-                'The endpoint URL of the point of contact server. The point of contact server is a reverse proxy server that is configured in front of the runtime listening interfaces. The format is "http[s]://hostname[:portnumber]/[junction]/sps".'
+                'The endpoint URL of the point of contact server. The point of contact server is a reverse proxy server that is configured in front of the runtime listening interfaces. The format is ``http[s]://hostname[:portnumber]/[junction]/sps``.'
             
             class WSFed_Service_Provider(typing.TypedDict):
 
@@ -1579,7 +1670,7 @@ class FED_Configurator(object):
                 identity_mapping: Federation_Common.Identity_Mapping
                 'The identity mapping data.'
                 point_of_contact_url: str
-                'The endpoint URL of the point of contact server. The point of contact server is a reverse proxy server that is configured in front of the runtime listening interfaces. The format is "http[s]://hostname[:portnumber]/[junction]/sps".'
+                'The endpoint URL of the point of contact server. The point of contact server is a reverse proxy server that is configured in front of the runtime listening interfaces. The format is ``http[s]://hostname[:portnumber]/[junction]/sps``.'
                 replay_validation: bool
                 'Whether to enable one-time assertion use enforcement.'
             
@@ -1592,29 +1683,29 @@ class FED_Configurator(object):
                 identity_mapping: Federation_Common.Identity_Mapping
                 'The identity mapping data.'
                 include_certificate_data: typing.Optional[bool]
-                'Whether to include the BASE64 encoded certificate data with the signature. Defaults to true if not specified.'
+                'Whether to include the BASE64 encoded certificate data with the signature. Defaults to ``true`` if not specified.'
                 include_issuer_details: typing.Optional[bool]
-                'Whether to include the issuer name and the certificate serial number with the signature. Defaults to false if not specified.'
+                'Whether to include the issuer name and the certificate serial number with the signature. Defaults to ``false`` if not specified.'
                 include_public_key: typing.Optional[bool]
-                'Whether to include the public key with the signature. Defaults to false if not specified.'
+                'Whether to include the public key with the signature. Defaults to ``false`` if not specified.'
                 include_subject_key_identifier: typing.Optional[bool]
-                'Whether to include the X.509 subject key identifier with the signature. Defaults to false if not specified.'
+                'Whether to include the X.509 subject key identifier with the signature. Defaults to ``false`` if not specified.'
                 include_subject_name: typing.Optional[bool]
-                'Whether to include the subject name with the signature. Defaults to false if not specified.'
+                'Whether to include the subject name with the signature. Defaults to ``false`` if not specified.'
                 max_request_lifetime: int
                 'The amount of time that the request is valid (in milliseconds).'
                 realm: str
                 'The realm of the WS-Federation partner.'
                 signature_algorithm: typing.Optional[str]
-                'The signature algorithm to use for signing SAML assertions. Must be one of: "RSA-SHA1", "RSA-SHA256" or "RSA-SHA512". Only required if signSamlAssertion is set to tru'
+                'The signature algorithm to use for signing SAML assertions. Valid values include ``RSA-SHA1``, ``RSA-SHA256`` or ``RSA-SHA512``. Only required if ``sign_saml_assertion`` is set to tru'
                 signing_key_identifier: typing.Optional[Federation_Common.Key_Identifier]
-                'The certificate to use for signing the SAML assertions. Only required if signSamlAssertion is set to true.'
+                'The certificate to use for signing the SAML assertions. Only required if ``sign_saml_assertion`` is set to ``true``.'
                 sign_saml_assertion: typing.Optional[bool]
                 'Whether or not the assertion needs to be signed.'
                 subject_confirmation_method: typing.Optional[str]
-                'The subject confirmation method. Must be one of: "No Subject Confirmation Method", "urn:oasis:names:tc:SAML:1.0:cm:bearer", "urn:oasis:names:tc:SAML:1.0:cm:holder-of-key" or "urn:oasis:names:tc:SAML:1.0:cm:sender-vouches".'
+                'The subject confirmation method. Must be one of [``No Subject Confirmation Method``, ``urn:oasis:names:tc:SAML:1.0:cm:bearer``, ``urn:oasis:names:tc:SAML:1.0:cm:holder-of-key`` or ``urn:oasis:names:tc:SAML:1.0:cm:sender-vouches``].'
                 use_inclusive_namespace: typing.Optional[bool]
-                'Whether or not to use the InclusiveNamespaces construct. Defaults to true if not specified. '
+                'Whether or not to use the InclusiveNamespaces construct. Defaults to ``true`` if not specified.'
 
             class WSFed_Service_provider_Partner(typing.TypedDict):
 
@@ -1623,26 +1714,26 @@ class FED_Configurator(object):
                 identity_mapping: Federation_Common.Identity_Mapping
                 'The identity mapping data.'
                 key_alias: typing.Optional[Federation_Common.Key_Identifier]
-                'The keystore and certificate to use to validate the signature. Only required if verifySignatures is set to true and useKeyInfo is set to false.'
+                'The keystore and certificate to use to validate the signature. Only required if verifySignatures is set to true and ``use_key_info`` is set to ``false``.'
                 key_info: typing.Optional[str]
-                'The regular expression used to find the X509 certificate for signature validation. Only required if verifySignatures is set to true and useKeyInfo is set to true.'
+                'The regular expression used to find the X509 certificate for signature validation. Only required if ``verify_signatures`` is set to true and ``use_key_info`` is set to ``true``.'
                 max_request_lifetime: int
                 'The amount of time that the request is valid (in milliseconds).'
                 realm: str
                 'The realm of the WS-Federation partner.'
                 use_key_info: typing.Optional[bool]
-                'Whether to use the keyInfo of the XML signature to find the X509 certificate for signature validation (true) or the specified keyAlias (false). Only required if verifySignatures is set to true.'
+                'Whether to use the keyInfo of the XML signature to find the X509 certificate for signature validation (true) or the specified ``key_alias`` (false). Only required if ``verify_signatures`` is set to ``true``.'
                 verify_signatures: typing.Optional[bool]
-                'Whether to enable signature validation. Defaults to false if not specified.'
+                'Whether to enable signature validation. Defaults to ``false`` if not specified.'
                 want_multiple_attribute_statements: bool
                 'Whether to create multiple attribute statements in the Universal User.'
 
             name: str
             'A meaningful name to identify this federation.'
             protocol: str
-            'The name of the protocol to be used in the federation. Valid values are "SAML2_0" and "OIDC10".'
+            'The name of the protocol to be used in the federation. Valid values are ``SAML2_0`` and ``OIDC10``.'
             role: str
-            'The role of a federation: "ip" for a SAML 2.0 identity provider federation, and "sp" for a SAML 2.0 service provider federation. Use "op" for an OpenID Connect Provider federation, and "rp" for an OpenID Connect Relying Party federation.'
+            'The role of a federation. Use ``ip`` for a SAML 2.0 identity provider federation, and ``sp`` for a SAML 2.0 service provider federation. Use ``op`` for an OpenID Connect Provider federation, and ``rp`` for an OpenID Connect Relying Party federation.'
             template_name: typing.Optional[str]
             'An identifier for the template on which to base this federation'
             configuration: typing.Union[SAML20_Identity_Provider, SAML20_Service_Provider, OIDC_Relying_Party, WSFed_Identity_Provider, WSFed_Service_Provider]

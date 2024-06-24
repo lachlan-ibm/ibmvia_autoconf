@@ -110,7 +110,8 @@ class CustomLoader(yaml.SafeLoader):
         try:
             return os.environ.get(self.construct_scalar(node))
         except KeyError as e:
-            raise ValueError("Environment variable {} does not exist".format(secret)) from e
+            raise ValueError("Environment variable {} does not exist".format(
+                                                self.construct_scalar(node))) from e
 
 class FileLoader():
 
@@ -163,12 +164,13 @@ class ISVA_Kube_Client:
             elif cls._caught == False:
                 try:
                     kubernetes.config.load_config()
-                except kubernetes.config.config_exception.ConfigException:
+                except:
                     cls._caught = True
             cls._client = kubernetes.client
         return cls._client
 
 KUBE_CLIENT = ISVA_Kube_Client.get_client()
+
 KUBE_CLIENT_SLEEP = 15
 try:
     KUBE_CLIENT_SLEEP = int(os.environ.get("ISVA_KUBERNETES_RESTART_SLEEP", 15))
