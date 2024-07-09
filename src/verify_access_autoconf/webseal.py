@@ -157,13 +157,19 @@ class WEB_Configurator(object):
                     "password": runtime.password
             })
         rsp = self.web.reverse_proxy.configure_api_protection(proxy_id, **methodArgs)
+        if rsp.success == True:
+            _logger.info("Successfully created API protection junction {}".format(api_config.junction))
+        else:
+            _logger.error("Failed to create API protection junction:\n{}\n{}".format(
+                    json.dumps(api_config, indent=4), rsp.data))
+
 
     def _add_junction(self, proxy_id, junction):
-        forceJunction = False
-        junctions = optional_list(self.web.reverse_proxy.list_junctions(proxy_id).json)
-        for jct in junctions:
-            if jct and jct["id"] == junction.junction_point:
-                junction['force'] = "yes"
+        forceJunction = "no"
+        oldJunction = optional_list(filter_list("id", junction.junction_point, self.web.reverse_proxy.list_junctions(proxy_id).json))[0]
+        if oldJunction:
+            forceJunction = "yes"
+        junction['force'] = forceJunction
 
         rsp = self.web.reverse_proxy.create_junction(proxy_id, **junction)
 
@@ -712,9 +718,9 @@ class WEB_Configurator(object):
                     })
         rsp = self.web.runtime_component.configure(**config)
         if rsp.success == True:
-            _logger.info("Successfully configured RTE")
+            _logger.info("Successfully configured Reverse Proxy Runtime Policy Server")
         else:
-            _logger.error("Failed to configure RTE with config:\n{}\n{}".format(
+            _logger.error("Failed to configure Reverse Proxy Runtime Policy Server with config:\n{}\n{}".format(
                 json.dumps(runtime, indent=4), rsp.data))
 
         if runtime.stanza_configuration != None:
@@ -1077,7 +1083,8 @@ class WEB_Configurator(object):
             if len(cert_mapping_file) != 1:
                 _logger.error("Can only specify one cert mapping file")
                 return
-            rsp = self.web.client_cert_mapping.create(name=cert_mapping_file['name'], content=cert_mapping_file['content'])
+            cert_mapping_file = cert_mapping_file[0]
+            rsp = self.web.client_cert_mapping.create(name=cert_mapping_file['name'], content=cert_mapping_file['contents'])
             if rsp.success == True:
                 _logger.info("Successfully configured certificate mapping")
             else:
@@ -1106,7 +1113,8 @@ class WEB_Configurator(object):
             if len(jct_mapping_file) != 1:
                 _logger.error("Can only specify one jct mapping file")
                 return
-            rsp = self.web.jct_mapping.create(name=jct_mapping_file['name'], jmt_config_data=jct_mapping_file['content'])
+            jct_mapping_file = jct_mapping_file[0]
+            rsp = self.web.jct_mapping.create(name=jct_mapping_file['name'], jmt_config_data=jct_mapping_file['contents'])
             if rsp.success == True:
                 _logger.info("Successfully configured junction mapping")
             else:
@@ -1132,7 +1140,8 @@ class WEB_Configurator(object):
             if len(url_mapping_file) != 1:
                 _logger.error("Can only specify one url mapping file")
                 return
-            rsp = self.web.url_mapping.create(name=url_mapping_file['name'], dynurl_config_data=url_mapping_file['content'])
+            url_mapping_file = url_mapping_file[0]
+            rsp = self.web.url_mapping.create(name=url_mapping_file['name'], dynurl_config_data=url_mapping_file['contents'])
             if rsp.success == True:
                 _logger.info("Successfully configured URL mapping")
             else:
@@ -1158,7 +1167,7 @@ class WEB_Configurator(object):
             if len(user_mapping_file) != 1:
                 _logger.error("Can only specify one user mapping file")
                 return
-            rsp = self.web.user_mapping.create(name=user_mapping_file['name'], content=user_mapping_file['content'])
+            rsp = self.web.user_mapping.create(name=user_mapping_file['name'], content=user_mapping_file['contents'])
             if rsp.success == True:
                 _logger.info("Successfully configured user mapping")
             else:
@@ -1184,7 +1193,7 @@ class WEB_Configurator(object):
             if len(fsso_config_file) != 1:
                 _logger.error("Can only specify one FSSO configuration file")
                 return
-            rsp = self.web.fsso.create(name=fsso_config_file['name'], fsso_config_data=fsso_config_file['content'])
+            rsp = self.web.fsso.create(name=fsso_config_file['name'], fsso_config_data=fsso_config_file['contents'])
             if rsp.success == True:
                 _logger.info("Successfully configured Federated Singe Sign On configuration")
             else:
@@ -1196,24 +1205,32 @@ class WEB_Configurator(object):
         '''
         Example::
 
-                   http_transforms:
+                 http_transforms:
+                   requests:
                    - inject_header.xslt
+                   lua:
                    - eai.lua
 
         '''
-        http_transforms: typing.List[str]
-        'List of files to be uploaded as HTTP Transformation Rules. These can be either LUA rules using the ``.lua`` file extension or XSLT rules using the ``.xslt`` file extension.'
+        requests: typing.List[str]
+        'List of files to be uploaded as XSLT request HTTP Transformation Rules.'
+        responses: typing.List[str]
+        'List of files to be uploaded as XSLT response HTTP Transformation Rules.'
+        lua: typing.List[str]
+        'List of files to be uploaded as LUA HTTP Transformation Rules.'
 
     def http_transform(self, http_transform_rules):
-        for http_transform_file_pointer in http_transform_rules:
-            http_transform_files = FILE_LOADER.read_files(http_transform_file_pointer)
-            for http_transform_file in http_transform_files:
-                rsp = self.web.http_transform.create(name=http_transform_file['name'],
-                        contents=http_transform_file['content'])
-                if rsp.success == True:
-                    _logger.info("Successfully created {} HTTP transform rule".format(http_transform_file['name']))
-                else:
-                    _logger.error("Failed to create {} HTTP transform rule".format(http_transform_file['name']))
+        for key in ['requests', 'responses', 'lua']:
+            rules = http_transform_rules.get(key, [])
+            for http_transform_file_pointer in rules:
+                http_transform_files = FILE_LOADER.read_files(http_transform_file_pointer)
+                for http_transform_file in http_transform_files:
+                    rsp = self.web.http_transform.create(name=http_transform_file['name'], template=key.rstrip('s'),
+                            contents=http_transform_file['contents'])
+                    if rsp.success == True:
+                        _logger.info("Successfully created {} HTTP transform rule".format(http_transform_file['name']))
+                    else:
+                        _logger.error("Failed to create {} HTTP transform rule".format(http_transform_file['name']))
 
 
     def __create_kerberos_property(self, _id, subsection, name, value):
@@ -1888,8 +1905,8 @@ class WEB_Configurator(object):
         if websealConfig.fsso != None:
             self.form_single_sign_on(websealConfig.fsso)
 
-        if websealConfig.http_transform != None:
-            self.http_transform(websealConfig.http_transform)
+        if websealConfig.http_transforms != None:
+            self.http_transform(websealConfig.http_transforms)
 
         if websealConfig.kerberos != None:
             self.kerberos(websealConfig.kerberos)

@@ -215,7 +215,7 @@ class ISVA_Configurator(object):
         personal_parsed_file = optional_list(FILE_LOADER.read_file(cert.p12_file))[0]
         rsp = ssl.import_personal(db_name, 
                                     file_path=os.path.abspath(personal_parsed_file['path']), 
-                                    password=cert.get("password", ""))
+                                    password=cert.get("secret", ""))
         if rsp.success == True:
             _logger.info("Successfully uploaded {} personal certificate to {}".format(
                 personal_parsed_file['name'], db_name))
@@ -347,9 +347,9 @@ class ISVA_Configurator(object):
         swap_size: typing.Optional[int]
         'The amount of allocated swap space, in Megabytes. There must be enough disk space on the active partition to store the swap file, otherwise an error will be logged in the system log file and the default amount of swap space will be used. (only present in the response if a value has been set).'
         min_threads: typing.Optional[int]
-        'The minimum number of threads which will handle LMI requests. A default value of 6 is used.'
+        'The minimum number of threads which will handle LMI requests. A default value of ``6`` is used.'
         max_threads: typing.Optional[int]
-        'The maximum number of threads which will handle LMI requests. A default value of 6 is used.'
+        'The maximum number of threads which will handle LMI requests. A default value of ``6`` is used.'
         max_pool_size: typing.Optional[int]
         'The maximum number of connections for the connection pool. The default value is ``100``.'
         lmi_debugging_enabled: typing.Optional[bool]
@@ -493,7 +493,7 @@ class ISVA_Configurator(object):
             .. note:: Groups are created before users; therefore if a user is being created and added to a group then this should be done in the user configuration entry.
             '''
             operation: str
-            'Operation to perform with group. "add" | "update" | delete".'
+            'Operation to perform with group. ``add`` | ``update`` | ``delete``.'
 
             id: str
             'Name of group to create.'
@@ -569,22 +569,22 @@ class ISVA_Configurator(object):
                 name: str
                 'Name of user'
                 type: str
-                'Type of user. "local" | "remote".'
+                'Type of user. ``local`` | ``remote``.'
 
             class Group(typing.TypedDict):
                 name: str
                 'name of group.'
                 type: str
-                'Type of group. "local" | "remote".'
+                'Type of group. ``local`` | ``remote``.'
 
             class Feature(typing.TypedDict):
                 name: str
                 'Name of feature.'
                 access: str
-                'Access to grant to feature. "r" | "w".'
+                'Access to grant to feature. ``r`` | ``w``.'
 
             operation: str
-            'Operation to perform on authorization role. "add" | "remove" | "update".'
+            'Operation to perform on authorization role. ``add`` | ``remove`` | ``update``.'
             name: str
             'Name of role.'
             users: typing.Optional[typing.List[User]]
@@ -633,7 +633,7 @@ class ISVA_Configurator(object):
             host: str
             'Specifies the name of the LDAP server. '
             port: str
-            'Specifies the port over which to communicate with the LDAP server. '
+            'Specifies the port over which to communicate with the LDAP server.'
             ssl: bool
             'Specifies whether SSL is used when the system communicates with the LDAP server.'
             key_database: str
@@ -641,7 +641,7 @@ class ISVA_Configurator(object):
             cert_label: str
             'Specifies the name of the certificate within the Key database that is used if client authentication is requested by the LDAP server.'
             user_attribute: str
-            'Specifies the name of the LDAP attribute which holds the supplied authentication user name of the user. '
+            'Specifies the name of the LDAP attribute which holds the supplied authentication user name of the user.'
             group_member_attribute: str
             'Specifies the name of the LDAP attribute which is used to hold the members of a group. '
             base_dn: str
@@ -661,7 +661,7 @@ class ISVA_Configurator(object):
             usermapping_script: str
             'Specifies the javascript script that will map the incoming client certificate DN. The script will be passed a Map containing the certificate dn, rdns, principal, cert, san and the user_attribute, group_member_attribute and base_dn from this configuration. If not specified a default script is used. Only valid if ``enable_usermapping`` is ``true``.'
             enable_ssh_pubkey_auth: typing.Optional[bool]
-            'Specifies whether or not users in the LDAP server can log in via SSH using SSH public key authentication. If this value is not provided, it will default to false.'
+            'Specifies whether or not users in the LDAP server can log in via SSH using SSH public key authentication. If this value is not provided, it will default to ``false``.'
             ssh_pubkey_auth_attribute: str
             'Specifies the name of the LDAP attribute which contains a user\'s public key data. This field is required if SSH public key authentication is enabled.'
 
@@ -677,13 +677,13 @@ class ISVA_Configurator(object):
             enable_admin_group: bool
             'Specifies whether a user must be a member of a particular group to be considered an administrator user.'
             group_claim: typing.Optional[str]
-            'The OIDC token claim to use as group membership. This claim can either be a String, or a list of Strings. The default value is "groups".'
+            'The OIDC token claim to use as group membership. This claim can either be a String, or a list of Strings. The default value is ``groupIds``.'
             admin_group: typing.Optional[str]
-            'The name of the group which a user must be a member of to be considered an administrator user. The default value is "adminGroup".'
+            'The name of the group which a user must be a member of to be considered an administrator user. The default value is ``adminGroup``.'
             user_claim: typing.Optional[str]
-            'Specifies the OIDC token claim to use as the username. The default value is "sub".'
+            'Specifies the OIDC token claim to use as the username. The default value is ``sub``.'
             keystore: typing.Optional[str]
-            'The SSL Truststore to verify connections the the OIDC OP. The default value if "lmi_trust_store".'
+            'The SSL Truststore to verify connections the the OIDC OP. The default value if ``lmi_trust_store``.'
             enable_tokenmapping: bool
             'Specifies whether custom claim to identity mapping is performed using a JavaScript code fragment.'
             tokenmapping_script: str
@@ -874,6 +874,70 @@ class ISVA_Configurator(object):
                     _logger.error("Failed to install extension:\n{}\n{}".format(
                                             json.dumps(extension, indent=4), rsp.data))
 
+    class Remote_Syslog(typing.TypedDict):
+        '''
+        Example::
+
+                remote_syslog:
+                - server: "127.12.7.1"
+                  port: 514
+                  debug: False
+                  protocol: "udp"
+                  sources:
+                  - name: "WebSEAL:ISAM:request.log"
+                    tag: "isva-dev"
+                    facility: "local0"
+                    severity: "debug"
+                  - name: "Runtime Messages"
+                    tag: "isva-dev"
+                    facility: "syslog"
+                    severity: "info"
+
+        .. note: This is an array of elements.
+        '''
+
+        class Forwarder(typing.TypedDict):
+            name: str
+            'The name of the log file source. The list of available source names can be retrieved via the ``source_names`` Web service.'
+            tag: str
+            'The tag to be used to designate the messages which originate from this source. This tag will be prepended to all messages that are sent to the remote syslog server.'
+            facility: str
+            'The syslog facility which will be used when sending messages to the remote syslog server. Valid values include ``kern``, ``user``, ``mail``, ``daemon``, ``auth``, ``syslog``, ``lpr``, ``news``, ``uucp``, ``cron``, ``security``, ``ftp``, ``ntp``, ``logaudit``, ``logalert``, ``clock``, ``local0``, ``local1``, ``local2``, ``local3``, ``local4``, ``local5``, ``local6`` and ``local7``.'
+            severity: int
+            'The syslog severity which will be used when sending messages to the remote syslog server. Valid values include ``emerg``, ``alert``, ``crit``, ``error``, ``warning``, ``notice``, ``info`` and ``debug``. '
+
+        server: str
+        'The IP address or host name of the remote syslog server.'
+        port: int
+        'The port on which the remote syslog server is listening.'
+        debug: bool
+        'Whether the forwarder process will be started in debug mode. All trace messages will be sent to the log file of the remote syslog forwarder.'
+        protocol: str
+        'The protocol which will be used when communicating with the remote syslog server. Valid values include ``udp``, ``tcp`` and ``tls``.'
+        format: typing.Optional[str]
+        'The format of the messages which are forwarded to the rsyslog server. Valid options include ``rfc-3164`` and ``rfc-5424``. Default value is ``rfc-3164``'
+        keyfile: typing.Optional[str]
+        'The name of the key file which contains the SSL certificates used when communicating with the remote syslog server (e.g. pdsrv). This option is required if the protocol is ``tls``.'
+        ca_certificate: typing.Optional[str]
+        'The label which is used to identify within the SSL key file the CA certificate of the remote syslog server. This option is required if the protocol is ``tls``.'
+        client_certificate: typing.Optional[str]
+        'The label which is used to identify within the SSL key file the client certificate which will be used during mutual authentication with the remote syslog server.'
+        permitted_peers: typing.Optional[str]
+        'The subject DN of the remote syslog server. If this policy data is not specified any certificates which have been signed by the CA will be accepted.'
+        sources: typing.List[Forwarder]
+        'The source of the log file entries which will be sent to the remote syslog server. '
+
+    def remote_syslog(self, config):
+        if config != None and config.remote_syslog != None and isinstance(config.remote_syslog, list):
+            for server in config.remote_syslog:
+                rsp = self.factory.get_analysis_diagnostics().remote_syslog.add_server(**server)
+                if rsp.success == True:
+                    _logger.info("Successfully added {} to the remote syslog configuration.".format(server.server))
+                    self.needsRestart = True
+                else:
+                    _logger.error("Failed to update the remote syslog configuration with:\n{}\n{}".format(
+                        json.dumps(server, indent=4) , rsp.data))
+
 
     def configure_base(self, appliance, container):
         base_config = None
@@ -927,7 +991,7 @@ class ISVA_Configurator(object):
                 configRequired = True
                 break
         if configRequired == True and self._check_aac_fed_licenses() == False:
-            _logger.error("You must activate the Advanced Access Control or Federation modules to")
+            _logger.error("You must activate the Advanced Access Control or Federation modules to configure global properties.")
             return
         elif configRequired == False:
             _logger.info("Skipping global configuration")
@@ -979,6 +1043,14 @@ class ISVA_Configurator(object):
         web.configure()
         aac.configure()
         fed.configure()
+        #Configure the remote syslog after everything else as it might rely on config we create
+        if self.config.appliance is not None:
+            self.remote_syslog(self.config.appliance)
+        elif self.config.container is not None:
+            self.remote_syslog(self.config.container)
+        if self.needsRestart == True:
+            deploy_pending_changes(self.factory, self.config)
+            self.needsRestart = False
 
 if __name__ == "__main__":
     ISVA_Configurator(config_yaml(), 

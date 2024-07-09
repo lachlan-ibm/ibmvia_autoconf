@@ -29,6 +29,9 @@ To run this configuration you should define the following properties, where the 
    export LDAP_BIND_PASSWORD=betterThanPassw0rd
    export LDAP_SEC_PASSWORD=betterThanPassw0rd
 
+The container deployment used for this demo can be found in the `Verify Access<https://github.com/IBM-Security/verify-access-container-deployment>`_ 
+sample code.
+
 
 .. include:: ../examples/first_steps.yaml
    :literal:

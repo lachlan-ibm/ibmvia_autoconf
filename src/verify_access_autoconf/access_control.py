@@ -2062,9 +2062,19 @@ class AAC_Configurator(object):
         'List of AAC/Federation runtime JVM tuning parameters.'
         endpoints: typing.Optional[typing.List[Endpoint]]
         'List of http(s) endpoints that the AAC/Federation runtime is listenting on.'
+        trace: typing.Optional[str]
+        'Set the runtime trace specification in Liberty.'
 
     def runtime_configuration(self, aac_config):
         if aac_config.runtime_properties:
+            if aac_config.runtime_properties.trace != None:
+                rsp = self.aac.runtime_parameters.update_trace(trace_string=aac_config.runtime_properties.trace)
+                if rsp.success == True:
+                    self.needsRestart = True
+                    _logger.info("Successfully updated the runtime trace.")
+                else:
+                    _logger.error("Failed to update the runtime trace:\n{}".format(rsp.data))
+
             for parameter in aac_config.runtime_properties.get("tuning_parameters", []):
                 rsp = self.aac.runtime_parameters.update_parameter(
                         parameter=parameter.name, value=parameter.value)
@@ -2075,6 +2085,7 @@ class AAC_Configurator(object):
                 else:
                     _logger.error("Failed to update parameter:\n{}\n{}".format(
                                                             json.dumps(parameter, ident=4), rsp.data))
+
             if aac_config.runtime_properties.endpoints: # Readable name to Verify Access uuid
                 iface_cfg = optional_list(self.factory.get_system_settings().interfaces.list_interfaces().json)
                 for endpoint in aac_config.runtime_properties.endpoints:
@@ -2099,10 +2110,32 @@ class AAC_Configurator(object):
                     else:
                         _logger.error("Failed to create endpoint:\n:{}\n{}".format(
                                                                         json.dumps(endpoint, indent=4), rsp.data))
+
+            if aac_config.runtime_properties.groups:
+                old_groups = optional_list(self.aac.user_registry.list_groups().json)
+                for group in aac_config.runtime_properties.groups:
+                    old_group = optional_list(filter_list("id", group.name, old_groups))[0]
+                    if old_group:
+                        _logger.info("Group exists in registry, adding users.")
+                        if group.users != None and isinstance(group.users, list):
+                            for user in group.users:
+                                rsp = self.aac.user_registry.add_user_to_group(user, group.name)
+                                if rsp.success == True:
+                                    _logger.info("Successfully added {} user to {} registry group.".format(user, group.name))
+                                else:
+                                    _logger.error("Failed to add {} user to existing registry group\n{}".format(user, rsp.data))
+                    else:
+                        rsp = self.aac.user_registry.create_group(group.name, users=group.users)
+                        if rsp.success == True:
+                            self.needsRestart = True
+                            _logger.info("Successfully added {} to the runtime user registry".format(group.name))
+                        else:
+                            _logger.error("Failed to create group:\n{}\n{}".format(json.dumps(user, indent=4), rsp.data))
+
             if aac_config.runtime_properties.users:
                 old_users = optional_list(self.aac.user_registry.list_users().json)
                 for user in aac_config.runtime_properties.users:
-                    old_user = optional_list(filter_list("id", user.name, old_users))
+                    old_user = optional_list(filter_list("id", user.name, old_users))[0]
                     if old_user:
                         rsp = self.aac.user_registry.delete_user(old_user['id'])
                         if rsp.success == True:
@@ -2112,31 +2145,12 @@ class AAC_Configurator(object):
                             _logger.error("Failed to remove old user from registry, skipping create {} user.".format(
                                                                                                         user.name))
                             continue
-                    rsp = self.aac.user_registry.create_user(user.name, passowrd=user.password, groups=user.groups)
+                    rsp = self.aac.user_registry.create_user(user.name, password=user.password, groups=user.groups)
                     if rsp.success == True:
                         self.needsRestart = True
                         _logger.info("Successfully added {} to the runtime user registry".format(user.name))
                     else:
                         _logger.error("Failed to create user:\n{}\n{}".format(json.dumps(user, indent=4), rsp.data))
-            if aac_config.runtime_properties.groups:
-                old_groups = optional_list(self.aac.user_registry.list_groups().json)
-                for group in aac_config.runtime_properties.groups:
-                    old_group = optional_list(filter_list("id", group.name, old_groups))
-                    if old_group:
-                        rsp = self.aac.user_registry.deletegroup(old_group['id'])
-                        if rsp.success == True:
-                            _logger.info("Successfully removed old group from user registry.")
-                        else:
-                            _logger.error("Failed to remove old group from registry, skipping create {} group.".format(
-                                                                                                        group.name))
-                            continue
-                    rsp = self.aac.user_registry.create_group(group.name, users=group.users)
-                    if rsp.success == True:
-                        self.needsRestart = True
-                        _logger.info("Successfully added {} to the runtime user registry".format(group.name))
-                    else:
-                        _logger.error("Failed to create group:\n{}\n{}".format(json.dumps(user, indent=4), rsp.data))
-
 
     def configure(self):
         if self.config.access_control == None:
