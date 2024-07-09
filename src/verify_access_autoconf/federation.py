@@ -303,6 +303,7 @@ class FED_Configurator(object):
     factory = None
     fed = None
     config = Map()
+    restartWRPs = []
 
 
     def __init__(self, config, factory): 
@@ -623,14 +624,15 @@ class FED_Configurator(object):
                     of the property being set is determined by the index in the chain template (to fetch the UUID prefix
                     of the chain template module bing configured) and the name of the property. For example, the 
                     properties::
-                        index: 1
-                        name: rule.type
-                        value:
-                        - "JAVASCRIPT"
+
+                                index: 1
+                                name: rule.type
+                                value:
+                                - "JAVASCRIPT"
 
                     would result in a property of::
 
-                        {"name": "071dcbe-93e3-11ee-a5af-14755ba358db.rule.type", "value": ["JAVASCRIPT"]}
+                                {"name": "071dcbe-93e3-11ee-a5af-14755ba358db.rule.type", "value": ["JAVASCRIPT"]}
 
                     '''
                     index: str
@@ -934,11 +936,11 @@ class FED_Configurator(object):
             partnerConfig = partner.configuration
             methodArgs.update({
                 "access_policy": partner.configuration.access_policy,
-                "arti_resolution_svc": partner.configuration.artifact_resolution_services,
-                "assert_consume_svc": partner.configuration.assertion_consumer_services,
+                "artifact_resolution_services": partner.configuration.artifact_resolution_services,
+                "assertion_consume_svc": partner.configuration.assertion_consumer_services,
                 "attribute_mappings": partner.configuration.attribute_mappings,
                 "include_fed_id_in_partner_id": partner.configuration.include_fed_id_in_alias_partner_id,
-                "logout_request_lifetime": partner.configuration.logout_request_lifetime,
+                "logout_req_lifetime": partner.configuration.logout_request_lifetime,
                 "manage_name_id_services": partner.configuration.manage_name_id_services,
                 "provider_id": partner.configuration.provider_id,
                 "session_timeout": partner.configuration.session_timeout,
@@ -957,11 +959,11 @@ class FED_Configurator(object):
             if partnerConfig and partnerConfig.assertion_settings != None:
                 assert_settings = partnerConfig.assertion_settings
                 methodArgs.update({
-                        "assert_valid_before": assert_settings.valid_before,
-                        "assert_valid_after": assert_settings.valid_after,
-                        "assert_attribute_types": assert_settings.attribute_types,
-                        "assert_session_not_after": assert_settings.session_not_after,
-                        "assert_multi_attr_stmt": assert_settings.create_multiple_attribute_statements
+                        "assertion_valid_before": assert_settings.valid_before,
+                        "assertion_valid_after": assert_settings.valid_after,
+                        "assertion_attr_types": assert_settings.attribute_types,
+                        "assertion_session_not_after": assert_settings.session_not_after,
+                        "assertion_multi_attr_stmt": assert_settings.create_multiple_attribute_statements
                     })
             if partnerConfig and partnerConfig.encryption_settings != None:
                 encryption = partnerConfig.encryption_settings
@@ -969,11 +971,11 @@ class FED_Configurator(object):
                         "decrypt_key_store": encryption.decryption_key_identifier.store if encryption.decryption_key_identifier else None,
                         "decrypt_key_alias": encryption.decryption_key_identifier.label if encryption.decryption_key_identifier else None,
                         "encrypt_block_alg": encryption.block_algorithm,
-                        "encrypt_transport_alg": encryption.key_transport_algorithm,
+                        "encrypt_key_transport_alg": encryption.key_transport_algorithm,
                         "encrypt_key_store": encryption.key_store,
                         "encrypt_key_alias": encryption.key_alias,
                         "encrypt_name_id": encryption.encrypt_name_id,
-                        "encrypt_assertion": encryption.encrypt_assertion,
+                        "encrypt_assertions": encryption.encrypt_assertion,
                         "encrypt_assertion_attrs": encryption.encrypt_assertion_attributes
                     })
 
@@ -1012,7 +1014,7 @@ class FED_Configurator(object):
             if partnerConfig and partnerConfig.signature_settings != None:
                 sigSetting = partnerConfig.signature_settings
                 methodArgs.update({
-                        "sign_alg": sigSetting.signing_algorithm,
+                        "sign_alg": sigSetting.signature_algorithm,
                         "sign_digest_alg": sigSetting.digest_algorithm,
                     })
                 if sigSetting.key_info_elements != None:
@@ -1166,7 +1168,7 @@ class FED_Configurator(object):
                 methodArgs.update({
                         "access_policy": config.access_policy,
                         "artifact_lifetime": config.artifact_lifetime,
-                        "artifact_resolution_service": config.artifact_resolution_services,
+                        "artifact_resolution_services": config.artifact_resolution_services,
                         "attribute_mappings": config.attribute_mappings,
                         "company_name": config.company_name,
                         "manage_name_id_services": config.manage_name_id_services,
@@ -1804,6 +1806,10 @@ class FED_Configurator(object):
                                                                                 federation.webseal.name, **methodArgs)
                     if rsp.success == True:
                         self.needsRestart = True
+                        if self.restartWRPs == None:
+                            self.restartWRPs = [federation.webseal.name]
+                        else:
+                            self.restartWRPs += [federation.webseal.name]
                         _logger.info("Successfully ran WebSEAL configuration for {} Federation on the {} reverse"
                                      "proxy instance".format(federation.name, federation.webseal.name))
                     else:
@@ -1811,6 +1817,16 @@ class FED_Configurator(object):
                                     "with config:\n{}\n{}".format(federation.name, federation.webseal.name, 
                                                                   json.dumps(federation, indent=4), rsp.data))
 
+    def final_restarts(self):
+        if self.needsRestart == True:
+            deploy_pending_changes(self.factory, self.config)
+        if self.restartWRPs != None and len(self.restartWRPs) > 0:
+            for wrp in self.restartWRPs:
+                rsp = self.factory.get_web_settings().reverse_proxy.restart_instance(wrp)
+                if rsp.success == True:
+                    _logger.info("Successfully restarted {} reverse proxy instance".format(wrp))
+                else:
+                    _logger.error("Failed to restart {} reverse proxy:\n{}".format(wrp, rsp.data))
 
 
     def configure(self):
@@ -1823,5 +1839,4 @@ class FED_Configurator(object):
         self.configure_alias_service(self.config.federation)
         #self.configure_attribute_sources(self.config.federation)
         self.configure_federations(self.config.federation)
-        if self.needsRestart == True:
-            deploy_pending_changes(self.factory, self.config)
+        self.final_restarts()

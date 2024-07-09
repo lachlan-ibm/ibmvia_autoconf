@@ -137,7 +137,7 @@ class FileLoader():
                 parsed_files += [{"name": os.path.basename(path), "path": path, "type": "dir", 
                     "directory": os.path.dirname(path).replace(self.config_base_dir, '')}]
             for file_pointer in os.listdir(path):
-                parsed_files += [self.read_file(path + file_pointer)]
+                parsed_files += [*self.read_file(path + file_pointer)]
         else:
             with open(path, 'rb') as _file:
                 contents = _file.read()

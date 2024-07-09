@@ -71,9 +71,9 @@ class Appliance_Configurator(object):
             if iface.ipv4 != None:
                 if iface.ipv4.dhcp != None:
                     methodArgs.update({
-                            "ipv4_dhcp_enabled": iface.ipv4.dhcp.enabled,
-                            "ipv4_dhcp_allow_management": iface.ipv4.dhcp.allow_management,
-                            "ipv4_dhcp_default_route": iface.ipv4.dhcp.provides_default_route,
+                            "ipv4_dhcp_enabled": iface.ipv4.dhcp.get("enabled", False),
+                            "ipv4_dhcp_allow_management": iface.ipv4.dhcp.get("allow_management", False),
+                            "ipv4_dhcp_default_route": iface.ipv4.dhcp.get("provides_default_route", False),
                             "ipv4_dhcp_route_metric": iface.ipv4.dhcp.route_metric
                         })
                 if iface.ipv4.addresses != None and isinstance(iface.ipv4.addresses, list):
@@ -82,7 +82,7 @@ class Appliance_Configurator(object):
                             "ipv4_address": address.address,
                             "ipv4_mask_or_prefix": address.mask_or_prefix,
                             "ipv4_broadcast_address": address.broadcast_address,
-                            "ipv4_allow_management": address.allow_management,
+                            "ipv4_allow_management": address.allow_mgmt,
                             "ipv4_enabled": address.enabled
                         })
             rsp = system.interfaces.update_interface(oldIface['uuid'], **methodArgs)
@@ -92,7 +92,7 @@ class Appliance_Configurator(object):
                             "address": address.address,
                             "mask_or_prefix": address.mask_or_prefix,
                             "enabled": address.enabled,
-                            "allow_management": address.allow_management
+                            "allow_management": address.allow_mgmt
                         }
                     rsp = system.interfaces.create_address(iface.label, **methodArgs)
 
@@ -113,7 +113,7 @@ class Appliance_Configurator(object):
 
 
     def _update_hostname(self, hostname):
-        rsp = self.appliance.get_system_settings().general.update(hostname)
+        rsp = self.appliance.get_system_settings().general.update_hostname(hostname)
         if rsp.success == True:
             _logger.info("Successfully updated the hostname of the Verify Access appliance.")
         else:
@@ -122,7 +122,7 @@ class Appliance_Configurator(object):
 
     def _update_host_file(self, entries):
         for entry in entries:
-            rsp = self.appliance.get_system_settings().host_file.get_record(entry.address)
+            rsp = self.appliance.get_system_settings().hosts_file.get_record(entry.address)
             existing = optional_list(rsp.json)[0]
             verb = 'None'
             if existing:
@@ -130,21 +130,21 @@ class Appliance_Configurator(object):
                 to_add = [h for h in entry.hosts if h not in old_hosts] # list of hosts not set for given address
                 to_remove = [h for h in old_hosts if h not in entry.hosts] # list of hosts not in new config but currently set on appliance
                 for new_host in to_add:
-                    r = self.factory.get_system.settings().host_file.update_record(entry.address, new_host)
+                    r = self.appliance.get_system_settings().hosts_file.update_record(entry.address, new_host)
                     if r.success != True:
                         rsp.success = False
                         rsp.data = r.data
                 for old_host in to_remove:
-                    r = self.factory.get_system.settings().host_file.delete_host_name(entry.address, old_host)
+                    r = self.appliance.get_system_settings().hosts_file.delete_host_name(entry.address, old_host)
                     if r.success != True:
                         rsp.success = False
                         rsp.data = r.data
                 verb = "updated" if rsp.success == True else "update"
             else:
-                rsp = self.factory.get_system.settings().host_file.create_record(entry.address, entry.hosts)
+                rsp = self.appliance.get_system_settings().hosts_file.create_record(entry.address, entry.hosts)
                 verb = "created" if rsp.success == True else "create"
             if rsp.success == True:
-                _logger.info("Successfully {} {}host file entry".format(verb, entry.address))
+                _logger.info("Successfully {} {} host file entry".format(verb, entry.address))
             else:
                 _logger.error("Failed to {} host file config with entry:\n{}\n{}".format(
                                         verb, json.dumps(entry, indent=4), rsp.data))
@@ -154,7 +154,7 @@ class Appliance_Configurator(object):
         '''
         Example::
 
-                networking:
+                network:
                   hostname: "isam.myidp.ibm.com"
                   host_file:
                   - address: "192.168.42.102"
@@ -172,7 +172,7 @@ class Appliance_Configurator(object):
                     table: "main"
                     comment: "Example route"
                   interfaces:
-                    ipv4:
+                  - ipv4:
                       dhcp:
                         enabled: false
                     addresses:

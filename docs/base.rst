@@ -153,3 +153,13 @@ particular extension.
 
 .. autoclass:: src.verify_access_autoconf.configure.ISVA_Configurator.Extensions
    :members:
+
+
+Remote Syslog
+=============
+The remote system logging capabilities of Verify Access deployments can be configured with this 
+option. Administrators are able to define external servers where logs for Verify Access sub-components 
+should be forwarded to.
+
+.. autoclass:: src.verify_access_autoconf.configure.ISVA_Configurator.Remote_Syslog
+   :members:
