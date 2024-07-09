@@ -82,7 +82,8 @@ appliances and should be enabled before any other configuration options are appl
 Networking
 ==========
 The networking settings can be used to define networking routes, as well as interface address, netmask and gateway 
-setting on a Verify Access appliance. Care must be taken when configuring network interfaces to ensure that the 
+setting on a Verify Access appliance. This configuration is also able to add hostfile entries as well as setting the
+hostname of Verify Access. Care must be taken when configuring network interfaces to ensure that the 
 interface used to configure the appliance is not changed (as this will result in the automation tool failing).
 
     .. note:: Interfaces can only be updated using the LMI, they cannot be created.
@@ -124,6 +125,21 @@ configuration properties can be found :ref:`here <pyisva:systemsettings#cluster>
 .. autoclass::  src.verify_access_autoconf.appliance.Appliance_Configurator.Cluster_Configuration
    :members:
 
+
+.. _managed-containers:
+
+Managed Containers
+==================
+The managed containers properties allows administrators to deploy IBM containerize products to IBM Security Verify
+Access appliances. This is particularly useful for administrators with hardware based appliances, allowing them to
+deploy a greater range of IBM products with their existing hardware.
+
+
+.. autoclass::  src.verify_access_autoconf.appliance.Appliance_Configurator.Managed_Containers
+   :members:
+
+
+.. _global-configuration:
 
 Global Configuration
 ====================

@@ -1,0 +1,49 @@
+container:
+  deployments:
+    - "isvawrp"
+    - "isvaruntime"
+  account_management:
+    users:
+    - name: "cfgsvc"
+      operation: "update"
+      password: "Passw0rd"
+  management_authorization:
+    authorization_enforcement: True
+    roles:
+    - operation: "update"
+      name: "Configuration Service"
+      users:
+      - name: "cfgsvc"
+        type: "local"
+      features:
+      - name: "shared_volume"
+        access: "w"
+  management_authentication:
+    auth_type: "federation"
+    oidc:
+      client_id: !environment OIDC_CLIENT_ID
+      client_secret: !environment OIDC_CLIENT_SECRET
+      discovery_endpoint: !environment OIDC_WELL_KNOWN
+      enable_pkce: true
+  ssl_certificates:
+  - name: "lmi_trust_store"
+    signer_certificates:
+    - "pki/base/postgresql/postgres.crt"
+    - "pki/base/openldap/ca.crt"
+    - "pki/base/verify.crt"
+  - name: "rt_profile_keys"
+    signer_certificates:
+    - "pki/base/postgresql/postgres.crt"
+  cluster:
+    runtime_database:
+      host: "postgresql"
+      port: 5432
+      type: "postgresql"
+      user: "postgres"
+      password: "Passw0rd"
+      ssl: True
+      db_name: "isva"
+  activation: #Activation codes
+    webseal: !environment ISVA_BASE_CODE
+    access_control: !environment ISVA_AAC_CODE
+    federation: !environment ISVA_FED_CODE

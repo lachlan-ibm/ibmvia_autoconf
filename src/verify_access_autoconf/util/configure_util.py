@@ -19,7 +19,7 @@ def config_base_dir():
 def config_yaml(config_file=None):
     if config_file:
         _logger.info("Reading file from provided path {}".format(config_file))
-        config = data_util.Map(yaml.load(open(config_file, 'r'), Loader=CustomLoader))
+        config = Map(yaml.load(open(config_file, 'r'), Loader=CustomLoader))
     elif const.CONFIG_YAML_ENV_VAR in os.environ.keys():
         cfg_file = os.environ.get(const.CONFIG_YAML_ENV_VAR)
         if not cfg_file.startswith("/"):
@@ -41,14 +41,14 @@ def read_files(base):
     if base.startswith("/"):
         contents = FileLoader("").read_files(base.lstrip("/"))
     else:
-        contents = FileLoaser(config_base_dir()).read_files(base)
+        contents = FileLoader(config_base_dir()).read_files(base)
     return contents
 
 
 def read_file(fp):
     contents = None
     if fp.startswith("/"):
-        contents = FileLoaser("").read_file(fp.lstrip('/'))
+        contents = FileLoader("").read_file(fp.lstrip('/'))
     else:
         contents = FileLoader(config_base_dir()).read_file(fp)
     return contents
@@ -92,6 +92,9 @@ def old_creds(cfg=None):
 
 
 def _kube_reload_container(client, namespace, container):
+    if not client:
+        _logger.error("Unable to restart deployment as kube client is null")
+        return
     exec_commands = ['isam_cli', '-c', 'reload', 'all']
     response = stream(client.CoreV1Api().connect_get_namespaced_pod_exec,
             container,
@@ -108,6 +111,9 @@ def _kube_reload_container(client, namespace, container):
 
 
 def _kube_rollout_restart(client, namespace, deployment):
+    if not client:
+        _logger.error("Unable to restart deployment as kube client is null")
+        return
     #Get a list of the current pods
     pods = [ pod.metadata.name for pod in 
                 client.CoreV1Api().list_namespaced_pod(namespace, label_selector="app=" + deployment).items ]
@@ -172,7 +178,7 @@ def _compose_restart_service(service, config):
         composeYaml = config_base_dir() + '/' + composeYaml
     ps = subprocess.run(['docker-compose', '-f' , composeYaml, 'restart', service])
     if ps.returncode != 0:
-        _logger.error("Error restarting docker-compose container:\nstdout: {}\nstderr{}".format(ps.stdout, ps.stderr))
+        _logger.error("Error restarting docker-compose container:\nstdout: {}\nstderr: {}".format(ps.stdout, ps.stderr))
         sys.exit(1)
 
 def _docker_restart_container(container, config):
@@ -204,14 +210,15 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
 
                 elif isvaConfig.container.k8s_deployments.pods is not None:
                     for pod in isvaConfig.container.pods:
-                        _kube_restart_container(KUBE_CLIENT, namespace, pod)
+                        _kube_reload_container(KUBE_CLIENT, namespace, pod)
 
             elif isvaConfig.container.compose_services:
                 for service in isvaConfig.container.compose_services:
                     _compose_restart_service(service, isvaConfig)
 
             elif isvaConfig.container.containers is not None:
-                _docker_restart_container(container, isvaConfig)
+                for container in isvaConfig.container.containers:
+                    _docker_restart_container(container, isvaConfig)
 
             else:
                 _logger.error("Unable to perform container restart, this may lead to errors")

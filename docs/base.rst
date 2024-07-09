@@ -91,6 +91,17 @@ configuration is:
    :members:
 
 
+Management Authentication
+=========================
+Administrators are able to configure how users are able to authenticate to the Verify Access management interface. By
+default the management interface uses a local user registry, but administrators can configure a LDAP server or integrate
+a third party identity provider using the OIDC specification.
+
+
+.. autoclass:: src.verify_access_autoconf.configure.ISVA_Configurator.Management_Authentication
+   :members:
+
+
 .. _module-activation:
 
 Module Activation
@@ -141,4 +152,14 @@ extension to a Verify Access appliance to determine which properties are require
 particular extension.
 
 .. autoclass:: src.verify_access_autoconf.configure.ISVA_Configurator.Extensions
+   :members:
+
+
+Remote Syslog
+=============
+The remote system logging capabilities of Verify Access deployments can be configured with this 
+option. Administrators are able to define external servers where logs for Verify Access sub-components 
+should be forwarded to.
+
+.. autoclass:: src.verify_access_autoconf.configure.ISVA_Configurator.Remote_Syslog
    :members:
