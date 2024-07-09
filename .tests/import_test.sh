@@ -3,7 +3,8 @@ export PIP_EXTRA_INDEX_URL="https://${ART_API_USER}:${ART_API_KEY}@na.artifactor
 pip install -r dev-requirements.txt
 #python setup.py sdist bdist_wheel
 python -m build
-export PYTHONPATH="$PYTHONPATH:$(pwd)/build/lib"
+pip install dist/verify_access_autoconf*.whl
+#export PYTHONPATH="$PYTHONPATH:$(pwd)/build/lib"
 
 python <<EOF
 import verify_access_autoconf
