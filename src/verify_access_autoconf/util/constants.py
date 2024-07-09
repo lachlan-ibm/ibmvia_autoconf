@@ -2,7 +2,6 @@
 """
 @copyright: IBM
 """
-import os, kubernetes
 
 HEADERS = {
             "Content-Type":"application/json",

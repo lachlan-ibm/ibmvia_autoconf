@@ -7,7 +7,7 @@ import logging
 import json
 import typing
 
-from .util.configure_util import deploy_pending_changes
+from .util.configure_util import deploy_pending_changes, config_base_dir
 from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, KUBE_CLIENT_SLEEP
 
 
@@ -157,13 +157,19 @@ class WEB_Configurator(object):
                     "password": runtime.password
             })
         rsp = self.web.reverse_proxy.configure_api_protection(proxy_id, **methodArgs)
+        if rsp.success == True:
+            _logger.info("Successfully created API protection junction {}".format(api_config.junction))
+        else:
+            _logger.error("Failed to create API protection junction:\n{}\n{}".format(
+                    json.dumps(api_config, indent=4), rsp.data))
+
 
     def _add_junction(self, proxy_id, junction):
-        forceJunction = False
-        junctions = optional_list(self.web.reverse_proxy.list_junctions(proxy_id).json)
-        for jct in junctions:
-            if jct and jct["id"] == junction.junction_point:
-                junction['force'] = "yes"
+        forceJunction = "no"
+        oldJunction = optional_list(filter_list("id", junction.junction_point, self.web.reverse_proxy.list_junctions(proxy_id).json))[0]
+        if oldJunction:
+            forceJunction = "yes"
+        junction['force'] = forceJunction
 
         rsp = self.web.reverse_proxy.create_junction(proxy_id, **junction)
 
@@ -172,6 +178,16 @@ class WEB_Configurator(object):
         else:
             _logger.error("Failed to add junction to {} with config:\n{}\n{}".format(
                 proxy_id, json.dumps(junction, indent=4), rsp.data))
+
+    def _import_management_root(self, proxy_id, zip_file):
+        path = optional_list(FILE_LOADER.read_file(zip_file))[0].get("path", "MISSING_PATH")
+        rsp = self.web.reverse_proxy.import_management_root_files(proxy_id, path)
+        if rsp.success == True:
+            _logger.info("Successfully imported {} to {} proxy management root".format(
+                zip_file, proxy_id))
+        else:
+            _logger.error("Failed to import {} to {} proxy:\n{}".format(
+                                        zip_file, proxy_id, rsp.data))
 
     class Reverse_Proxy(typing.TypedDict):
         '''
@@ -194,15 +210,16 @@ class WEB_Configurator(object):
                     - enabled: "yes"
                       port: 443
                     junctions:
-                    - name: "/app"
-                      transparent_path: True
-                      server:
-                        host: "1.2.3.4"
-                        port: 443
-                      ssl:
-                      - enabled: "yes"
-                        key_file: "pdsrv.kdb",
-                        cert_file: "server"
+                    - junction_point: "/app"
+                      description: "Backend Application"
+                      junction_type: "ssl"
+                      transparent_path: true
+                      server_hostname: "1.2.3.4"
+                      server_port: 443
+                      remote_http_header:
+                      - "iv-user"
+                      - "iv-groups"
+                      - "iv-creds"
                     aac_configuration:
                       hostname: "localhost"
                       port: 443
@@ -247,7 +264,7 @@ class WEB_Configurator(object):
                 'Password to use for basic authentication.'
 
             channel: str
-            'MMFA channel to configure. "mobile" | "browser" | "both".'
+            'MMFA channel to configure. ``mobile`` | ``browser`` | ``both``.'
             runtime: Liberty_Server
             'Liberty runtime server properties.'
             lmi: Liberty_Server
@@ -299,17 +316,17 @@ class WEB_Configurator(object):
             reuse_certs: bool
             'Re-use existing certificates in the SSL database.'
             api: typing.Optional[bool]
-            'Should this reverse proxy be configured for API protection. Default is false.'
+            'Should this reverse proxy be configured for API protection. Default is ``false``.'
             browser: typing.Optional[bool]
-            'Should this reverse proxy be configured for Browser interaction. Default is false.'
+            'Should this reverse proxy be configured for Browser interaction. Default is ``false``.'
             auth_register: typing.Optional[bool]
-            'Will the client registration endpoint require authentication. Default is false.'
+            'Will the client registration endpoint require authentication. Default is ``false``.'
             fapi_compliant: typing.Optional[bool]
-            'Configures reverse proxy instance to be FAPI Compliant. Default is false.'
+            'Configures reverse proxy instance to be FAPI Compliant. Default is ``false``.'
             
         class Stanza_Configuration(typing.TypedDict):
             operation:str
-            'Operation to perform on configuration file. "add" | "delete" | "update".'
+            'Operation to perform on configuration file. Valid values include ``add``, ``delete`` and ``update``.'
             stanza: str
             'Name of stanza to modify.'
             entry_id: typing.Optional[str]
@@ -331,31 +348,31 @@ class WEB_Configurator(object):
             basic_auth_mode: str
             'Defines how the Reverse Proxy server passes client identity information in HTTP basic authentication (BA) headers to the back-end server.'
             tfim_sso: bool
-            'Enables IBM Security Federated Identity Manager single sign-on (SSO) for the junction. "yes" | "no"'
+            'Enables IBM Security Federated Identity Manager single sign-on (SSO) for the junction. ``yes`` | ``no``'
             stateful_junction: str
-            'Specifies whether the junction supports stateful applications. "yes" | "no".'
+            'Specifies whether the junction supports stateful applications. ``yes`` | ``no``.'
             preserve_cookie: str
             'Specifies whether modifications of the names of non-domain cookies are to be made.'
             cookie_include_path: str
             'Specifies whether script generated server-relative URLs are included in cookies for junction identification.'
             transparent_path_junction: str
-            'Specifies whether a transparent path junction is created. "yes" | "no".'
+            'Specifies whether a transparent path junction is created. ``yes`` | ``no``.'
             mutual_auth: bool
-            'Specifies whether to enforce mutual authentication between a front-end Reverse Proxy server and a back-end Reverse Proxy server over SSL. "yes" | "no".'
+            'Specifies whether to enforce mutual authentication between a front-end Reverse Proxy server and a back-end Reverse Proxy server over SSL. ``yes`` | ``no``.'
             insert_ltpa_cookie: bool
-            ' Controls whether LTPA cookies are passed to the junctioned Web server. "yes" | "no"'
+            ' Controls whether LTPA cookies are passed to the junctioned Web server. ``yes`` | ``no``'
             insert_session_cookie: bool
             'Controls whether to send the session cookie to the junctioned Web server.'
             request_encoding: str
             'Specifies the encoding to use when the system generates HTTP headers for junctions.'
             enable_basic_auth: str
-            'Specifies whether to use BA header information to authenticate to back-end server. "yes" | "no".'
+            'Specifies whether to use BA header information to authenticate to back-end server. ``yes`` | ``no``.'
             key_label: str
             'The key label for the client-side certificate that is used when the system authenticates to the junctioned Web server.'
             gso_resource_group: str
             'The name of the GSO resource or resource group.'
             junction_cookie_javascript_block: str
-            'Controls the junction cookie JavaScript block. "trailer" | "inhead" | "onfocus" | "xhtml10" | "httpheader".'
+            'Controls the junction cookie JavaScript block. ``trailer`` | ``inhead`` | ``onfocus`` | ``xhtml10`` | ``httpheader``.'
             client_ip_http: str
             'Specifies whether to insert the IP address of the incoming request into an HTTP header for transmission to the junctioned Web server.'
             version_two_cookies: str
@@ -397,7 +414,7 @@ class WEB_Configurator(object):
             force: bool
             'Specifies whether to overwrite an existing junction of the same name.'
             delegation_support: str
-            'This option is valid only with junctions that were created with the type of ssl or sslproxy.'
+            'This option is valid only with junctions that were created with the type of ``ssl`` or ``sslproxy``.'
             scripting_support: str
             'Supplies junction identification in a cookie to handle script-generated server-relative URLs.'
             junction_hard_limit: str
@@ -420,12 +437,12 @@ class WEB_Configurator(object):
             'Network port that endpoint should listen on.'
 
         class LDAP(typing.TypedDict):
-            ssl: bool
-            'Enable SSL Verification of connections.'
+            ssl: str
+            'Enable SSL Verification of connections. ``yes`` or ``no``'
             key_file: typing.Optional[str]
-            'The SSL Database to use to verify connections. Only valid if ``ssl == true``.'
+            'The SSL Database to use to verify connections. Only valid if ``ssl`` is ``yes``.'
             cert_file: typing.Optional[str]
-            'The SSL Certificate to use to verify connections. Only valid of ``ssl == true``.'
+            'The SSL Certificate to use to verify connections. Only valid of ``ssl`` is ``yes``.'
             port: int
             'The network port to communicate with the LDAP server.'
 
@@ -434,9 +451,9 @@ class WEB_Configurator(object):
         host: str
         'The host name that is used by the Security Verify Access policy server to contact the appliance.'
         nw_interface_yn: typing.Optional[str]
-        'Specifies whether to use a logical network interface for the instance. Only valid for appliance deployments. "yes" | "no".'
+        'Specifies whether to use a logical network interface for the instance. Only valid for appliance deployments. ``yes`` | ``no``.'
         ip_address: typing.Optional[str]
-        'The IP address for the logical interface. Only valid for appliance deployments where ``nw_interface_yn == "yes"``. "yes" | "no".'
+        'The IP address for the logical interface. Only valid for appliance deployments where ``nw_interface_yn`` is ``yes``. ``yes`` | ``no``.'
         listening_port: int
         'This is the listening port through which the instance communicates with the Security Verify Access policy server.'
         domain: str
@@ -627,9 +644,9 @@ class WEB_Configurator(object):
 
         class Stanza_Configuration(typing.TypedDict):
             operation: str
-            'Operation to perform on configuration file. "add" | "delete" | "update".'
+            'Operation to perform on configuration file. ``add`` | ``delete`` | ``update``.'
             resource: str
-            'Filename to be modified. "ldap.conf" | "pd.conf" | "instance.conf".'
+            'Filename to be modified. ``ldap.conf`` | ``pd.conf`` | ``instance.conf``.'
             stanza: str
             'Name of stanza to modify.'
             entry: typing.Optional[str]
@@ -638,11 +655,11 @@ class WEB_Configurator(object):
             'Optional value to modify.'
 
         policy_server: str
-        'The mode for the policy server. "local" | "remote".'
+        'The mode for the policy server. ``local`` | ``remote``.'
         user_registry: str
-        'Type of user registry to use. "local" | "ldap".'
+        'Type of user registry to use. ``local`` | ``ldap``.'
         clean_ldap: bool
-        'Remove any existing user data from registry. Only valid if ``user_registry == "local"``.'
+        'Remove any existing user data from registry. Only valid if ``user_registry`` is ``local``.'
         isam_domain: str
         'The Security Verify Access domain name.'
         admin_password: str
@@ -650,7 +667,7 @@ class WEB_Configurator(object):
         admin_cert_lifetime: int
         'The lifetime in days for the SSL server certificate.'
         ssl_compliance: str
-        'Specifies whether SSL is compliant with any additional computer security standard. "fips" | "sp800-131-transition" | "sp800-131-strict" | "suite-b-128" | "suite-b-192".'
+        'Specifies whether SSL is compliant with any additional computer security standard. ``fips`` | ``sp800-131-transition`` | ``sp800-131-strict`` | ``suite-b-128`` | ``suite-b-192``.'
         ldap: LDAP
         'LDAP server properties.'
         isam: typing.Optional[ISAM]
@@ -658,7 +675,7 @@ class WEB_Configurator(object):
         stanza_configuration: typing.Optional[typing.List[Stanza_Configuration]]
         'Optional list of modifications to configuration files.'
         override_config: typing.Optional[bool]
-        'Optional property to attempt to force a reconfiguration of the runtime component if it is already configured. This is not possible if there are reverse proxy objects. Default is `false`'
+        'Optional property to attempt to force a reconfiguration of the runtime component if it is already configured. This is not possible if there are reverse proxy objects. Default is ``false``'
 
     def runtime(self, runtime):
         rte_status = self.web.runtime_component.get_status()
@@ -701,9 +718,9 @@ class WEB_Configurator(object):
                     })
         rsp = self.web.runtime_component.configure(**config)
         if rsp.success == True:
-            _logger.info("Successfully configured RTE")
+            _logger.info("Successfully configured Reverse Proxy Runtime Policy Server")
         else:
-            _logger.error("Failed to configure RTE with config:\n{}\n{}".format(
+            _logger.error("Failed to configure Reverse Proxy Runtime Policy Server with config:\n{}\n{}".format(
                 json.dumps(runtime, indent=4), rsp.data))
 
         if runtime.stanza_configuration != None:
@@ -919,7 +936,7 @@ class WEB_Configurator(object):
                 name: str
                 'User or Group entity to set permissions for.'
                 permissions: str
-                'Permission bit-string, eg. "Tcmdbsvarxl"'
+                'Permission bit-string, eg. ``Tcmdbsvarxl``'
 
             name: str
             'Name of the ACL.'
@@ -1066,7 +1083,8 @@ class WEB_Configurator(object):
             if len(cert_mapping_file) != 1:
                 _logger.error("Can only specify one cert mapping file")
                 return
-            rsp = self.web.client_cert_mapping.create(name=cert_mapping_file['name'], content=cert_mapping_file['content'])
+            cert_mapping_file = cert_mapping_file[0]
+            rsp = self.web.client_cert_mapping.create(name=cert_mapping_file['name'], content=cert_mapping_file['contents'])
             if rsp.success == True:
                 _logger.info("Successfully configured certificate mapping")
             else:
@@ -1095,7 +1113,8 @@ class WEB_Configurator(object):
             if len(jct_mapping_file) != 1:
                 _logger.error("Can only specify one jct mapping file")
                 return
-            rsp = self.web.jct_mapping.create(name=jct_mapping_file['name'], jmt_config_data=jct_mapping_file['content'])
+            jct_mapping_file = jct_mapping_file[0]
+            rsp = self.web.jct_mapping.create(name=jct_mapping_file['name'], jmt_config_data=jct_mapping_file['contents'])
             if rsp.success == True:
                 _logger.info("Successfully configured junction mapping")
             else:
@@ -1121,7 +1140,8 @@ class WEB_Configurator(object):
             if len(url_mapping_file) != 1:
                 _logger.error("Can only specify one url mapping file")
                 return
-            rsp = self.web.url_mapping.create(name=url_mapping_file['name'], dynurl_config_data=url_mapping_file['content'])
+            url_mapping_file = url_mapping_file[0]
+            rsp = self.web.url_mapping.create(name=url_mapping_file['name'], dynurl_config_data=url_mapping_file['contents'])
             if rsp.success == True:
                 _logger.info("Successfully configured URL mapping")
             else:
@@ -1147,7 +1167,7 @@ class WEB_Configurator(object):
             if len(user_mapping_file) != 1:
                 _logger.error("Can only specify one user mapping file")
                 return
-            rsp = self.web.user_mapping.create(name=user_mapping_file['name'], content=user_mapping_file['content'])
+            rsp = self.web.user_mapping.create(name=user_mapping_file['name'], content=user_mapping_file['contents'])
             if rsp.success == True:
                 _logger.info("Successfully configured user mapping")
             else:
@@ -1170,39 +1190,47 @@ class WEB_Configurator(object):
     def form_single_sign_on(self, config):
         for fsso_config in config:
             fsso_config_file = FILE_LOADER.read_file(fsso_config)
-            if len(user_mapping_file) != 1:
+            if len(fsso_config_file) != 1:
                 _logger.error("Can only specify one FSSO configuration file")
                 return
-            rsp = self.web.fsso.create(name=fsso_config_file['name'], fsso_config_data=fsso_config_file['content'])
+            rsp = self.web.fsso.create(name=fsso_config_file['name'], fsso_config_data=fsso_config_file['contents'])
             if rsp.success == True:
                 _logger.info("Successfully configured Federated Singe Sign On configuration")
             else:
                 _logger.error("Failed to configure FSSO using {} config file:\n{}".format(
-                                user_mapping_file['name'], rsp.data))
+                                fsso_config_file['name'], rsp.data))
 
 
     class Http_Transformations(typing.TypedDict):
         '''
         Example::
 
-                   http_transforms:
+                 http_transforms:
+                   requests:
                    - inject_header.xslt
+                   lua:
                    - eai.lua
 
         '''
-        http_transforms: typing.List[str]
-        'List of files to be uploaded as HTTP Transformation Rules. These can be either LUA rules using the ``.lua`` file extension or XSLT rules using the ``.xslt`` file extension.'
+        requests: typing.List[str]
+        'List of files to be uploaded as XSLT request HTTP Transformation Rules.'
+        responses: typing.List[str]
+        'List of files to be uploaded as XSLT response HTTP Transformation Rules.'
+        lua: typing.List[str]
+        'List of files to be uploaded as LUA HTTP Transformation Rules.'
 
     def http_transform(self, http_transform_rules):
-        for http_transform_file_pointer in http_transform_rules:
-            http_transform_files = FILE_LOADER.read_files(http_transform_file_pointer)
-            for http_transform_file in http_transform_files:
-                rsp = self.web.http_transform.create(name=http_transform_file['name'],
-                        contents=http_transform_file['content'])
-                if rsp.success == True:
-                    _logger.info("Successfully created {} HTTP transform rule".format(http_transform_file['name']))
-                else:
-                    _logger.error("Failed to create {} HTTP transform rule".format(http_transform_file['name']))
+        for key in ['requests', 'responses', 'lua']:
+            rules = http_transform_rules.get(key, [])
+            for http_transform_file_pointer in rules:
+                http_transform_files = FILE_LOADER.read_files(http_transform_file_pointer)
+                for http_transform_file in http_transform_files:
+                    rsp = self.web.http_transform.create(name=http_transform_file['name'], template=key.rstrip('s'),
+                            contents=http_transform_file['contents'])
+                    if rsp.success == True:
+                        _logger.info("Successfully created {} HTTP transform rule".format(http_transform_file['name']))
+                    else:
+                        _logger.error("Failed to create {} HTTP transform rule".format(http_transform_file['name']))
 
 
     def __create_kerberos_property(self, _id, subsection, name, value):
@@ -1237,7 +1265,7 @@ class WEB_Configurator(object):
             name: str
             'Name of the Kerberos realm.'
             properties: typing.Optional[typing.List[typing.Dict]]
-            'List of key\: value properties to configure for realm.'
+            'List of key / value properties to configure for realm.'
 
         class Domain_Realm(typing.TypedDict):
             name: str
@@ -1266,7 +1294,7 @@ class WEB_Configurator(object):
                     for k, v in realm.properties: self.__create_property("realms/" + realm.name, None, k, v)
         if config.domain_realms != None:
             for domain_realm in config.domain_realms: self.__create_kerberos_property("domain_realm", None,
-                    domain_ream.name, domain_realm.dns)
+                    domain_realm.name, domain_realm.dns)
         if config.capaths != None:
             for capath in config.capaths:
                 self.__create_kerberos_property("capaths", capath.name, None, None)
@@ -1298,7 +1326,7 @@ class WEB_Configurator(object):
 
     def password_strength(self, password_strength_rules):
         pwd_config_file = FILE_LOADER.read_file(password_strength_rules)
-        if len(pwd_mapping_file) != 1:
+        if len(pwd_config_file) != 1:
             _logger.error("Can only specify one password strength rule file")
             return
         rsp = self.web.password_strength.create(name=pwd_config_file['name'], content=pwd_config_file['content'])
@@ -1306,7 +1334,7 @@ class WEB_Configurator(object):
             _logger.info("Successfully configured password strength rules")
         else:
             _logger.error("Failed to configure password strength rules using {}\n{}".format(
-                            pwd_mapping_file['name'], rsp.data))
+                            pwd_config_file['name'], rsp.data))
 
 
     class RSA(typing.TypedDict):
@@ -1469,10 +1497,10 @@ class WEB_Configurator(object):
                     rsp = self.web.api_access_control.resource_server.create_resource(
                                 resource_server.reverse_proxy, resource_server.junction_point, **methodArgs)
                     if rsp.success == True:
-                        _logger.info("Successfully created {} junctioned resource".format(junction.name))
+                        _logger.info("Successfully created {} junctioned resource".format(resource.name))
                     else:
                         _logger.error("Failed to create {} junctioned resource with config;\n{}\n{}".format(
-                            junction.name, json.dumps(junction, indent=4), rsp.data))
+                            resource.name, json.dumps(resource, indent=4), rsp.data))
 
 
     def __apiac_policies(self, policies):
@@ -1596,7 +1624,7 @@ class WEB_Configurator(object):
                 policy_name: str
                 'The name of the custom policy if the type is custom.'
                 policy_type: str
-                'The type of Policy. The valid values are "unauthenticated", "anyauthenticated", "none", "default" or "custom".'
+                'The type of Policy. The valid values are ``unauthenticated``, ``anyauthenticated``, ``none``, ``default`` or ``custom``.'
                 static_response_headers: typing.Optional[typing.List[Response_Header]]
                 'A list of header names and values that should be added to the HTTP response.'
                 rate_limiting_policy: typing.Optional[str]
@@ -1618,21 +1646,21 @@ class WEB_Configurator(object):
                 pos: str
                 'The position of this attribute in the ordered list of all attributes.'
                 action: str
-                'The action to perform for this attribute. Valid values are "put" and "remove".'
+                'The action to perform for this attribute. Valid values are ``put`` and ``remove``.'
                 attribute: str
                 'The name of the attribute.'
 
             class Policy(typing.TypedDict):
                 type: str
-                'The type of Policy. The valid values are "unauthenticated", "anyauthenticated", "none", "default" or "custom".'
+                'The type of Policy. The valid values are ``unauthenticated``, ``anyauthenticated``, ``none``, ``default`` or ``custom``.'
                 name: typing.Optional[str]
                 'The name of the custom policy if the type is custom.'
 
             class Claim(typing.TypedDict):
                 type: str
-                'The type of claim to add to the JWT. Valid values are either "text" for a literal text claim or "attr" for a credential attribute claim.'
+                'The type of claim to add to the JWT. Valid values are either ``text`` for a literal text claim or ``attr`` for a credential attribute claim.'
                 value: str
-                'The value for the claim. If the type is "text" this will be the literal text that is added to the JWT. If the type is "attr" this will be the name of the credential attribute to add to the JWT.'
+                'The value for the claim. If the type is ``text`` this will be the literal text that is added to the JWT. If the type is ``attr`` this will be the name of the credential attribute to add to the JWT.'
                 claim_name: str
                 'The name of the claim that is added to the JWT. For attr type claims this is optional and if not specified the claim name will be set as the name of the credential attribute. If the type is attr and the value contains a wildcard this field is invalid and if specified will result in an error. '
 
@@ -1641,7 +1669,7 @@ class WEB_Configurator(object):
             server_hostname: str
             'The DNS host name or IP address of the target back-end server.'
             server_port: int
-            'TCP port of the back-end third-party server. Default is 80 for TCP junctions and 443 for SSL junctions.'
+            'TCP port of the back-end third-party server. Default is ``80`` for TCP junctions and ``443`` for SSL junctions.'
             virtual_hostname: typing.Optional[str]
             'Virtual host name that is used for the junctioned Web server.'
             server_dn: typing.Optional[str]
@@ -1653,19 +1681,19 @@ class WEB_Configurator(object):
             junction_point: str
             'Name of the location in the Reverse Proxy namespace where the root of the back-end application server namespace is mounted.'
             junction_type: str
-            'Type of junction. Valid values: "tcp", "ssl", "tcpproxy", "sslproxy",'
+            'Type of junction. Valid values include ``tcp``, ``ssl``, ``tcpproxy``, ``sslproxy`` and ``mutual``.'
             stateful_junction: typing.Optional[str]
-            'Specifies whether the junction supports stateful applications. By default, junctions are not stateful. Valid value is "yes" or "no".'
+            'Specifies whether the junction supports stateful applications. By default, junctions are not stateful. Valid value is ``yes`` or ``no``.'
             policy: Policy
             'The Policy that is associated with this Resource Server.'
             authentication_type: str
-            'The type of Oauth authentication. The valid values are "default" or "oauth".'
+            'The type of Oauth authentication. The valid values are ``default`` or ``oauth``.'
             oauth_introspection_transport: typing.Optional[str]
-            'The transport type. The valid values are "none", "http", "https" or "both".'
+            'The transport type. The valid values are ``none``, ``http``, ``https`` or ``both``.'
             oauth_introspection_proxy: typing.Optional[str]
             'The proxy, if any, used to reach the introspection endpoint.'
             oauth_introspection_auth_method: typing.Optional[str]
-            'The method for passing the authentication data to the introspection endpoint. Valid values are "client_secret_basic" or "client_secret_post".'
+            'The method for passing the authentication data to the introspection endpoint. Valid values are ``client_secret_basic`` or ``client_secret_post``.'
             oauth_introspection_endpoint: typing.Optional[str]
             'This is the introspection endpoint which will be called to handle the token introspection.'
             oauth_introspection_client_id: typing.Optional[str]
@@ -1677,13 +1705,13 @@ class WEB_Configurator(object):
             oauth_introspection_token_type_hint: typing.Optional[str]
             'A hint about the type of the token submitted for introspection.'
             oauth_introspection_mapped_id: typing.Optional[str]
-            'A formatted string which is used to construct the Verify Access principal name from elements of the introspection response. Claims can be added to the identity string, surrounded by "{}".'
+            'A formatted string which is used to construct the Verify Access principal name from elements of the introspection response. Claims can be added to the identity string, surrounded by ``{}``.'
             oauth_introspection_external_user: typing.Optional[str]
             'A boolean which is used to indicate whether the mapped identity should correspond to a known Verify Access identity or not.'
             oauth_introspection_response_attributes: typing.List[Attribute]
             'A list of rules indicating which parts of the json response should be added to the credential.'
             static_response_headers: typing.List[Response_Header]
-            'A list of header names and values that should be added to the HTTP response. List of key value pairs eg: ``{"name":"Access-Control-Max-Age", "value":"600"}``'
+            'A list of header names and values that should be added to the HTTP response. List of key value pairs eg. ``{"name":"Access-Control-Max-Age", "value":"600"}``'
             jwt_header_name: typing.Optional[str]
             'The name of the HTTP header that will contain the JWT.'
             jwt_certificate: typing.Optional[str]
@@ -1691,51 +1719,51 @@ class WEB_Configurator(object):
             jwt_claims: typing.Optional[Claim]
             'The list of claims to add to the JWT.'
             junction_hard_limit: str
-            'Defines the hard limit percentage for consumption of worker threads. Valid value is an integer from "0" to "100".'
+            'Defines the hard limit percentage for consumption of worker threads. Valid value is an integer from ``0`` to ``100``.'
             junction_soft_limit: str
-            'Defines the soft limit percentage for consumption of worker threads. Valid value is an integer from "0" to "100".'
+            'Defines the soft limit percentage for consumption of worker threads. Valid value is an integer from ``0`` to ``100``.'
             basic_auth_mode: typing.Optional[str]
-            'Defines how the Reverse Proxy server passes client identity information in HTTP basic authentication (BA) headers to the back-end server. The value is one of: "filter" (default), "ignore", "supply", "gso".'
+            'Defines how the Reverse Proxy server passes client identity information in HTTP basic authentication (BA) headers to the back-end server. Valid value include ``filter`` (default), ``ignore``, ``supply`` and ``gso``.'
             tfim_sso: str
-            'Enables IBM Security Federated Identity Manager single sign-on (SSO) for the junction. Valid value is "yes" or "no".'
+            'Enables IBM Security Federated Identity Manager single sign-on (SSO) for the junction. Valid value is ``yes`` or ``no``.'
             remote_http_header: typing.Optional[typing.List[str]]
-            'Controls the insertion of Security Verify Access specific client identity information in HTTP headers across the junction. The value is an array containing a combination of: "iv-user", "iv-user-l", "iv-groups", "iv-creds" or "all".'
+            'Controls the insertion of Security Verify Access specific client identity information in HTTP headers across the junction. The value is an array containing a combination of ``iv-user``, ``iv-user-l``, ``iv-groups``, ``iv-creds`` or ``all``.'
             http2_junction: typing.Optional[str]
-            'Specifies whether the junction supports the HTTP/2 protocol. By default, junctions do not support the HTTP/2 protocol. A valid value is "yes" or "no".'
+            'Specifies whether the junction supports the HTTP/2 protocol. By default, junctions do not support the HTTP/2 protocol. A valid value is ``yes`` or ``no``.'
             http2_proxy: typing.Optional[str]
-            'Specifies whether the junction proxy support the HTTP/2 protocol. By default, junction proxies do not support the HTTP/2 protocol. A valid value is "yes" or "no".'
+            'Specifies whether the junction proxy support the HTTP/2 protocol. By default, junction proxies do not support the HTTP/2 protocol. A valid values are ``yes`` or ``no``.'
             sni_name: typing.Optional[str]
             'The server name indicator (SNI) to send to TLS junction servers. By default, no SNI is sent.'
             preserve_cookie: typing.Optional[str]
-            'Specifies whether modifications of the names of non-domain cookies are to be made. Valid value is "yes" or "no".'
+            'Specifies whether modifications of the names of non-domain cookies are to be made. Valid value is ``yes`` or ``no``.'
             cookie_include_path: str
-            'Specifies whether script generated server-relative URLs are included in cookies for junction identification. Valid value is "yes" or "no".'
+            'Specifies whether script generated server-relative URLs are included in cookies for junction identification. Valid value is ``yes`` or ``no``.'
             transparent_path_junction: str
-            'Specifies whether a transparent path junction is created. Valid value is "yes" or "no".'
+            'Specifies whether a transparent path junction is created. Valid value is ``yes`` or ``no``.'
             mutual_auth: str
-            'Specifies whether to enforce mutual authentication between a front-end Reverse Proxy server and a back-end Reverse Proxy server over SSL. Valid value is "yes" or "no".'
+            'Specifies whether to enforce mutual authentication between a front-end Reverse Proxy server and a back-end Reverse Proxy server over SSL. Valid value is ``yes`` or ``no``.'
             insert_ltpa_cookies: str
-            'Controls whether LTPA cookies are passed to the junctioned Web server. Valid value is "yes" or "no".'
+            'Controls whether LTPA cookies are passed to the junctioned Web server. Valid value is ``yes`` or ``no``.'
             insert_session_cookies: str
-            'Controls whether to send the session cookie to the junctioned Web server. Valid value is "yes" or "no".'
+            'Controls whether to send the session cookie to the junctioned Web server. Valid value is ``yes`` or ``no``.'
             request_encoding: str
-            'Specifies the encoding to use when the system generates HTTP headers for junctions. Possible values for encoding are: "utf8_bin", "utf8_uri", "lcp_bin", and "lcp_uri".'
+            'Specifies the encoding to use when the system generates HTTP headers for junctions. Possible values for encoding include ``utf8_bin``, ``utf8_uri``, ``lcp_bin``, and ``lcp_uri``.'
             enable_basic_auth: str
-            'Specifies whether to use BA header information to authenticate to back-end server. Valid value is "yes" or "no".'
+            'Specifies whether to use BA header information to authenticate to back-end server. Valid value is ``yes`` or ``no``.'
             key_label: typing.Optional[str]
             'The key label for the client-side certificate that is used when the system authenticates to the junctioned Web server.'
             gso_respource_group: typing.Optional[str]
             'The name of the GSO resource or resource group.'
             junction_cookie_javascript_block: str
-            'Controls the junction cookie JavaScript block. The value should be one of: "trailer", "inhead", "onfocus", "xhtml10".'
+            'Controls the junction cookie JavaScript block. The value should be one of ``trailer``, ``inhead``, ``onfocus`` or ``xhtml10``.'
             client_ip_http: str
-            'Specifies whether to insert the IP address of the incoming request into an HTTP header for transmission to the junctioned Web server. Valid value is "yes" or "no".'
+            'Specifies whether to insert the IP address of the incoming request into an HTTP header for transmission to the junctioned Web server. Valid value is ``yes`` or ``no``.'
             version_two_cookies: typing.Optional[str]
-            'Specifies whether LTPA version 2 cookies (LtpaToken2) are used. Valid value is "yes" or "no".'
+            'Specifies whether LTPA version 2 cookies (LtpaToken2) are used. Valid value is ``yes`` or ``no``.'
             ltpa_keyfile: typing.Optional[str]
             'Location of the key file that is used to encrypt the LTPA cookie data.'
             authz_rules: str
-            'Specifies whether to allow denied requests and failure reason information from authorization rules to be sent in the Boolean Rule header (AM_AZN_FAILURE) across the junction. Valid value is "yes" or "no".'
+            'Specifies whether to allow denied requests and failure reason information from authorization rules to be sent in the Boolean Rule header (AM_AZN_FAILURE) across the junction. Valid value is ``yes`` or ``no``.'
             fsso_config_file: str
             'The name of the configuration file that is used for forms based single sign-on.'
             username: typing.Optional[str]
@@ -1745,31 +1773,31 @@ class WEB_Configurator(object):
             local_ip: typing.Optional[str]
             'Specifies the local IP address that the Reverse Proxy uses when the system communicates with the target back-end server.'
             query_contents: str
-            'Provides the Reverse Proxy with the correct name of the query_contents program file and where to find the file. By default, the Windows file is called query_contents.exe and the UNIX file is called query_contents.sh.'
+            'Provides the Reverse Proxy with the correct name of the query_contents program file and where to find the file. By default, the Windows file is called ``query_contents.exe`` and the UNIX file is called ``query_contents.sh``.'
             case_sensitive_url: str
-            'Specifies whether the Reverse Proxy server treats URLs as case sensitive. Valid value is "yes" or "no".'
+            'Specifies whether the Reverse Proxy server treats URLs as case sensitive. Valid value is ``yes`` or ``no``.'
             windows_style_url: str
-            'Specifies whether Windows style URLs are supported. Valid value is "yes" or "no".'
+            'Specifies whether Windows style URLs are supported. Valid value is ``yes`` or ``no``.'
             ltpa_keyfile_password: typing.Optional[str]
             'Password for the key file that is used to encrypt LTPA cookie data.'
             https_port: int
-            'HTTPS port of the back-end third-party server. Applicable when the junction type is "ssl".'
+            'HTTPS port of the back-end third-party server. Applicable when the junction type is ``ssl``.'
             http_port: int
-            'HTTP port of the back-end third-party server. Applicable when the junction type is "tcp".'
+            'HTTP port of the back-end third-party server. Applicable when the junction type is ``tcp``.'
             proxy_hostname: typing.Optional[str]
-            'The DNS host name or IP address of the proxy server. Applicable when the junction type is "sslproxy".'
+            'The DNS host name or IP address of the proxy server. Applicable when the junction type is ``sslproxy``.'
             proxy_port: typing.Optional[int]
-            'The TCP port of the proxy server. Applicable when the junction type is "tcpproxy".'
+            'The TCP port of the proxy server. Applicable when the junction type is ``tcpproxy``.'
             sms_environment: typing.Optional[str]
             'Only applicable for virtual junctions. Specifies the replica set that sessions on the virtual junction are managed under.'
             vhost_label: typing.Optional[str]
             'Only applicable for virtual junctions. Causes a second virtual junction to share the protected object space with the initial virtual junction.'
             delegation_support: typing.Optional[str]
-            'This option is valid only with junctions that were created with the type of "ssl" or "sslproxy". Indicates single sign-on from a front-end Reverse Proxy server to a back-end Reverse Proxy server.'
+            'This option is valid only with junctions that were created with the type of ``ssl`` or ``sslproxy``. Indicates single sign-on from a front-end Reverse Proxy server to a back-end Reverse Proxy server.'
             scripting_support: typing.Optional[str]
             'Supplies junction identification in a cookie to handle script-generated server-relative URLs. '
             force: str
-            'Specifies whether to overwrite an existing junction of the same name. Valid value is "yes" or "no".'
+            'Specifies whether to overwrite an existing junction of the same name. Valid value is ``yes`` or ``no``.'
             resources: typing.Optional[typing.List[Resource]]
             'List of resources to add to resource server.'
             document_root: typing.Optional[typing.List[str]]
@@ -1792,7 +1820,7 @@ class WEB_Configurator(object):
             ssl: str
             'Whether or not to enable SSL between the Security Verify Access authorization server and the LDAP server.'
             ssl_port: str
-            'The SSL port on which the LDAP server will be contacted. Only valid if ``ssl`` set to "yes".'
+            'The SSL port on which the LDAP server will be contacted. Only valid if ``ssl`` set to ``yes``.'
             key_file: str
             'The name of the keyfile that will be used when communicating with the LDAP server over SSL.'
             key_label: str
@@ -1810,19 +1838,19 @@ class WEB_Configurator(object):
             name: str
             'The name of the CORS policy.'
             allowed_origin: typing.Optional[typing.List[str]]
-            'An array of origins which are allowed to make cross origin requests to this resource. Each origin must contain the schema and any non-default port information. A value of * indicates that any origin will be allowed.'
+            'An array of origins which are allowed to make cross origin requests to this resource. Each origin must contain the schema and any non-default port information. A value of ``*`` indicates that any origin will be allowed.'
             allow_credentials: typing.Optional[bool]
-            'Controls whether or not the Access-Control-Allow-Credentials header will be set. If not present, this value will default to false.'
+            'Controls whether or not the Access-Control-Allow-Credentials header will be set. If not present, this value will default to ``false``.'
             exposed_headers: typing.Optional[typing.List[str]]
             'Controls the values populated in the Access-Control-Expose-Headers header.'
             handle_preflight: typing.Optional[bool]
-            'Controls whether or not the Reverse Proxy will handle pre-flight requests. If not present, this value will default to false.'
+            'Controls whether or not the Reverse Proxy will handle pre-flight requests. If not present, this value will default to ``false``.'
             allowed_methods: typing.Optional[typing.List[str]]
-            'Controls the methods permitted in pre-flight requests and the subsequent Access-Control-Allow-Methods header. This option only relates to pre-flight requests handled by the Reverse Proxy and will be ignored if handle_preflight is set to false. Methods are case sensitive and simple methods (ie: GET, HEAD and POST) are always implicitly allowed.'
+            'Controls the methods permitted in pre-flight requests and the subsequent Access-Control-Allow-Methods header. This option only relates to pre-flight requests handled by the Reverse Proxy and will be ignored if handle_preflight is set to ``false``. Methods are case sensitive and simple methods (ie. GET, HEAD and POST) are always implicitly allowed.'
             allowed_headers: typing.Optional[typing.List[str]]
-            'Controls the headers permitted in pre-flight requests and the subsequent Access-Control-Allow-Headers header. This option only relates to pre-flight requests handled by the Reverse Proxy and will be ignored if handle_preflight is set to false.'
+            'Controls the headers permitted in pre-flight requests and the subsequent Access-Control-Allow-Headers header. This option only relates to pre-flight requests handled by the Reverse Proxy and will be ignored if handle_preflight is set to ``false``.'
             max_age: typing.Optional[int]
-            'Controls the Access-Control-Max-Age header added to pre-flight requests. If set to zero, the header will not be added to pre-flight responses. If set to -1, clients will be told not to cache at all. If not present, this value will default to zero.'
+            'Controls the Access-Control-Max-Age header added to pre-flight requests. If set to zero, the header will not be added to pre-flight responses. If set to ``-1``, clients will be told not to cache at all. If not present, this value will default to ``0``.'
 
         authorization_servers: typing.Optional[typing.List[Authorization_Server]]
         'List of API Authorization servers to create.'
@@ -1853,7 +1881,7 @@ class WEB_Configurator(object):
             self.__apiac_authz_server(runtime, config.authorization_servers)
 
         if config.resource_servers != None:
-            self.__apiac_resource_server(resourcconfig.resource_serverse_server)
+            self.__apiac_resource_server(config.resource_servers)
 
 
     def configure(self):
@@ -1877,8 +1905,8 @@ class WEB_Configurator(object):
         if websealConfig.fsso != None:
             self.form_single_sign_on(websealConfig.fsso)
 
-        if websealConfig.http_transform != None:
-            self.http_transform(websealConfig.http_transform)
+        if websealConfig.http_transforms != None:
+            self.http_transform(websealConfig.http_transforms)
 
         if websealConfig.kerberos != None:
             self.kerberos(websealConfig.kerberos)
@@ -1906,4 +1934,5 @@ class WEB_Configurator(object):
 
 
 if __name__ == "__main__":
-        configure()
+        w = WEB_Configurator()
+        w.configure()

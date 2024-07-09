@@ -1,8 +1,8 @@
 Example Verify Access Configurations (Getting Started)
 ######################################################
 
-First Steps
-===========
+First Steps (container deployment)
+==================================
 
 The first steps configuration file defines some initial configuration that is required for all Verify Access deployments.
 These steps include:
@@ -28,6 +28,9 @@ To run this configuration you should define the following properties, where the 
    export ISVA_FED_CODE="federations activation code"
    export LDAP_BIND_PASSWORD=betterThanPassw0rd
    export LDAP_SEC_PASSWORD=betterThanPassw0rd
+
+The container deployment used for this demo can be found in the `Verify Access<https://github.com/IBM-Security/verify-access-container-deployment>`_ 
+sample code.
 
 
 .. include:: ../examples/first_steps.yaml
@@ -65,6 +68,84 @@ To run this configuration you should define the following properties:
    :literal:
 
 
+Container golden image pipeline
+===============================
+
+This configuration example will demonstrate how administrators can set up a "pipeline" of configuration
+steps to build out a deployment. This is especially useful in staged (development/production) environments
+where a Verify Access deployment might be tested in several different sandboxed environments before it is 
+pushed to a production environment.
+
+This workflow builds on a configuration snapshot (golden image), which can be used to scale out a Verify 
+Access deployment. The first steps involve completing steps which are required for all environments, such 
+as accepting EULA, activating Verify Access modules, or importing static resources such as JavaScript 
+mapping rules/HTML template files. Once this configuration has been completed, the generated snapshot 
+file can be reused to bootstrap Verify Access deployments in downstream environments.
+
+
+Base Snapshot
+_____________
+This configuration will accept the EULA, activate the modules of Verify Access and enable OIDC authentication
+to the management interface.
+
+To run this configuration you should define the following properties:
+
+.. code-block:: bash
+
+   export ISVA_CONFIG_YAML=golden_base_image.yaml
+   export ISVA_MGMT_BASE_URL="https://192.168.42.101"
+   export ISVA_MGMT_USER=admin
+   export ISVA_MGMT_PWD=betterThanPassw0rd
+   export ISVA_MGMT_OLD_PWD=admin
+   export ISVA_BASE_CODE="webseal activation code"
+   export ISVA_AAC_CODE="access control activation code"
+   export ISVA_FED_CODE="federations activation code"
+
+
+.. include:: ../examples/snapshot_pipeline/base_image.yaml
+   :literal:
+
+
+Development Environment
+_______________________
+This configuration step will set up the WebSEAL Reverse Proxy runtime environment and create a 
+reverse proxy instance to test with. This configuration will also re-import the required PKI for
+the dev environment's LDAP and HVDB connections.
+
+To run this configuration you should define the following properties:
+
+.. code-block:: bash
+
+   export ISVA_CONFIG_YAML=dev_env_image.yaml
+   export ISVA_MGMT_BASE_URL="https://192.168.42.101"
+   export ISVA_MGMT_PWD="apiKeyGoesHere"
+   export LDAP_PWD="Passw0rd"
+   export RUNTIME_USER="easuser"
+   export RUNTIME_PWD="passw0rd"
+
+
+.. include:: ../examples/snapshot_pipeline/dev_env_image.yaml
+   :literal:
+
+
+Production Environment
+______________________
+This configuration step will deploy the development snapshot image to a production environment, updating
+the required PKI for connections to the HVDB and LDAP services.
+
+To run this configuration you should define the following properties:
+
+.. code-block:: bash
+
+   export ISVA_CONFIG_YAML=prod_env_image.yaml
+   export ISVA_MGMT_BASE_URL="https://192.168.42.101"
+   export ISVA_MGMT_PWD="apiKeyGoesHere"
+
+
+.. include:: ../examples/snapshot_pipeline/prod_env_image.yaml
+   :literal:
+
+
 WebSEAL Reverse Proxy using Advanced Access Control authentication
 ==================================================================
 
@@ -83,7 +164,7 @@ include:
    :literal:
 
 
-Installation of the Instana monitoring Agent
+Installation of the Instana monitoring agent
 ============================================
 
 The Instana monitoring example defines a Verify Access deployment where a third party infrastructure monitoring tool (Instana)
@@ -110,7 +191,24 @@ Mobile Multi-Factor Authentication Cookbook
 
 The MMFA example follows the legacy cookbook deployment guide.
 
-*TODO*
+There are a few steps which are required for running this configuration. You must:
+
+* Create the PKI for the Verify Access appliance
+
+* Deploy the Verify Access runtime containers required for the MMFA cookbook.
+
+* Run the :ref:`MMFA<example_mmfa_yaml>` configuration to set up the multi-factor mobile authentication scenario
+
+* Test the MMFA authentication capabilities out
+
+
+.. _example_mmfa_yaml:
+
+Mobile Multi-Factor Authentication Configuration:
+_________________________________________________
+
+.. include:: ../examples/mmfa_demo/mmfa_config.yaml
+   :literal:
 
 
 Federation Cookbook
@@ -126,9 +224,11 @@ There are a few steps which are required for running this configuration. You mus
 
 * Obtain an version appropriate copy of the required JavaScript mapping rules
 
-* Run the :ref:`IdP<example_idp_yaml>` and :ref:`SP<example_sp_yaml>` configurations to create the Federations
+* Run the :ref:`IdP<example_idp_yaml>` configuration to create the Federations on the IdP
 
-* Run the :ref:`IdP partner<example_idp_partner_yaml>` and :ref:`SP partner<example_sp_partner_yaml>` configurations to create the Federation Partners
+* Run the :ref:`SP<example_sp_yaml>` configuration to create the Federations on the SP
+
+* Run the :ref:`IdP partner<example_idp_partner_yaml>` configuration to create the Federation Partners on the IdP.
 
 * Create a test user using the demo User Self Care enrollment policy on the IdP deployment
 
@@ -161,12 +261,4 @@ IdP Partner Configuration:
 __________________________
 
 .. include:: ../examples/federation_demo/federation_idp_partner.yaml
-   :literal:
-
-.. _example_sp_partner_yaml:
-
-SP Partner Configuration:
-_________________________
-
-.. include:: ../examples/federation_demo/federation_sp_partner.yaml
    :literal:

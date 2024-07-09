@@ -3,13 +3,12 @@
 @copyright: IBM
 """
 import logging
-import requests
 import json
 import typing
 
 from .util.constants import HEADERS
-from .util.configure_util import creds, config_base_dir, deploy_pending_changes
-from .util.data_util import Map, optional_list, filter_list
+from .util.configure_util import config_yaml, deploy_pending_changes
+from .util.data_util import Map, optional_list, filter_list, FILE_LOADER
 
 _logger = logging.getLogger(__name__)
 
@@ -41,7 +40,7 @@ class Appliance_Configurator(object):
                     table=route.table)
             verb = "updated" if rsp.success == True else "update"
         else:
-            rsp = system.static_routes.create_route(enabled=route.enabled, address=route.address, mask_or_prefix=proxy.mask_or_prefix,
+            rsp = system.static_routes.create_route(enabled=route.enabled, address=route.address, mask_or_prefix=route.mask_or_prefix,
                     gateway=route.gateway, interface_uuid=ifaceUuid, metric=route.metric, comment=route.comment,
                     table=route.table)
             verb = "created" if rsp.success == True else "create"
@@ -72,9 +71,9 @@ class Appliance_Configurator(object):
             if iface.ipv4 != None:
                 if iface.ipv4.dhcp != None:
                     methodArgs.update({
-                            "ipv4_dhcp_enabled": iface.ipv4.dhcp.enabled,
-                            "ipv4_dhcp_allow_management": iface.ipv4.dhcp.allow_management,
-                            "ipv4_dhcp_default_route": iface.ipv4.dhcp.provides_default_route,
+                            "ipv4_dhcp_enabled": iface.ipv4.dhcp.get("enabled", False),
+                            "ipv4_dhcp_allow_management": iface.ipv4.dhcp.get("allow_management", False),
+                            "ipv4_dhcp_default_route": iface.ipv4.dhcp.get("provides_default_route", False),
                             "ipv4_dhcp_route_metric": iface.ipv4.dhcp.route_metric
                         })
                 if iface.ipv4.addresses != None and isinstance(iface.ipv4.addresses, list):
@@ -83,7 +82,7 @@ class Appliance_Configurator(object):
                             "ipv4_address": address.address,
                             "ipv4_mask_or_prefix": address.mask_or_prefix,
                             "ipv4_broadcast_address": address.broadcast_address,
-                            "ipv4_allow_management": address.allow_management,
+                            "ipv4_allow_management": address.allow_mgmt,
                             "ipv4_enabled": address.enabled
                         })
             rsp = system.interfaces.update_interface(oldIface['uuid'], **methodArgs)
@@ -93,7 +92,7 @@ class Appliance_Configurator(object):
                             "address": address.address,
                             "mask_or_prefix": address.mask_or_prefix,
                             "enabled": address.enabled,
-                            "allow_management": address.allow_management
+                            "allow_management": address.allow_mgmt
                         }
                     rsp = system.interfaces.create_address(iface.label, **methodArgs)
 
@@ -112,11 +111,58 @@ class Appliance_Configurator(object):
             _logger.error("Failed to set the DNS properties:\n{}\n{}".format(
                                                 json.dumps(dns_config, indent=4), rsp.data))
 
+
+    def _update_hostname(self, hostname):
+        rsp = self.appliance.get_system_settings().general.update_hostname(hostname)
+        if rsp.success == True:
+            _logger.info("Successfully updated the hostname of the Verify Access appliance.")
+        else:
+            _logger.error("Failed to update the hostname of the Verify Access appliance.")
+
+
+    def _update_host_file(self, entries):
+        for entry in entries:
+            rsp = self.appliance.get_system_settings().hosts_file.get_record(entry.address)
+            existing = optional_list(rsp.json)[0]
+            verb = 'None'
+            if existing:
+                old_hosts = [h['name'] for h in existing]
+                to_add = [h for h in entry.hosts if h not in old_hosts] # list of hosts not set for given address
+                to_remove = [h for h in old_hosts if h not in entry.hosts] # list of hosts not in new config but currently set on appliance
+                for new_host in to_add:
+                    r = self.appliance.get_system_settings().hosts_file.update_record(entry.address, new_host)
+                    if r.success != True:
+                        rsp.success = False
+                        rsp.data = r.data
+                for old_host in to_remove:
+                    r = self.appliance.get_system_settings().hosts_file.delete_host_name(entry.address, old_host)
+                    if r.success != True:
+                        rsp.success = False
+                        rsp.data = r.data
+                verb = "updated" if rsp.success == True else "update"
+            else:
+                rsp = self.appliance.get_system_settings().hosts_file.create_record(entry.address, entry.hosts)
+                verb = "created" if rsp.success == True else "create"
+            if rsp.success == True:
+                _logger.info("Successfully {} {} host file entry".format(verb, entry.address))
+            else:
+                _logger.error("Failed to {} host file config with entry:\n{}\n{}".format(
+                                        verb, json.dumps(entry, indent=4), rsp.data))
+
+
     class Networking(typing.TypedDict):
         '''
         Example::
 
-                networking:
+                network:
+                  hostname: "isam.myidp.ibm.com"
+                  host_file:
+                  - address: "192.168.42.102"
+                    hosts:
+                    - "www.myidp.ibm.com"
+                  - address: "192.168.42.101"
+                    hosts:
+                    - "isam.myidp.ibm.com"
                   routes:
                   - enabled: true
                     address: "default"
@@ -126,7 +172,7 @@ class Appliance_Configurator(object):
                     table: "main"
                     comment: "Example route"
                   interfaces:
-                    ipv4:
+                  - ipv4:
                       dhcp:
                         enabled: false
                     addresses:
@@ -214,6 +260,11 @@ class Appliance_Configurator(object):
             search_domains: typing.Optional[str]
             'Comma-separated list of DNS search domains.'
 
+        class HostEntry(typing.TypedDict):
+            hosts: typing.List[str]
+            'List of host names or domain names to add.'
+            address: str
+            'IPv4 address to add for hosts.'
 
         routes: typing.Optional[typing.List[Route]]
         'Optional list of routes to add to an interface.'
@@ -223,6 +274,12 @@ class Appliance_Configurator(object):
 
         dns: typing.Optional[DNS]
         'Domain Name Server settings for appliance'
+
+        hostname: typing.Optional[str]
+        'Hostname to set for the Verify Access appliance.'
+
+        host_file: typing.Optional[typing.List[HostEntry]]
+        'Entries to add to an appliance\'s hosts file.'
 
     def update_network(self, config):
         if config.network != None:
@@ -234,6 +291,10 @@ class Appliance_Configurator(object):
                     self._update_interface(iface)
             if config.network.dns != None:
                 self._update_dns(config.network.dns)
+            if config.network.hostname != None:
+                self._update_hostname(config.network.hostname)
+            if config.network.host_file != None:
+                self._update_host_file(config.network.host_file)
         deploy_pending_changes(self.appliance, self.config)
 
 
@@ -243,7 +304,8 @@ class Appliance_Configurator(object):
 
                     date_time:
                       enable_ntp: true
-                      ntp_servers: "time.ibm.com,192.168.0.1"
+                      ntp_servers:
+                      - "time.ibm.com,192.168.0.1"
                       time_zone: "Australia/Brisbane"
 
         '''
@@ -254,13 +316,13 @@ class Appliance_Configurator(object):
         time_zone: str
         'The id of the timezone the appliance is operating in.'
         date_time: typing.Optional[str]
-        'The current date and time, in the format "YYYY-MM-DD HH:mm:ss"'
+        'The current date and time, in the format ``YYYY-MM-DD HH:mm:ss``'
 
     def date_time(self, config):
         if config.date_time != None:
             rsp = self.appliance.get_system_settings().date_time.update(enable_ntp=config.date_time.enable_ntp,
                     ntp_servers=config.date_time.ntp_servers, time_zone=config.date_time.time_zone,
-                    date_time=date_time.date_time)
+                    date_time=config.date_time.date_time)
             if rsp.success == True:
                 _logger.info("Successfully updated Date/Time settings on appliance")
             else:
@@ -376,10 +438,214 @@ class Appliance_Configurator(object):
                     json.dumps(config.cluster, indent=4), rsp.data))
 
 
+    def _container_volumes(self, containers):
+        if containers.volumes != None:
+            for volume in containers.volumes:
+                existing = optional_list(filter_list('name', volume.name, 
+                                                     self.appliance.get_system_settings().managed_containers.volumes.list()))[0]
+                rsp = verb = None
+                if existing:
+                    rsp = self.appliance.get_system_settings().managed_containers.volumes.import_volume(
+                        existing['id'], FILE_LOADER.read_file(volume.archive))
+                    verb = "updated" if rsp.success == True else "update"
+                else:
+                    existing = self.appliance.get_system_settings().managed_containers.volumes.create(volume.name).id_from_location
+                    rsp = self.appliance.get_system_settings().managed_containers.volumes.create(
+                                                            existing, FILE_LOADER.read_file(volume.archive))
+                    verb = "created" if rsp.success == True else "create"
+                if rsp.success == True:
+                    _logger.info("Successfully {} managed container volume {}".format(verb, volume.name))
+                else:
+                    _logger.error("Failed to {} managed container volume with:\n{}\n{}".format(
+                                            verb, json.dumps(volume, indent=4), rsp.data))
+
+
+    def _container_registries(self, containers):
+        if containers.registries != None:
+            for rgy in containers.registries:
+                existing = optional_list(filter_list('host', rgy.host, 
+                                                     self.appliance.get_system_settings().managed_containers.registries.list()))[0]
+                rsp = verb = None
+                if existing:
+                    rsp = self.appliance.get_system_settings().managed_containers.registries.update(existing['id'], **rgy)
+                    verb = "updated" if rsp.success == True else "update"
+                else:
+                    rsp = self.appliance.get_system_settings().managed_containers.registries.create(**rgy)
+                    verb = "created" if rsp.success == True else "create"
+                if rsp.success == True:
+                    _logger.info("Successfully {} {} container registry properties".format(verb, rgy.host))
+                else:
+                    _logger.error("Failed to {} container registry properties:\n{}\n{}".format(
+                                            verb, json.dumps(rgy, indent=4), rsp.data))
+
+
+    def _container_images(self, containers):
+        if containers.images != None:
+            for image in containers.images:
+                existing = optional_list(filter_list('image', image, 
+                                                     self.appliance.get_system_settings().managed_containers.images.list()))[0]
+                rsp = verb = None
+                if existing:
+                    rsp = self.appliance.get_system_settings().managed_containers.images.update(existing['id'])
+                    verb = "updated" if rsp.success == True else "update"
+                else:
+                    rsp = self.appliance.get_system_settings().managed_containers.images.create(image)
+                    verb = "created" if rsp.success == True else "create"
+                if rsp.success == True:
+                    _logger.info("Successfully {} {} cached container image".format(verb, image))
+                else:
+                    _logger.error("Failed to {} cached container image {}:\n{}".format(verb, image, rsp.data))
+
+
+    def _container_deployments(self, containers):
+        if containers.deployments != None:
+            for deployment in containers.deployments:
+                existing = optional_list(filter_list('name', deployment.name, 
+                                                     self.appliance.get_system_settings().managed_containers.deployments.list()))[0]
+                rsp = verb = None
+                if existing:
+                    rsp = self.appliance.get_system_settings().managed_containers.deployments.delete(existing['id'])
+                    if rsp.success == True:
+                        rsp = self.appliance.get_system_settings().managed_containers.deployments.create(**deployment)
+                    verb = "redeploy"
+                else:
+                    rsp = self.appliance.get_system_settings().managed_containers.registries.create(**deployment)
+                    verb = "created" if rsp.success == True else "create"
+                if rsp.success == True:
+                    _logger.info("Successfully {} {} managed container deployment".format(verb, deployment.name))
+                else:
+                    _logger.error("Failed to {} managed container deployment:\n{}\n{}".format(
+                                            verb, json.dumps(deployment, indent=4), rsp.data))
+
+
+    class Managed_Containers(typing.TypedDict):
+        '''
+        Example::
+
+                managed_containers:
+                  volumes:
+                  - name: "iag-config"
+                    archive: iag.zip
+                  images:
+                  - "icr.io/isva/verify-access-oidc-provider:23.03"
+                  registries:
+                  - host: "icr.io"
+                    proxy:
+                      host: "proxy.ibm.com"
+                      port: 3128
+                  deployments:
+                  - name: "IAG Deployment"
+                    image: "icr.io/isva/verify-access-oidc-provider:23.03"
+                    type: "iag"
+                    ports:
+                    - name: "https"
+                      value: "192.168.42.102:30443"
+                    volumes:
+                    - name: "config"
+                      value: "iag-config"
+                    env:
+                    - name: "LOG_FORMAT"
+                      value: "JSON"
+
+        '''
+
+        class Volume(typing.TypedDict):
+            name: str
+            'Name of volume to be created/updated.'
+            archive: str
+            'Zip archive of volume contents.'
+
+        class Registry(typing.TypedDict):
+            class Proxy:
+                host: str
+                'Host name or address of proxy'
+                port: str
+                'Port request should be proxied to'
+                user: str
+                'Username to (basic) authenticate to the proxy with'
+                secret: str
+                'Secret to (basic) authenticate to the proxy with'
+                schema: str
+                'TCP schema to communicate with proxy. Default is ``http://``'
+
+            host: str
+            'Domain or IP address of container registry.'
+            user: str
+            'User to authenticate to container registry as'
+            secret: str
+            'Secret to authenticate to the container registry as ``user``'
+            proxy: typing.Optional[Proxy]
+            'Proxy configuration for pulling images.'
+            
+
+        class Deployment(typing.TypedDict):
+
+            class PortProperties(typing.TypedDict):
+                name: str
+                'Name of the Metadata port mapping being forwarded to the host appliance.'
+                value: str
+                'Host port to map to. This can optionally include an interface address, eg. ``192.168.42.201:30443``'
+            
+            class VolumeProperties(typing.TypedDict):
+                name: str
+                'Name of Metadata volume mount point.'
+                value: str
+                'Name or ID of the volume being mounted.'
+            
+            class EnvProperties(typing.TypedDict):
+                name: str
+                'Name of environment variable to create.'
+                value: str
+                'Value of environment variable.'
+
+            class LoggingProperties(typing.TypedDict): 
+                max_files: typing.Optional[int]
+                'The maximum number of roll-over log files to keep. If a value is not specified, the default of 10 (10 files) will be used.'
+                max_size: typing.Optional[int]
+                'The maximum size of a log file, in megabytes, before it will be rolled over. If a value is not specified, the default of 10 (10MB) will be used.'
+
+            name: str
+            'Name of the container deployment.'
+            image: str
+            'Container image to use.'
+            type: str
+            'Container deployment metadata type.'
+            ports: typing.List[PortProperties]
+            'Mapping between container ports and host ports.'
+            volumes: typing.List[VolumeProperties]
+            'Container volume mount properties.'
+            env: typing.List[EnvProperties]
+            'Container environment variable properties.'
+            logging: typing.Optional[LoggingProperties]
+            'Container logfile rollover properties.'
+            command: typing.Optional[str]
+            'An optional command from the metadata document to run instead of the container entrypoint.'
+            args: typing.Optional[typing.List[str]]
+            'An optional list of arguments to pass to the specified command.'
+
+
+        volumes: typing.Optional[typing.List[Volume]]
+        'List of volumes to be created or updated.'
+        images: typing.Optional[typing.List[str]]
+        'List of image to be pulled. This should include registry and tag information, eg. ``icr.io/isva/verify-access-oidc-provider:23.03``'
+        registries: typing.Optional[typing.List[Registry]]
+        'List of container registry authentication/proxy configuration to apply.'
+        deployments: typing.Optional[typing.List[Deployment]]
+        'List of managed container deployments to create.'
+
+    def managed_containers(self, config):
+        if config.managed_containers != None:
+            self._container_volumes(config.managed_containers)
+            self._container_registries(config.managed_containers)
+            self._container_images(config.managed_containers)
+            self._container_deployments(config.managed_containers)
+
+
     def configure(self):
         self.update_network(self.config.appliance)
         self.date_time(self.config.appliance)
         self.cluster(self.config.appliance)
+        self.managed_containers(self.config.appliance)
 
 if __name__ == "__main__":
-    configure()
+    Appliance_Configurator(config_yaml(), None).configure()
