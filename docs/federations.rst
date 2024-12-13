@@ -1,8 +1,8 @@
 Federations Configuration
 #########################
-The Federation module is used to integrate Verify Access with third party applications to provide or 
+The Federation module is used to integrate Verify Identity Access with third party applications to provide or 
 accept identity information. This module can be use fro both: supplying third party applications with 
-identity information (Verify Access is the identity source); or accepting identity information (Verify 
+identity information (Verify Identity Access is the identity source); or accepting identity information (Verify Identity 
 Access is the identity consumer).
 
 Integration with third party applications is achieved via Identity standards, such as OIDC or SAML 2.0.
@@ -156,11 +156,11 @@ To configure Point of Contact profiles, see the entry in the `Appliance <applian
 Alias Service
 =============
 The alias service stores and retrieves aliases that are related to a federated identity. Persistent name identifier format allows 
-you to link a user at the identity provider with a user at the service provider. Verify Access stores these account linkages in 
+you to link a user at the identity provider with a user at the service provider. Verify Identity Access stores these account linkages in 
 a high-volume database or an LDAP database. 
 
 
-.. autoclass:: src.verify_access_autoconf.federation.FED_Configurator.Alias_Service
+.. autoclass:: src.ibmvia_autoconf.federation.FED_Configurator.Alias_Service
     :members:
 
 
@@ -181,7 +181,7 @@ Security Token Service
 ======================
 
 
-.. autoclass:: src.verify_access_autoconf.federation.FED_Configurator.Security_Token_Service
+.. autoclass:: src.ibmvia_autoconf.federation.FED_Configurator.Security_Token_Service
     :members:
 
 
@@ -189,10 +189,10 @@ Federations
 ===========
 
 
-.. autoclass:: src.verify_access_autoconf.federation.FED_Configurator.Federations
+.. autoclass:: src.ibmvia_autoconf.federation.FED_Configurator.Federations
     :members:
 
-.. autoclass:: src.verify_access_autoconf.federation.Federation_Common
+.. autoclass:: src.ibmvia_autoconf.federation.Federation_Common
     :members:
 
 

@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath('/home/lowkey/git.workspace/pyisam')) #TEMPOR
 
 # -- Project information -----------------------------------------------------
 
-project = 'verify-access-autoconf'
-copyright = '2022, Lachlan Gleeson'
+project = 'ibmvia-autoconf'
+copyright = '2024, Lachlan Gleeson, IBM'
 author = 'Lachlan Gleeson'
 
 
@@ -47,7 +47,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 
 #intersphinx_timeout = 3  # 3 seconds timeout
-#intersphinx_mapping = {'pyisva', ("https://pyisva.readthedocs.io/en/latest/", None)}
+#intersphinx_mapping = {'pyivia', ("https://pyivia.readthedocs.io/en/latest/", None)}
 
 # -- Options for HTML output -------------------------------------------------
 

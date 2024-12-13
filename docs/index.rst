@@ -3,10 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to verify-access-autoconf documentation!
+Welcome to ibmvia-autoconf documentation!
 ==================================================
-verify-access-autoconf is an automation layer written on top of pyISVA. This library should be used to apply 
-YAML configuration files to a Verify Access deployment.
+ibmvia-autoconf is an automation layer written on top of pyIVIA. This library should be used to apply 
+YAML configuration files to a Verify Identity Access deployment.
 
 This library is designed to work with both Appliance and Container based deployments, and is not idempotent.
 
@@ -21,7 +21,7 @@ You can install ``verify-access-autoconf`` with ``pip``:
 
     $ pip install verify-access-autoconf
 
-.. _verify_access_autoconf_architecture:
+.. _ibmvia_autoconf_architecture:
 
 Architecture
 ------------
@@ -34,13 +34,13 @@ Example configurations can be found in the ``examples`` directory with additiona
 `Examples / Getting Started <examples.html>`_ page.
 
 
-.. _verify_access_autoconf_modules:
+.. _ibmvia_autoconf_modules:
 
 Modules
 _______
 
 The configuration process is broken into six modules. Each module is responsible for configuring a subset of
-Verify Access features. The order of configuration is:
+Verify Identity Access features. The order of configuration is:
 
 - base (Licensing, SSL Databases, Cluster Settings)
 - appliance (if applicable)
@@ -51,7 +51,7 @@ Verify Access features. The order of configuration is:
 
 More complex deployment architectures can be achieved by running sequential ``config.yaml`` descriptors.
 
-.. _verify_access_autoconf_yaml_keywords:
+.. _ibmvia_autoconf_yaml_keywords:
 
 YAML configuration keywords
 ___________________________
@@ -81,7 +81,7 @@ can be used in configuration files:
         admin_password: !environment ISVA_ADMIN_SECRET
 
 
-.. _verify_access_autoconf_env_vars:
+.. _ibmvia_autoconf_env_vars:
 
 Environment properties
 ______________________
@@ -90,7 +90,7 @@ In addition to the supplied YAML configuration, some properties can alternativel
 these variables are set, they take priority over values set in configuration files.
 
 - ``ISVA_CONFIG_BASE``
-                        This variable is the root directory of all configuration files for the given Verify Access 
+                        This variable is the root directory of all configuration files for the given Verify Identity Access 
                         Deployment. This can include: YAML configuration files; HTML template pages; JavaScript mapping
                         rules; XML configuration files.
                         
@@ -103,7 +103,7 @@ these variables are set, they take priority over values set in configuration fil
                         directory.
 
 - ``ISVA_MGMT_BASE_URL``
-                        This variable is the URL address that Verify Access Local Management Interface is responding 
+                        This variable is the URL address that Verify Identity Access Local Management Interface is responding 
                         on. This should contain: the https scheme; the domain or IP address; and a port if not the 
                         standard (443) port. eg: ``https://127.0.0.2:9443``.
 
@@ -121,14 +121,14 @@ these variables are set, they take priority over values set in configuration fil
 - ``ISVA_KUBERNETES_YAML_CONFIG``
                         This variable defines the Kubernetes cluster configuration file required to run ``kubectl``
                         commands. This configuration file should have sufficient permission in your cluster to restart 
-                        deployments and pods in the namespace that Verify Access is deployed to.
+                        deployments and pods in the namespace that Verify Identity Access is deployed to.
                         The file path can either be absolute or relative to the ``ISVA_CONFIG_BASE`` variable.
 
                         .. note:: This is only applicable for Container deployments using Kubernetes orchestration.
 
 - ``ISVA_DOCKER_COMPOSE_CONFIG``
                         This variable defines the Docker-Compose deployment configuration file required to run
-                        ``docker-compose`` commands for your Verify Access deployment. This file path can 
+                        ``docker-compose`` commands for your Verify Identity Access deployment. This file path can 
                         either be absolute or relative to the ``ISVA_CONFIG_BASE`` variable.
 
                         .. note:: This is only applicable for Container deployments using Docker-Compose orchestration.

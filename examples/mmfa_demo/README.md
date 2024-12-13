@@ -22,7 +22,7 @@ Installing the Verify Access Operator
 The Verify Access Operator can be installed into any Kubernetes environment from source code
 
 ```
-kubectl create -f https://github.com/IBM-Security/verify-access-operator/releases/download/v23.12.0/bundle.yaml
+kubectl create -f https://github.com/IBM-Security/verify-access-operator/releases/download/v24.4.0/bundle.yaml
 ```
 
 
@@ -57,7 +57,7 @@ ISVA_CONFIG_BASE=/verify_access_config
 ISVA_MGMT_PASSWORD=admin
 ISVA_CONFIGURATOR_LOG_LEVEL=ALL
 ISVA_KUBERNETES_RESTART_SLEEP=60
-IVE_DEMO_CONFIG="lmiHostAndPort=https://isva-mmfa-config:9443,lmiAdminId=admin,lmiAdminPwd=admin,acHostAndPort=https://isva-mmfa-runtime:9443,websealHostNameAndPort=https://www.myidp.ibm.com,acUuidCookieName=ac.uuid"
+LIVE_DEMO_CONFIG="lmiHostAndPort=https://isva-mmfa-config:9443,lmiAdminId=admin,lmiAdminPwd=admin,acHostAndPort=https://isva-mmfa-runtime:9443,websealHostNameAndPort=https://www.myidp.ibm.com,acUuidCookieName=ac.uuid"
 EOF
 
 kubectl delete secret mmfa-env
@@ -143,7 +143,7 @@ spec:
   template:
     spec:
       containers:
-      - name: verify-access-configurator
+      - name: verify-identity-access-configurator
         image: autoconf:latest
         imagePullPolicy: Never
         volumeMounts:
@@ -154,7 +154,7 @@ spec:
         - "-c"
         - |
           echo "Starting MMFA Config"
-          ISVA_CONFIG_YAML=mmfa_config.yaml ISVA_MGMT_BASE_URL=https://isva-mmfa-config:9443 python3 -m verify_access_autoconf;
+          ISVA_CONFIG_YAML=mmfa_config.yaml ISVA_MGMT_BASE_URL=https://isva-mmfa-config:9443 python3 -m ibmvia_autoconf;
         envFrom:
         - secretRef:
             name: mmfa-env

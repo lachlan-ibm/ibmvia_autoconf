@@ -2,7 +2,7 @@
 """
 @copyright: IBM
 """
-import os, kubernetes, logging, sys, yaml, pyisva, datetime, subprocess, shutil, time, json
+import os, kubernetes, logging, sys, yaml, pyivia, datetime, subprocess, shutil, time, json
 from . import constants as const
 from .data_util import Map, FileLoader, CustomLoader, KUBE_CLIENT, KUBE_CLIENT_SLEEP
 from kubernetes.stream import stream
@@ -13,25 +13,35 @@ _logger = logging.getLogger(__name__)
 def config_base_dir():
     if const.CONFIG_BASE_DIR in os.environ.keys():
         return os.environ.get(const.CONFIG_BASE_DIR)
+    elif const.LEGACY_CONFIG_BASE_DIR in os.environ.keys():
+        _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd 
+                     properties instead".format(const.LEGACY_CONFIG_BASE_DIR))
+        return os.environ.get(const.LEGACY_CONFIG_BASE_DIR)
     return os.path.expanduser("~") #Default is home directory
 
 
 def config_yaml(config_file=None):
     if config_file:
         _logger.info("Reading file from provided path {}".format(config_file))
-        config = Map(yaml.load(open(config_file, 'r'), Loader=CustomLoader))
-    elif const.CONFIG_YAML_ENV_VAR in os.environ.keys():
-        cfg_file = os.environ.get(const.CONFIG_YAML_ENV_VAR)
+        return Map(yaml.load(open(config_file, 'r'), Loader=CustomLoader))
+    env_var = const.CONFIG_YAML_ENV_VAR
+    if const.LEGACY_CONFIG_BASE_DIR in os.environ.keys():
+        conf_base_var = const.LEGACY_CONFIG_BASE_DIR
+        _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd 
+                     properties instead".format(const.LEGACY_CONFIG_BASE_DIR))
+    elif env_var in os.environ.keys():
+        cfg_file = os.environ.get(env_var)
         if not cfg_file.startswith("/"):
-            cfg_file = config_base_dir() + '/' + os.environ.get(const.CONFIG_YAML_ENV_VAR)
+            cfg_file = config_base_dir() + '/' + cfg_file
         _logger.info("Reading file from env var {} = {}".format(
-            const.CONFIG_YAML_ENV_VAR, cfg_file))
+            env_var, cfg_file))
         return Map(yaml.load(open(cfg_file, 'r'), Loader=CustomLoader))
     elif config_base_dir() and const.CONFIG_YAML in os.listdir(config_base_dir()):
+        base_dir = config_base_dir()
         _logger.info("Reading config file from {} env var: {}/config.yaml".format(
-            const.CONFIG_BASE_DIR, os.environ.get(const.CONFIG_BASE_DIR)))
+            const.CONFIG_BASE_DIR, base_dir))
         return Map(yaml.load(open(
-            os.path.join(config_base_dir(), const.CONFIG_YAML), 'r'), Loader=CustomLoader))
+            os.path.join(base_dir, const.CONFIG_YAML), 'r'), Loader=CustomLoader))
     else:
         raise RuntimeError("Failed to find a YAML configuration file, help!")
 
@@ -57,15 +67,28 @@ def read_file(fp):
 def mgmt_base_url(cfg=None):
     if cfg == None:
         cfg = config_yaml()
-    return os.environ.get(const.MGMT_URL_ENV_VAR, cfg.mgmt_base_url)
+    if const.LEGACY_MGMT_URL_ENV_VAR in os.environ.keys():
+        _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd 
+                     properties instead".format(const.LEGACY_MGMT_URL_ENV_VAR))
+        return os.environ.get(const.LEGACY_MGMT_URL_ENV_VAR, cfg.mgmt_base_url)
+    else:
+        return os.environ.get(const.MGMT_URL_ENV_VAR, cfg.mgmt_base_url)
 
 def creds(cfg=None):
     user = None
     secret = None
     if const.MGMT_USER_ENV_VAR in os.environ.keys():
         user = os.environ.get(const.MGMT_USER_ENV_VAR)
+    elif const.LEGACY_MGMT_USER_ENV_VAR in os.environ.keys():
+        _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd 
+                     properties instead".format(const.LEGACY_MGMT_USER_ENV_VAR))
+        user = os.environ.get(const.LEGACY_MGMT_USER_ENV_VAR)
     if const.MGMT_PWD_ENV_VAR in os.environ.keys():
         secret = os.environ.get(const.MGMT_PWD_ENV_VAR)
+    elif const.LEGACY_MGMT_PWD_ENV_VAR in os.environ.keys():
+        _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd 
+                     properties instead".format(const.LEGACY_MGMT_PWD_ENV_VAR))
+        secret = os.environ.get(const.LEGACY_MGMT_PWD_ENV_VAR)
     if user == None or secret == None:
         if cfg == None:
             cfg = config_yaml()
@@ -81,13 +104,18 @@ def old_creds(cfg=None):
     secret = None
     if const.MGMT_OLD_PASSWORD_ENV_VAR in os.environ.keys():
         user = os.environ.get(const.MGMT_USER_ENV_VAR)
+    elif const.LEGACY_MGMT_OLD_PASSWORD_ENV_VAR in os.environ.keys():
+        user = os.environ.get(const.LEGACY_MGMT_USER_ENV_VAR)
     if const.MGMT_OLD_PASSWORD_ENV_VAR in os.environ.keys():
         secret = os.environ.get(const.MGMT_OLD_PASSWORD_ENV_VAR)
-    if user == None or secret == None:
-        if user == None:
-            user = cfg.get('mgmt_user', "admin")
-        if secret == None:
-            secret = cfg.get('mgmt_old_pwd', None)
+    elif const.LEGACY_MGMT_OLD_PASSWORD_ENV_VAR in os.environ.keys():
+        _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd 
+                     properties instead".format(const.LEGACY_MGMT_PWD_ENV_VAR))
+        secret = os.environ.get(const.MGMT_OLD_PASSWORD_ENV_VAR)
+    if user == None and cfg != None:
+        user = cfg.get('mgmt_user', "admin")
+    if secret == None and cfg != None:
+        secret = cfg.get('mgmt_old_pwd', None)
     return (user, secret)
 
 
@@ -169,6 +197,10 @@ def _compose_restart_service(service, config):
     composeYaml = None
     if const.DOCKER_COMPOSE_CONFIG in os.environ.keys():
         composeYaml = os.environ.get(const.DOCKER_COMPOSE_CONFIG)
+    elif const.LEGACY_DOCKER_COMPOSE_CONFIG in os.environ.keys():
+        _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd 
+                     properties instead".format(const.LEGACY_DOCKER_COMPOSE_CONFIG))
+        composeYaml = os.environ.get(const.DOCKER_COMPOSE_CONFIG)
     elif config.container.docker_compose_yaml is not None:
         composeYaml = config.container.docker_compose_yaml
     else:
@@ -195,7 +227,7 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
     if not isvaConfig:
         isvaConfig = config_yaml()
     if not factory:
-        factory = pyisva.Factory(mgmt_base_url(isvaConfig), *creds(isvaConfig))
+        factory = pyivia.Factory(mgmt_base_url(isvaConfig), *creds(isvaConfig))
 
     factory.get_system_settings().configuration.deploy_pending_changes()
     if factory.is_docker() == True and isvaConfig.container is not None:

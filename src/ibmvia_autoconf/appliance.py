@@ -44,7 +44,7 @@ class Appliance_Configurator(object):
                     gateway=route.gateway, interface_uuid=ifaceUuid, metric=route.metric, comment=route.comment,
                     table=route.table)
             verb = "created" if rsp.success == True else "create"
-        if rsp.success == True:
+        if rsp != None and rsp.success == True:
             _logger.info("Successfully {} route info for {} interface".format(
                                         verb, route.interface))
         else:
@@ -96,11 +96,11 @@ class Appliance_Configurator(object):
                         }
                     rsp = system.interfaces.create_address(iface.label, **methodArgs)
 
-        if rsp != None and rsp.success == True:
-            _logger.info("Successfully set address for interface {}".format(iface.label))
-        else:
-            _logger.error("Failed to update address for interface {} with config:\n{}\n{}".format(
-                iface.label, json.dumps(iface, indent=4), rsp.data))
+            if rsp != None and rsp.success == True:
+                _logger.info("Successfully set address for interface {}".format(iface.label))
+            else:
+                _logger.error("Failed to update address for interface {} with config:\n{}\n{}".format(
+                    iface.label, json.dumps(iface, indent=4), rsp.data))
 
 
     def _update_dns(self, dns_config):
