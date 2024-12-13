@@ -1,8 +1,8 @@
 Appliance Configuration
 #######################
 
-This module contains documentation for system level configuration applicable for Appliance (VM) based Verify Access
-deployments. Container configuration is defined under the ``container`` top level key. At a minimum an administrator
+This module contains documentation for system level configuration applicable for Appliance (VM) based Verify Identity 
+Access deployments. Container configuration is defined under the ``container`` top level key. At a minimum an administrator
 should define the ``isva_base_url``, ``isva_admin_user`` and ``isva_admin_password`` keys (or define the applicable
 environment variables).
 
@@ -60,7 +60,7 @@ Example
 Appliance specific configuration
 ================================
 This section covers the configuration options which are only available on appliance or Virtual Machine deployments of 
-Verify Access.
+Verify Identity Access.
 
 
 .. include:: base.rst
@@ -69,11 +69,11 @@ Verify Access.
 
 FIPS Compliance
 ===============
-Verify Access can be configured to FIPS compliance when required. FIPS compliance can only be enabled on new (unconfigured) 
+Verify Identity Access can be configured to FIPS compliance when required. FIPS compliance can only be enabled on new (unconfigured) 
 appliances and should be enabled before any other configuration options are applied.
 
 
-.. autoclass::  src.verify_access_autoconf.configure.ISVA_Configurator.FIPS
+.. autoclass::  src.ibmvia_autoconf.configure.ISVA_Configurator.FIPS
    :members:
 
 
@@ -82,14 +82,14 @@ appliances and should be enabled before any other configuration options are appl
 Networking
 ==========
 The networking settings can be used to define networking routes, as well as interface address, netmask and gateway 
-setting on a Verify Access appliance. This configuration is also able to add hostfile entries as well as setting the
-hostname of Verify Access. Care must be taken when configuring network interfaces to ensure that the 
+setting on a Verify Identity Access appliance. This configuration is also able to add hostfile entries as well as setting the
+hostname of Verify Identity Access. Care must be taken when configuring network interfaces to ensure that the 
 interface used to configure the appliance is not changed (as this will result in the automation tool failing).
 
     .. note:: Interfaces can only be updated using the LMI, they cannot be created.
 
 
-.. autoclass::  src.verify_access_autoconf.appliance.Appliance_Configurator.Networking
+.. autoclass::  src.ibmvia_autoconf.appliance.Appliance_Configurator.Networking
    :members:
 
 
@@ -97,15 +97,15 @@ interface used to configure the appliance is not changed (as this will result in
 
 Date / Time settings
 ====================
-The date and time settings can be adjusted on a Verify Access appliance or synchronized to a external NTP server. Admins 
+The date and time settings can be adjusted on a Verify Identity Access appliance or synchronized to a external NTP server. Admins 
 are also able to set the time zone of the appliance using canonical name.
 
 To set the Date/Time configuration using either a NTP server or manually setting the date via a formatted string. A 
-complete list of the available configuration properties can be found `here <https://ibm-security.github.io/pyisva>`_. 
+complete list of the available configuration properties can be found `here <https://lachlan-ibm.github.io/pyivia>`_. 
 An example configuration is:
 
 
-.. autoclass::  src.verify_access_autoconf.appliance.Appliance_Configurator.Date_Time
+.. autoclass::  src.ibmvia_autoconf.appliance.Appliance_Configurator.Date_Time
    :members:
 
 
@@ -113,16 +113,16 @@ An example configuration is:
 
 Cluster Configuration
 =====================
-The cluster configuration options can be used to add additional servers to the Verify Access deployment. Currently only
- external databases (HVDB and config) as well as Verify Access HA servers are supported.
+The cluster configuration options can be used to add additional servers to the Verify Identity Identity Access deployment. Currently only
+ external databases (HVDB and config) as well as Verify Identity Identity Access HA servers are supported.
 
 This option is typically used in a container deployment to configure the HVDB connection. A complete list of the available 
-configuration properties can be found :ref:`here <pyisva:systemsettings#cluster>`. 
+configuration properties can be found :ref:`here <pyivia:systemsettings#cluster>`. 
 
     .. note:: PKI required to connect to any servers should be imported in the previous step.
 
 
-.. autoclass::  src.verify_access_autoconf.appliance.Appliance_Configurator.Cluster_Configuration
+.. autoclass::  src.ibmvia_autoconf.appliance.Appliance_Configurator.Cluster_Configuration
    :members:
 
 
@@ -130,12 +130,12 @@ configuration properties can be found :ref:`here <pyisva:systemsettings#cluster>
 
 Managed Containers
 ==================
-The managed containers properties allows administrators to deploy IBM containerize products to IBM Security Verify
+The managed containers properties allows administrators to deploy IBM containerize products to IBM Verify Identity
 Access appliances. This is particularly useful for administrators with hardware based appliances, allowing them to
 deploy a greater range of IBM products with their existing hardware.
 
 
-.. autoclass::  src.verify_access_autoconf.appliance.Appliance_Configurator.Managed_Containers
+.. autoclass::  src.ibmvia_autoconf.appliance.Appliance_Configurator.Managed_Containers
    :members:
 
 

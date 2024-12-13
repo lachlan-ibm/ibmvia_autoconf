@@ -994,7 +994,7 @@ class AAC_Configurator(object):
 
         '''
         template_files: typing.List[str]
-        'List of files or zip-files to upload as HTML template pages. Path to files can be relative to the ``ISVA_CONFIG_BASE`` property or fully-qualified file paths.'
+        'List of files or zip-files to upload as HTML template pages. Path to files can be relative to the ``IVIA_CONFIG_BASE`` property or fully-qualified file paths.'
 
     def _strip_base_dir(self, path):
         return path.lstrip(config_base_dir())
@@ -1040,7 +1040,7 @@ class AAC_Configurator(object):
             type: str
             'Type of JavaScript rule to create. Valid values include ``InfoMap``, ``AuthSVC``, ``FIDO2``, ``OAUTH``, ``OTP``, ``OIDC`` and ``SAML2_0``.'
             files: typing.List[str]
-            'List of files or directories to upload as JavaScript mapping rules. Path to files can be relative to the ``ISVA_CONFIG_BASE`` property or fully-qualified file paths.'
+            'List of files or directories to upload as JavaScript mapping rules. Path to files can be relative to the ``IVIA_CONFIG_BASE`` property or fully-qualified file paths.'
 
         mapping_rules: typing.List[Mapping_Rule]
         'List of mapping rule types/files to upload.'
