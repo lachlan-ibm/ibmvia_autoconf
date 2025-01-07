@@ -316,7 +316,7 @@ class FED_Configurator(object):
 
     def _mapping_rule_to_id(self, rule_name):
         '''
-        Helper method to convert rule name to Verify Access ID
+        Helper method to convert rule name to Verify Identity Access ID
         '''
         rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
         mapping_rule = optional_list(filter_list('name', rule_name, rules))[0]
@@ -451,7 +451,7 @@ class FED_Configurator(object):
 
     def _chain_index_to_prefix(self, template_name, chain_index):
         '''
-        Convert the given chain name and index to the Verify Access generated UUID prefix from
+        Convert the given chain name and index to the Verify Identity Access generated UUID prefix from
         the chain template
         '''
         templates = optional_list(self.fed.sts.list_templates().json)
