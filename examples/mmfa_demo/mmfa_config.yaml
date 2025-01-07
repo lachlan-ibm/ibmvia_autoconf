@@ -39,8 +39,8 @@ container:
       ssl: True
       db_name: !environment HVDB_DB
   activation: #Activation codes
-    webseal: !environment ISVA_BASE_CODE
-    access_control: !environment ISVA_AAC_CODE
+    webseal: !environment IVIA_BASE_CODE
+    access_control: !environment IVIA_AAC_CODE
   advanced_tuning_parameters:
   - name: "scim_demo_enabled"
     value: "true"
@@ -183,7 +183,7 @@ webseal:
         host: "mmfa-config"
         port: "9443"
         username: admin
-        password: !environment ISVA_MGMT_PASSWORD
+        password: !environment IVIA_MGMT_PASSWORD
       runtime:
         host: "mmfa-runtime"
         port: "9443"
@@ -292,7 +292,7 @@ webseal:
         host: "mmfa-config"
         port: "9443"
         username: admin
-        password: !environment ISVA_MGMT_PASSWORD
+        password: !environment IVIA_MGMT_PASSWORD
       runtime:
         host: "mmfa-runtime"
         port: "9443"

@@ -30,7 +30,7 @@ class AAC_Configurator(object):
 
     def _mapping_rule_to_id(self, rule_name):
         '''
-        Helper method to convert rule name to Verify Access ID
+        Helper method to convert rule name to Verify Identity Access ID
         '''
         rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
         mapping_rule = optional_list(filter_list('name', rule_name, rules))[0]
@@ -413,7 +413,7 @@ class AAC_Configurator(object):
 
         '''
         id: typing.Optional[int]
-        'The Verify Access assigned property id. Either the property ID or name must be defined.'
+        'The Verify Identity Access assigned property id. Either the property ID or name must be defined.'
         name: typing.Optional[str]
         'The name of the advanced configuration property. Either the property ID or name must be defined.'
         value: str
@@ -558,16 +558,16 @@ class AAC_Configurator(object):
                 group_dn: str
                 'The LDAP attribute that will be used to construct the group DN.'
 
-            class ISVAUserSchemaProperties(typing.TypedDict):
+            class IVIAUserSchemaProperties(typing.TypedDict):
                 '''
                 uri: ``urn:ietf:params:scim:schemas:extension:isam:1.0:User``
                 '''
                 ldap_connection: typing.Optional[str]
-                'The name of the ldap server connection to the Verify Access user registry. If a connection is not specified the SCIM application will not attempt to manage Verify Access users.'
+                'The name of the ldap server connection to the Verify Identity Access user registry. If a connection is not specified the SCIM application will not attempt to manage Verify Identity Access users.'
                 isam_domain: typing.Optional[str]
-                'The name of the Verify Access domain. This will default to ``Default``'
+                'The name of the Verify Identity Access domain. This will default to ``Default``'
                 update_native_users: typing.Optional[bool]
-                'Enable update of Verify Access specific attributes when LDAP standard attributes are updated.'
+                'Enable update of Verify Identity Access specific attributes when LDAP standard attributes are updated.'
                 connection_type: typing.Optional[str]
                 'Indicates the type of ldap server connection ``ldap`` or ``isamruntime``. Defaults to ``ldap``.'
                 attrs_dir: typing.Optional[str]
@@ -577,7 +577,7 @@ class AAC_Configurator(object):
 
             uri: str
             'Name of schema properties to modify. See ``.*SchemaProperties`` classes for the valid schema names.'
-            properties: typing.Union[ISVAUserSchemaProperties, GroupSchemaProperties, EnterpriseSchemaProperties, UserSchemaProperties]
+            properties: typing.Union[IVIAUserSchemaProperties, GroupSchemaProperties, EnterpriseSchemaProperties, UserSchemaProperties]
             'Schema unique properties to apply.'
 
         admin_group: str
@@ -914,15 +914,15 @@ class AAC_Configurator(object):
                 isamruntime
                 '''
                 bind_dn: str
-                'The distinguished name to use to bind to the Verify Access Runtime LDAP server.'
+                'The distinguished name to use to bind to the Verify Identity Access Runtime LDAP server.'
                 bind_pwd: str
-                'The password for bindDN to use when binding to the Verify Access Runtime LDAP server.'
+                'The password for bindDN to use when binding to the Verify Identity Access Runtime LDAP server.'
                 ssl: bool
                 'Controls whether SSL is used to establish the connection.'
                 ssl_truststore: typing.Optional[str]
                 'The key database to be used as an SSL truststore. This field is required when ``ssl`` is ``true``.'
                 ssl_key_label: typing.Optional[str]
-                'The name of the key which should be used during mutual authentication with the Verify Access runtime LDAP server.'
+                'The name of the key which should be used during mutual authentication with the Verify Identity Access runtime LDAP server.'
 
             class WebServiceConnection(typing.TypedDict):
                 '''

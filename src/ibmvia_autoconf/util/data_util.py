@@ -154,11 +154,11 @@ FILE_LOADER = FileLoader()
 if const.CONFIG_BASE_DIR in os.environ.keys():
     FILE_LOADER = FileLoader(os.environ.get(const.CONFIG_BASE_DIR))
 elif const.LEGACY_CONFIG_BASE_DIR in os.environ.keys():
-    _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd
-                     properties instead".format(const.LEGACY_CONFIG_BASE_DIR))
+    _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd "
+                     "properties instead".format(const.LEGACY_CONFIG_BASE_DIR))
     FILE_LOADER = FileLoader(os.environ.get(const.LEGACY_CONFIG_BASE_DIR))
 
-class ISVA_Kube_Client:
+class IVIA_Kube_Client:
     _client = None
     _caught = False
 
@@ -168,8 +168,8 @@ class ISVA_Kube_Client:
             if const.KUBERNETES_CONFIG in os.environ.keys():
                 kubernetes.config.load_kube_config(config_file=os.environ.get(const.KUBERNETES_CONFIG))
             elif const.LEGACY_KUBERNETES_CONFIG in os.environ.keys():
-                _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd
-                     properties instead".format(const.LEGACY_KUBERNETES_CONFIG))
+                _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd "
+                     "properties instead".format(const.LEGACY_KUBERNETES_CONFIG))
                 kubernetes.config.load_kube_config(config_file=os.environ.get(const.LEGACY_KUBERNETES_CONFIG))
             elif cls._caught == False:
                 try:
@@ -179,7 +179,7 @@ class ISVA_Kube_Client:
             cls._client = kubernetes.client
         return cls._client
 
-KUBE_CLIENT = ISVA_Kube_Client.get_client()
+KUBE_CLIENT = IVIA_Kube_Client.get_client()
 
 KUBE_CLIENT_SLEEP = 15
 try:

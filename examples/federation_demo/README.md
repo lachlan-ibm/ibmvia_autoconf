@@ -48,9 +48,9 @@ HVDB_DB=isva
 IDP_LDAP_HOST=openldap-idp
 SP_LDAP_HOST=openldap-sp
 LDAP_PORT=636
-ISVA_BASE_CODE=$WGA_CODE
-ISVA_AAC_CODE=$MGA_CODE
-ISVA_FED_CODE=$FED_CODE
+IVIA_BASE_CODE=$WGA_CODE
+IVIA_AAC_CODE=$MGA_CODE
+IVIA_FED_CODE=$FED_CODE
 LDAP_BIND_DN=cn=root,secAuthority=Default
 LDAP_BIND_PW=Passw0rd
 LDAP_SEC_PW=Passw0rd
@@ -58,10 +58,10 @@ FED_ANON_PASSWORD=Passw0rd
 TEST_PASSWORD=Passw0rd
 RUNTIME_USER=easuser
 RUNTIME_PASSWORD=passw0rd
-ISVA_CONFIG_BASE=/verify_access_config
-ISVA_MGMT_PASSWORD=admin
-ISVA_CONFIGURATOR_LOG_LEVEL=ALL
-ISVA_KUBERNETES_RESTART_SLEEP=60
+IVIA_CONFIG_BASE=/verify_access_config
+IVIA_MGMT_PASSWORD=admin
+IVIA_CONFIGURATOR_LOG_LEVEL=ALL
+IVIA_KUBERNETES_RESTART_SLEEP=60
 IDP_LIVE_DEMO_CONFIG="lmiHostAndPort=https://isva-idp-config:9443,lmiAdminId=admin,lmiAdminPwd=admin,acHostAndPort=https://isva-idp-runtime:9443,websealHostNameAndPort=https://www.myidp.ibm.com,acUuidCookieName=ac.uuid"
 SP_LIVE_DEMO_CONFIG="lmiHostAndPort=https://isva-sp-config:9443,lmiAdminId=admin,lmiAdminPwd=admin,acHostAndPort=https://isva-sp-runtime:9443,websealHostNameAndPort=https://www.mysp.ibm.com,acUuidCookieName=ac.uuid"
 EOF
@@ -166,7 +166,7 @@ _____________
 
 ```
 source fed.env
-ISVA_CONFIG_YAML=federation_idp.yaml ISVA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
+IVIA_CONFIG_YAML=federation_idp.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
 ```
 
 
@@ -175,7 +175,7 @@ ____________
 
 ```
 source fed.env
-ISVA_CONFIG_YAML=federation_sp.yaml ISVA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m ibmvia_autoconf;
+IVIA_CONFIG_YAML=federation_sp.yaml IVIA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m ibmvia_autoconf;
 ```
 
 Configure IDP partner
@@ -183,7 +183,7 @@ _____________________
 
 ```
 source fed.env
-ISVA_CONFIG_YAML=federation_idp_partner.yaml ISVA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
+IVIA_CONFIG_YAML=federation_idp_partner.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
 ```
 
 
@@ -211,11 +211,11 @@ spec:
         - "-c"
         - |
           echo "Starting SP Config"
-          ISVA_CONFIG_YAML=federation_idp.yaml ISVA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
+          IVIA_CONFIG_YAML=federation_idp.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
           echo "Starting SP Config" && sleep 10;
-          ISVA_CONFIG_YAML=federation_sp.yaml ISVA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m ibmvia_autoconf;
+          IVIA_CONFIG_YAML=federation_sp.yaml IVIA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m ibmvia_autoconf;
           echo "Starting IDP partner Config" && sleep 10;
-          ISVA_CONFIG_YAML=federation_idp_partner.yaml ISVA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
+          IVIA_CONFIG_YAML=federation_idp_partner.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
         envFrom:
         - secretRef:
             name: fed-env

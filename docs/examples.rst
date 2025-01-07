@@ -17,15 +17,15 @@ To run this configuration you should define the following properties, where the 
 
 .. code-block:: bash
 
-   export ISVA_CONFIG_BASE="current directory"
-   export ISVA_CONFIG_YAML=first_steps.yaml
-   export ISVA_MGMT_BASE_URL="https://192.168.42.101"
-   export ISVA_MGMT_USER=admin
-   export ISVA_MGMT_PWD=betterThanPassw0rd
-   export ISVA_MGMT_OLD_PWD=admin
-   export ISVA_BASE_CODE="webseal activation code"
-   export ISVA_AAC_CODE="access control activation code"
-   export ISVA_FED_CODE="federations activation code"
+   export IVIA_CONFIG_BASE="current directory"
+   export IVIA_CONFIG_YAML=first_steps.yaml
+   export IVIA_MGMT_BASE_URL="https://192.168.42.101"
+   export IVIA_MGMT_USER=admin
+   export IVIA_MGMT_PWD=betterThanPassw0rd
+   export IVIA_MGMT_OLD_PWD=admin
+   export IVIA_BASE_CODE="webseal activation code"
+   export IVIA_AAC_CODE="access control activation code"
+   export IVIA_FED_CODE="federations activation code"
    export LDAP_BIND_PASSWORD=betterThanPassw0rd
    export LDAP_SEC_PASSWORD=betterThanPassw0rd
 
@@ -52,14 +52,14 @@ To run this configuration you should define the following properties:
 
 .. code-block:: bash
 
-   export ISVA_CONFIG_YAML=appliance_first_steps.yaml
-   export ISVA_MGMT_BASE_URL="https://192.168.42.101"
-   export ISVA_MGMT_USER=admin
-   export ISVA_MGMT_PWD=betterThanPassw0rd
-   export ISVA_MGMT_OLD_PWD=admin
-   export ISVA_BASE_CODE="webseal activation code"
-   export ISVA_AAC_CODE="access control activation code"
-   export ISVA_FED_CODE="federations activation code"
+   export IVIA_CONFIG_YAML=appliance_first_steps.yaml
+   export IVIA_MGMT_BASE_URL="https://192.168.42.101"
+   export IVIA_MGMT_USER=admin
+   export IVIA_MGMT_PWD=betterThanPassw0rd
+   export IVIA_MGMT_OLD_PWD=admin
+   export IVIA_BASE_CODE="webseal activation code"
+   export IVIA_AAC_CODE="access control activation code"
+   export IVIA_FED_CODE="federations activation code"
    export LDAP_BIND_PASSWORD=betterThanPassw0rd
    export LDAP_SEC_PASSWORD=betterThanPassw0rd
 
@@ -92,14 +92,14 @@ To run this configuration you should define the following properties:
 
 .. code-block:: bash
 
-   export ISVA_CONFIG_YAML=golden_base_image.yaml
-   export ISVA_MGMT_BASE_URL="https://192.168.42.101"
-   export ISVA_MGMT_USER=admin
-   export ISVA_MGMT_PWD=betterThanPassw0rd
-   export ISVA_MGMT_OLD_PWD=admin
-   export ISVA_BASE_CODE="webseal activation code"
-   export ISVA_AAC_CODE="access control activation code"
-   export ISVA_FED_CODE="federations activation code"
+   export IVIA_CONFIG_YAML=golden_base_image.yaml
+   export IVIA_MGMT_BASE_URL="https://192.168.42.101"
+   export IVIA_MGMT_USER=admin
+   export IVIA_MGMT_PWD=betterThanPassw0rd
+   export IVIA_MGMT_OLD_PWD=admin
+   export IVIA_BASE_CODE="webseal activation code"
+   export IVIA_AAC_CODE="access control activation code"
+   export IVIA_FED_CODE="federations activation code"
 
 
 .. include:: ../examples/snapshot_pipeline/base_image.yaml
@@ -116,9 +116,9 @@ To run this configuration you should define the following properties:
 
 .. code-block:: bash
 
-   export ISVA_CONFIG_YAML=dev_env_image.yaml
-   export ISVA_MGMT_BASE_URL="https://192.168.42.101"
-   export ISVA_MGMT_PWD="apiKeyGoesHere"
+   export IVIA_CONFIG_YAML=dev_env_image.yaml
+   export IVIA_MGMT_BASE_URL="https://192.168.42.101"
+   export IVIA_MGMT_PWD="apiKeyGoesHere"
    export LDAP_PWD="Passw0rd"
    export RUNTIME_USER="easuser"
    export RUNTIME_PWD="passw0rd"
@@ -137,9 +137,9 @@ To run this configuration you should define the following properties:
 
 .. code-block:: bash
 
-   export ISVA_CONFIG_YAML=prod_env_image.yaml
-   export ISVA_MGMT_BASE_URL="https://192.168.42.101"
-   export ISVA_MGMT_PWD="apiKeyGoesHere"
+   export IVIA_CONFIG_YAML=prod_env_image.yaml
+   export IVIA_MGMT_BASE_URL="https://192.168.42.101"
+   export IVIA_MGMT_PWD="apiKeyGoesHere"
 
 
 .. include:: ../examples/snapshot_pipeline/prod_env_image.yaml

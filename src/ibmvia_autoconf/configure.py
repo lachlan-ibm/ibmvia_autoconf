@@ -23,7 +23,7 @@ from .util.constants import HEADERS, LOG_LEVEL
 logging.basicConfig(stream=sys.stdout, level=os.environ.get(LOG_LEVEL, logging.DEBUG))
 _logger = logging.getLogger(__name__)
 
-class ISVA_Configurator(object):
+class IVIA_Configurator(object):
     #Only restart containers if we import PKI or apply a license
     needsRestart = False
 
@@ -848,9 +848,9 @@ class ISVA_Configurator(object):
         '''
 
         extension: str
-        'The signed extension file to be installed on Verify Access.'
+        'The signed extension file to be installed on Verify Identity Access.'
         third_party_packages: typing.Optional[str]
-        'An optional list of third party packages to be uploaded to Verify Access as part of the installation process.'
+        'An optional list of third party packages to be uploaded to Verify Identity Access as part of the installation process.'
         properties: typing.Optional[dict]
         'Key-Value properties to give the extension during the installation process. This list of properties will vary with the type of extension being installed.'
 
@@ -1050,4 +1050,4 @@ class ISVA_Configurator(object):
             self.needsRestart = False
 
 if __name__ == "__main__":
-    ISVA_Configurator().configure()
+    IVIA_Configurator().configure()

@@ -16,9 +16,9 @@ Example
     admin_cfg:
       session_timeout: 720
     activation: #Module activation codes
-      webseal: !environment ISVA_BASE_CODE
-      access_control: !environment ISVA_AAC_CODE
-      federation: !environment ISVA_FED_CODE
+      webseal: !environment IVIA_BASE_CODE
+      access_control: !environment IVIA_AAC_CODE
+      federation: !environment IVIA_FED_CODE
     network:
       routes:
       - enabled: True
@@ -73,7 +73,7 @@ Verify Identity Access can be configured to FIPS compliance when required. FIPS 
 appliances and should be enabled before any other configuration options are applied.
 
 
-.. autoclass::  src.ibmvia_autoconf.configure.ISVA_Configurator.FIPS
+.. autoclass::  src.ibmvia_autoconf.configure.IVIA_Configurator.FIPS
    :members:
 
 
