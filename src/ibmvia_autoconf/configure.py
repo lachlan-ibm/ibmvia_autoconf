@@ -7,7 +7,7 @@ import os
 import logging
 import json
 import requests
-import pyisva
+import pyivia
 import time
 import typing
 
@@ -23,7 +23,7 @@ from .util.constants import HEADERS, LOG_LEVEL
 logging.basicConfig(stream=sys.stdout, level=os.environ.get(LOG_LEVEL, logging.DEBUG))
 _logger = logging.getLogger(__name__)
 
-class ISVA_Configurator(object):
+class IVIA_Configurator(object):
     #Only restart containers if we import PKI or apply a license
     needsRestart = False
 
@@ -58,7 +58,7 @@ class ISVA_Configurator(object):
             mgmt_pwd: 'S3cr37Pa55w0rd!'
             mgmt_old_pwd: 'administrator'
 
-        .. note:: These properties are overridden by ``ISVA_MGMT_*`` environment variables
+        .. note:: These properties are overridden by ``IVIA_MGMT_*`` environment variables
 
         '''
 
@@ -81,7 +81,6 @@ class ISVA_Configurator(object):
 
 
     def accept_eula(self):
-        payload = {"accepted": True}
         rsp = self.factory.get_system_settings().first_steps.set_sla_status()
         if rsp.success == True:
             _logger.info("Accepted SLA")
@@ -114,6 +113,11 @@ class ISVA_Configurator(object):
             fips_settings = self.factory.get_system_settings().fips.get_settings().json
             if fips_settings.get("fipsEnabled", False) == False:
                 response = self.factory.get_system_settings().fips.update_settings(**config.appliance.fips)
+                if response.success == True:
+                    _logger.info("Successfully enabled FIPS mode.")
+                else:
+                    _logger.error("Failed to enable FIPS mode using config:\n{}\n{}".format(
+                                                json.dumps(fips_settings, indent=4), response.data))
 
 
     def complete_setup(self):
@@ -163,10 +167,8 @@ class ISVA_Configurator(object):
 
         webseal: typing.Optional[str]
         'License code for the WebSEAL Reverse Proxy module.'
-
         access_control: typing.Optional[str]
         'License code for the Advanced Access Control module.'
-
         federation: typing.Optional[str]
         'License for the Federations module.'
 
@@ -246,10 +248,9 @@ class ISVA_Configurator(object):
 
         class Personal_Certificate(typing.TypedDict):
             path: str
-            'Path to file to import as a personal certificate'
-
+            'Path to file to import as a personal certificate.'
             secret: typing.Optional[str]
-            'Optional secret to decrypt personal certificate'
+            'Optional secret to decrypt personal certificate.'
 
         class Load_Certificate(typing.TypedDict):
             server: str
@@ -260,11 +261,11 @@ class ISVA_Configurator(object):
             'Name of retrieved X509 certificate alias in SSL database.'
 
         name: typing.Optional[str]
-        'Name of SSL database to configure. If database does not exist it will be created. Either `name` or `kdb_file` must be defined.'
+        'Name of SSL database to configure. If database does not exist it will be created. Either ``name`` or ``kdb_file`` must be defined.'
         kdb_file: typing.Optional[str]
         'Path to the .kdb file to import as a SSL database. Required if importing a SSL KDB.'
         stash_file: typing.Optional[str]
-        'Path to the .sth file for the specified `kdb_file`. Required if `kdb_file` is set.'
+        'Path to the .sth file for the specified ``kdb_file``. Required if ``kdb_file`` is set.'
         signer_certificates: typing.Optional[typing.List[str]]
         'List of file paths for signer certificates (PEM or DER) to import.'
         personal_certificates: typing.Optional[typing.List[Personal_Certificate]]
@@ -288,14 +289,14 @@ class ISVA_Configurator(object):
                             _logger.error("Failed to create {} SSL Certificate database".format(
                                 database.name))
                             continue
-                elif database.kdb_file != None: #Import the database
+                elif database.kdb_file != None and database.sth_file != None: #Import the database
                     kdb_f = optional_list(FILE_LOADER.read_file(database.kdb_file))[0]
                     sth_f = optional_list(FILE_LOADER.read_file(database.sth_file))[0]
                     rsp = ssl.import_database(kdb_file=kdb_f.get("path"), sth_file=sth_f.get("path"))
                     if rsp.success == True:
-                        _logger.info("Successfully imported a SSL KDB file")
+                        _logger.info("Successfully imported {} SSL KDB file".format(database.kdb_file))
                     else:
-                        _logger.error("Failed to import SSL KDB file:\n{}\n{}".format(
+                        _logger.error("Failed to import {} SSL KDB file:\n{}\n{}".format(database.kdb_file,
                                         json.dumps(database, indent=4), rsp.data))
                 else:
                     _logger.error("SSL Database config provided but cannot be identified: {}".format(
@@ -326,7 +327,7 @@ class ISVA_Configurator(object):
                      console_log_level: "AUDIT"
                      accept_client_certs: true
 
-        The complete list of properties that can be set by this key can be found at :ref:`pyisva:systemsettings#administrator-settings`
+        The complete list of properties that can be set by this key can be found in the `pyivia <https://lachlan-ibm.github.io/pyivia/systemsettings.html#pyivia.core.system.adminsettings.AdminSettings.update>`_ documentation.
         '''
         min_heap_size: typing.Optional[int]
         'The minimum heap size, in megabytes, for the JVM.'
@@ -476,14 +477,11 @@ class ISVA_Configurator(object):
         '''
         class Management_User(typing.TypedDict):
             operation: str
-            'Operation to perform with user. "add" | "update" | delete".'
-
+            'Operation to perform with user. ``add`` | ``update`` | ``delete``.'
             name: str
             'Name of the user to create, remove or update.'
-
             password: typing.Optional[str]
             'Password to authenticate as user. Required if creating user.'
-
             groups: typing.Optional[typing.List[str]]
             'Optional list of groups to add user to.'
 
@@ -494,16 +492,13 @@ class ISVA_Configurator(object):
             '''
             operation: str
             'Operation to perform with group. ``add`` | ``update`` | ``delete``.'
-
             id: str
             'Name of group to create.'
-
             users: typing.Optional[typing.List[str]]
             'Optional list of users to add to group.'
 
         users: typing.Optional[typing.List[Management_User]]
         'Optional list of management users to configure'
-
         groups: typing.Optional[typing.List[Management_Group]]
         'Optional list of management groups to configure.'
 
@@ -761,14 +756,16 @@ class ISVA_Configurator(object):
         'Value of the Advanced Tuning Parameter.'
         description: typing.Optional[str]
         'optional description of the Advanced Tuning Parameter.'
+        operation: str
+        'Operation which should be performed on advanced tuning parameter. Valid values include ``add`` | ``delete`` | ``update``.'
 
     def advanced_tuning_parameters(self, config):
         if config.advanced_tuning_parameters != None:
-            params = self.factory.get_system_settings().advance_tining.list_params().json
+            old_atps = optional_list(self.factory.get_system_settings().advance_tining.list_params().json)
             for atp in config.advanced_tuning_parameters:
                 if atp.operation == "delete":
                     uuid = None
-                    for p in params:
+                    for p in old_atps:
                         if p['key'] == atp.name:
                             uuid = p['uuid']
                             break
@@ -779,18 +776,18 @@ class ISVA_Configurator(object):
                         _logger.error("Failed to remove {} Advanced Tuning Parameter:\n{}".format(
                             atp.name, rsp.data))
                 elif atp.operation == "update":
-                    exits = False
-                    for p in params:
+                    exists = False
+                    for p in old_atps:
                         if p['key'] == atp.name:
                             exists = True
                             break
                     rsp = None
                     if exists == True:
                         rsp = self.factory.get_system_settings().advanced_tuning.update_parameter(
-                            key=atp.name, value=atp.value, comment=atp.comment)
+                            key=atp.name, value=atp.value, comment=atp.description)
                     else:
                         rsp = self.factory.get_system_settings().advanced_tuning.create_parameter(
-                            key=atp.name, value=atp.value, comment=atp.comment)
+                            key=atp.name, value=atp.value, comment=atp.description)
                     if rsp.success == True:
                         _logger.info("Successfully updated {} Advanced Tuning Parameter".format(atp.name))
                     else:
@@ -798,7 +795,7 @@ class ISVA_Configurator(object):
                             atp.name, json.dumps(atp, indent=4), rsp.data))
                 elif atp.operation == "add":
                     rsp = self.factory.get_system_settings().advanced_tuning.create_parameter(
-                        key=atp.name, value=atp.value, comment=atp.comment)
+                        key=atp.name, value=atp.value, comment=atp.description)
                     if rsp.success == True:
                         _logger.info("Successfully add {} Advanced Tuning Parameter".format(atp.name))
                     else:
@@ -851,9 +848,9 @@ class ISVA_Configurator(object):
         '''
 
         extension: str
-        'The signed extension file to be installed on Verify Access.'
+        'The signed extension file to be installed on Verify Identity Access.'
         third_party_packages: typing.Optional[str]
-        'An optional list of third party packages to be uploaded to Verify Access as part of the installation process.'
+        'An optional list of third party packages to be uploaded to Verify Identity Access as part of the installation process.'
         properties: typing.Optional[dict]
         'Key-Value properties to give the extension during the installation process. This list of properties will vary with the type of extension being installed.'
 
@@ -1026,14 +1023,14 @@ class ISVA_Configurator(object):
             sys.exit(1)
         _logger.info("LMI responding, begin configuration")
         if self.old_password(self.config):
-            self.factory = pyisva.Factory(mgmt_base_url(self.config), *old_creds(self.config))
+            self.factory = pyivia.Factory(mgmt_base_url(self.config), *old_creds(self.config))
             self.accept_eula()
             self.fips(self.config)
             self.complete_setup()
             self.set_admin_password(old_creds(self.config), creds(self.config))
-            self.factory = pyisva.Factory(mgmt_base_url(self.config), *creds(self.config))
+            self.factory = pyivia.Factory(mgmt_base_url(self.config), *creds(self.config))
         else:
-            self.factory = pyisva.Factory(mgmt_base_url(self.config), *creds(self.config))
+            self.factory = pyivia.Factory(mgmt_base_url(self.config), *creds(self.config))
             self.accept_eula()
             self.fips(self.config)
             self.complete_setup()
@@ -1053,5 +1050,4 @@ class ISVA_Configurator(object):
             self.needsRestart = False
 
 if __name__ == "__main__":
-    ISVA_Configurator(config_yaml(), 
-                      pyisva.Factory(mgmt_base_url(config_yaml(),), *creds(config_yaml()))).configure()
+    IVIA_Configurator().configure()

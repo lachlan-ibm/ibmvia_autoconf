@@ -2,9 +2,9 @@ appliance:
   admin_cfg:
     session_timeout: 720
   activation: #Activation codes
-    webseal: !environment ISVA_BASE_CODE
-    access_control: !environment ISVA_AAC_CODE
-    federation: !environment ISVA_FED_CODE
+    webseal: !environment IVIA_BASE_CODE
+    access_control: !environment IVIA_AAC_CODE
+    federation: !environment IVIA_FED_CODE
   network:
     routes:
     - enabled: True

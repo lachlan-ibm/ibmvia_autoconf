@@ -1,7 +1,7 @@
 Container Configuration
 ########################
 
-This module contains documentation for system level configuration applicable for Container based Verify Access
+This module contains documentation for system level configuration applicable for Container based Verify Identity Access
 deployments. Container configuration is defined under the ``container`` top level key. At a minimum an administrator
 should define the ``isva_base_url``, ``isva_admin_user`` and ``isva_admin_password`` keys (or define the applicable
 environment variables).
@@ -54,7 +54,7 @@ Example
 
 Container specific configuration
 ================================
-This section covers the Container specific configuration of Verify Access deployments. Typically this involves setting
+This section covers the Container specific configuration of Verify Identity Access deployments. Typically this involves setting
 an external HVDB connection; and enabling the management authorization feature to permit a service account to publish
 configuration snapshots which can be subsequently fetched by other containers in` the deployment.
 
@@ -69,7 +69,7 @@ Managing Container Deployments
 
 Kubernetes / OpenShift
 ----------------------
-If Verify Access is deployed with Kubernetes, then ``kubectl`` cli tool can be used to promote a configuration snapshot. There are
+If Verify Identity Access is deployed with Kubernetes, then ``kubectl`` cli tool can be used to promote a configuration snapshot. There are
 two ways to do this: One, use Kubernetes to restart the deployments; Two, use the automated service from the legacy
 "all-in-one" container. It is recommended to use Kubernetes to rollout restarts to deployments where possible.
 
@@ -95,7 +95,7 @@ of a deployment configuration is::
 
 Docker-Compose
 --------------
-If Verify Access is deployed with Docker-Compose, then ``docker-compose`` clit tool can be used to manage runtime
+If Verify Identity Access is deployed with Docker-Compose, then ``docker-compose`` clit tool can be used to manage runtime
 containers when a snapshot needs to be promoted. The configurator can use the compose service names to request a restart 
 of runtime containers. If this functionality is used then the user running the configurator should have sufficient 
 privilege to restart docker containers. 
@@ -114,7 +114,7 @@ Database Configuration
 ======================
 The database configuration for container deployments can be done using the :ref:`cluster-configuration` entry.
 
-.. autoclass:: src.verify_access_autoconf.container.Docker_Configurator.Cluster_Configuration
+.. autoclass:: src.ibmvia_autoconf.container.Docker_Configurator.Cluster_Configuration
 
 
 Global Configuration

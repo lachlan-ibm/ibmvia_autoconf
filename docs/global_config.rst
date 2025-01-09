@@ -1,6 +1,6 @@
 .. _global-config:
 
-The global configuration section documents configuration which is shared between the Access Control and Federation modules of Verify Access. This 
+The global configuration section documents configuration which is shared between the Access Control and Federation modules of Verify Identity Access. This 
 includes Advanced Configuration Properties, HTTP template pages, JavaScript mapping rules, Point of Contact profiles, Access Policies and Server Connections.
 
 
@@ -15,7 +15,7 @@ Access policies can be applied to the deployment types:
 * OpenID Connect and API Protection Definition
 
 
-.. autoclass:: src.verify_access_autoconf.federation.FED_Configurator.Access_Policies
+.. autoclass:: src.ibmvia_autoconf.federation.FED_Configurator.Access_Policies
     :members:
 
 
@@ -24,18 +24,18 @@ Attribute Sources
 Identity attribute sources for federated identities.
 
 
-.. autoclass:: src.verify_access_autoconf.federation.FED_Configurator.Attribute_Sources
+.. autoclass:: src.ibmvia_autoconf.federation.FED_Configurator.Attribute_Sources
     :members:
 
 
 Advanced Configuration Parameters
 =================================
 The Advanced Configuration Parameters entry is used to set module wide properties for authentication and authorization 
-components. The list of available properties is dependant on the target version of Verify Access being configured. Administrators
-are able to use the Verify Access assigned identifier or the name of the property.
+components. The list of available properties is dependant on the target version of Verify Identity Access being configured. Administrators
+are able to use the Verify Identity Access assigned identifier or the name of the property.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Advanced_Configuration
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Advanced_Configuration
    :members:
 
 
@@ -46,7 +46,7 @@ AAC and Federation templating engine. The directory structure of any directories
 top level directories. If you are defining a directory it should contain a trailing ``/``.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Template_Files
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Template_Files
    :members:
 
 
@@ -60,7 +60,7 @@ are typically used to implement custom business logic for a particular integrati
           the OIDC definition they are associated with.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Mapping_Rules
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Mapping_Rules
    :members:
 
 
@@ -69,7 +69,7 @@ Point Of Contact
 The point of contact profile is used to control how the runtime server communicates with the point of contact server (usually WebSEAL).
 
 
-.. autoclass:: src.verify_access_autoconf.federation.FED_Configurator.Point_Of_Contact_Profiles
+.. autoclass:: src.ibmvia_autoconf.federation.FED_Configurator.Point_Of_Contact_Profiles
    :members:
 
 
@@ -79,7 +79,7 @@ Server connections are used to connect to third party infrastructure such as LDA
 connections are used by other AAC components to provide authentication/authorization services.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Server_Connections
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Server_Connections
    :members:
 
 
@@ -90,5 +90,5 @@ the runtime server can respond to requests; setting server configuration paramet
 defining users in the runtime user registry.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Runtime_Configuration
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Runtime_Configuration
    :members:

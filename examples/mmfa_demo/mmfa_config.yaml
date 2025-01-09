@@ -15,20 +15,20 @@ container:
   ssl_certificates:
   - name: "wrp_trust_store"
     personal_certificates:
-    - p12_file: "mmfa.p12"
+    - p12_file: "www.mmfa.ibm.com.p12"
       name: mmfa-key
       password: !environment MMFAKEYP12_SECRET
     signer_certificates:
     - "ssl_certificates/"
   - name: "lmi_trust_store"
     signer_certificates:
-    - "postgresql.pem"
-    - "ldap.pem"
+    - "ssl_certificates/postgresql.pem"
+    - "ssl_certificates/ldap.pem"
   - name: "rt_profile_keys"
     signer_certificates:
-    - "postgresql.pem"
-    - "ldap.pem"
-    - "GeoTrustGlobalCA.pem"
+    - "ssl_certificates/postgresql.pem"
+    - "ssl_certificates/ldap.pem"
+    - "ssl_certificates/GeoTrustGlobalCA.pem"
   cluster:
     runtime_database:
       host: !environment HVDB_HOST
@@ -39,8 +39,8 @@ container:
       ssl: True
       db_name: !environment HVDB_DB
   activation: #Activation codes
-    webseal: !environment ISVA_BASE_CODE
-    access_control: !environment ISVA_AAC_CODE
+    webseal: !environment IVIA_BASE_CODE
+    access_control: !environment IVIA_AAC_CODE
   advanced_tuning_parameters:
   - name: "scim_demo_enabled"
     value: "true"
@@ -80,7 +80,6 @@ container:
       ssl: True
       key_file: "rt_profile_keys"
   template_files:
-  - "authenticator_client_metadata.zip"
   - "template_files.zip"
   mapping_rules:
     type: "InfoMap"
@@ -153,6 +152,7 @@ webseal:
         - "/mga/websock/mmfa-wss"
     - host: "mmfa-wrp-browser"
       instance: "mobile"
+      acls:
       - name: "isam_mobile_rest"
         junctions:
         - "/scim"
@@ -183,7 +183,7 @@ webseal:
         host: "mmfa-config"
         port: "9443"
         username: admin
-        password: !environment ISVA_MGMT_PASSWORD
+        password: !environment IVIA_MGMT_PASSWORD
       runtime:
         host: "mmfa-runtime"
         port: "9443"
@@ -292,7 +292,7 @@ webseal:
         host: "mmfa-config"
         port: "9443"
         username: admin
-        password: !environment ISVA_MGMT_PASSWORD
+        password: !environment IVIA_MGMT_PASSWORD
       runtime:
         host: "mmfa-runtime"
         port: "9443"

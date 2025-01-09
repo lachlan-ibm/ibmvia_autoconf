@@ -53,7 +53,7 @@ OIDC API protection configuration for definitions and clients. This is capable o
 defintions and clients.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.API_Protection
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.API_Protection
    :members:
 
 
@@ -73,7 +73,7 @@ risk-based access or context-based access policies to conditionally enforce addi
 requirements.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Authentication
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Authentication
    :members:
 
 
@@ -81,12 +81,12 @@ requirements.
 
 Context Based Access Control
 ============================
-This section covers the configuration of the Context Based Access policy engine of a Verify Access deployment. 
+This section covers the configuration of the Context Based Access policy engine of a Verify Identity Access deployment. 
 Context based access policies are capable of defining conditional authentication requirements based on administrator
 defined requirements (such as device registration status, ip reputation, authentication method enrollment for a user).
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Access_Control
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Access_Control
    :members:
 
 
@@ -98,7 +98,7 @@ address of an incoming request to identify the location (continent, country, reg
 is coming from, and conditionally enforcing addition authentication requirements for more "risky" requests.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Risk_Profiles
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Risk_Profiles
    :members:
 
 
@@ -108,7 +108,7 @@ Attributes allow an administrator to source information about a user from a numb
 to build up credential attributes, which can then be used by subsequent authentication/authorization flows.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Attributes
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Attributes
    :members:
 
 
@@ -118,7 +118,7 @@ Obligations are used to enforce business requirements (such as registering a dev
 flow before permitting access.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Obligations
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Obligations
    :members:
 
 
@@ -135,7 +135,7 @@ Policy Information Points allow administrators to integrate third party informat
 context to an authorization policy before making a decision to permit/deny access.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Policy_Information_Points
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Policy_Information_Points
    :members:
 
 
@@ -164,7 +164,7 @@ Push Notification Service
 This configuration option can be used to integrate with Apple/Google mobile push notification service.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Push_Notification_Provider
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Push_Notification_Provider
    :members:
 
 
@@ -174,7 +174,7 @@ Configure MMFA capabilities. These properties are used as a discovery mechanism 
 registered for a user; and is capable of initiating or completing an "out of band" authentication/authorization challenge.
 
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Mobile_Multi_Factor_Authentication
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Mobile_Multi_Factor_Authentication
    :members:
 
 
@@ -196,11 +196,11 @@ To set Advanced Configuration Properties, see the entry in the `Appliance <appli
 
 SCIM
 ====
-This configuration property is used to configure Verify Access to integrate with either a LDAP server or a Verify Access User 
+This configuration property is used to configure Verify Identity Access to integrate with either a LDAP server or a Verify Identity Access User 
 Registry (WebSEAL runtime component) using the System for Cross-Domain Identity Management interfaces. This allows 
-administrators to create/manage users, as well as provide attributes to other Verify Access authentication components.
+administrators to create/manage users, as well as provide attributes to other Verify Identity Access authentication components.
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.System_CrossDomain_Identity_Management
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.System_CrossDomain_Identity_Management
    :members:
 
 
@@ -209,7 +209,7 @@ FIDO2
 The FIDO2 configuration property is used to create and manage FIDO2 relying parties and their associated verification
 documents (metadata) as well as any custom logic applied in a JavaScript mediator.
 
-.. autoclass:: src.verify_access_autoconf.access_control.AAC_Configurator.Fast_Identity_Online2
+.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Fast_Identity_Online2
    :members:
 
 
