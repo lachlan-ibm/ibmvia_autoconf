@@ -1,4 +1,4 @@
-### ISVA IDP Config ###
+### IVIA IDP Config ###
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -65,7 +65,7 @@ spec:
     app: isva-idp-config
   type: NodePort
 ---
-### ISVA IDP WRP ###
+### IVIA IDP WRP ###
 apiVersion: ibm.com/v1
 kind: IBMSecurityVerifyAccess
 metadata:
@@ -97,7 +97,7 @@ spec:
     app: isva-idp-webseal
   type: NodePort
 ---
-### ISVA IDP Runtime ###
+### IVIA IDP Runtime ###
 apiVersion: ibm.com/v1
 kind: IBMSecurityVerifyAccess
 metadata:
@@ -128,7 +128,7 @@ spec:
     app: isva-idp-runtime
   type: ClusterIP
 ---
-### ISVA SP Config ###
+### IVIA SP Config ###
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -197,7 +197,7 @@ spec:
     app: isva-sp-config
   type: ClusterIP
 ---
-### ISVA SP WRP ###
+### IVIA SP WRP ###
 apiVersion: ibm.com/v1
 kind: IBMSecurityVerifyAccess
 metadata:
@@ -229,7 +229,7 @@ spec:
     app: isva-sp-webseal
   type: NodePort
 ---
-### ISVA SP Runtime ###
+### IVIA SP Runtime ###
 apiVersion: ibm.com/v1
 kind: IBMSecurityVerifyAccess
 metadata:

@@ -6,6 +6,7 @@ html
 *.egg-info
 dist
 build
+pyenv
 *.key
 *.pem
 *.p12

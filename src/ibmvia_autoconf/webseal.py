@@ -428,7 +428,7 @@ class WEB_Configurator(object):
             proxy_port: str
             'The TCP port of the proxy server.'
             remote_http_header: typing.List[str]
-            'Controls the insertion of Security Verify Access specific client identity information in HTTP headers across the junction.'
+            'Controls the insertion of Security Verify Identity Access specific client identity information in HTTP headers across the junction.'
 
         class Endpoint(typing.TypedDict):
             enabled: bool
@@ -449,15 +449,15 @@ class WEB_Configurator(object):
         name: str
         'Name of the reverse proxy instance.'
         host: str
-        'The host name that is used by the Security Verify Access policy server to contact the appliance.'
+        'The host name that is used by the Security Verify Identity Access policy server to contact the appliance.'
         nw_interface_yn: typing.Optional[str]
         'Specifies whether to use a logical network interface for the instance. Only valid for appliance deployments. ``yes`` | ``no``.'
         ip_address: typing.Optional[str]
         'The IP address for the logical interface. Only valid for appliance deployments where ``nw_interface_yn`` is ``yes``. ``yes`` | ``no``.'
         listening_port: int
-        'This is the listening port through which the instance communicates with the Security Verify Access policy server.'
+        'This is the listening port through which the instance communicates with the Security Verify Identity Access policy server.'
         domain: str
-        'The Security Verify Access domain.'
+        'The Security Verify Identity Access domain.'
         ldap: LDAP
         'LDAP policy server properties.'
         http: Endpoint
@@ -638,9 +638,9 @@ class WEB_Configurator(object):
 
         class ISAM(typing.TypedDict):
             host: str
-            'Hostname or address of Verify Access policy server.'
+            'Hostname or address of Verify Identity Access policy server.'
             port: int
-            'Port that Verify Access policy server is listening on.'
+            'Port that Verify Identity Access policy server is listening on.'
 
         class Stanza_Configuration(typing.TypedDict):
             operation: str
@@ -661,7 +661,7 @@ class WEB_Configurator(object):
         clean_ldap: bool
         'Remove any existing user data from registry. Only valid if ``user_registry`` is ``local``.'
         isam_domain: str
-        'The Security Verify Access domain name.'
+        'The Security Verify Identity Access domain name.'
         admin_password: str
         'The password for the ``sec_master`` user.'
         admin_cert_lifetime: int
@@ -671,7 +671,7 @@ class WEB_Configurator(object):
         ldap: LDAP
         'LDAP server properties.'
         isam: typing.Optional[ISAM]
-        'Verify Access policy server properties.'
+        'Verify Identity Access policy server properties.'
         stanza_configuration: typing.Optional[typing.List[Stanza_Configuration]]
         'Optional list of modifications to configuration files.'
         override_config: typing.Optional[bool]
@@ -1028,9 +1028,9 @@ class WEB_Configurator(object):
             'List of attributes to add to junction object.'
 
         users: typing.Optional[typing.List[User]]
-        'List of users to add to the User Registry. These will be created as "full" Verify Access users.'
+        'List of users to add to the User Registry. These will be created as "full" Verify Identity Access users.'
         groups: typing.Optional[typing.List[Group]]
-        'List of groups to add to the User Registry. These will be created as "full" Verify Access groups.'
+        'List of groups to add to the User Registry. These will be created as "full" Verify Identity Access groups.'
         acls: typing.Optional[typing.List[Access_Control_List]]
         'List of ACL\'s to create in the Policy Server.'
         pops: typing.Optional[typing.List[Protected_Object_Policy]]
@@ -1705,9 +1705,9 @@ class WEB_Configurator(object):
             oauth_introspection_token_type_hint: typing.Optional[str]
             'A hint about the type of the token submitted for introspection.'
             oauth_introspection_mapped_id: typing.Optional[str]
-            'A formatted string which is used to construct the Verify Access principal name from elements of the introspection response. Claims can be added to the identity string, surrounded by ``{}``.'
+            'A formatted string which is used to construct the Verify Identity Access principal name from elements of the introspection response. Claims can be added to the identity string, surrounded by ``{}``.'
             oauth_introspection_external_user: typing.Optional[str]
-            'A boolean which is used to indicate whether the mapped identity should correspond to a known Verify Access identity or not.'
+            'A boolean which is used to indicate whether the mapped identity should correspond to a known Verify Identity Access identity or not.'
             oauth_introspection_response_attributes: typing.List[Attribute]
             'A list of rules indicating which parts of the json response should be added to the credential.'
             static_response_headers: typing.List[Response_Header]
@@ -1727,7 +1727,7 @@ class WEB_Configurator(object):
             tfim_sso: str
             'Enables IBM Security Federated Identity Manager single sign-on (SSO) for the junction. Valid value is ``yes`` or ``no``.'
             remote_http_header: typing.Optional[typing.List[str]]
-            'Controls the insertion of Security Verify Access specific client identity information in HTTP headers across the junction. The value is an array containing a combination of ``iv-user``, ``iv-user-l``, ``iv-groups``, ``iv-creds`` or ``all``.'
+            'Controls the insertion of Security Verify Identity Access specific client identity information in HTTP headers across the junction. The value is an array containing a combination of ``iv-user``, ``iv-user-l``, ``iv-groups``, ``iv-creds`` or ``all``.'
             http2_junction: typing.Optional[str]
             'Specifies whether the junction supports the HTTP/2 protocol. By default, junctions do not support the HTTP/2 protocol. A valid value is ``yes`` or ``no``.'
             http2_proxy: typing.Optional[str]
@@ -1812,13 +1812,13 @@ class WEB_Configurator(object):
             auth_port: int
             'The port on which authorization requests will be received.'
             admin_port: int
-            'The port on which Security Verify Access administration requests will be received.'
+            'The port on which Security Verify Identity Access administration requests will be received.'
             domain: str
-            'The Security Verify Access domain.'
+            'The Security Verify Identity Access domain.'
             addresses: typing.Optional[typing.List[str]]
             'A json array containing a list of local addresses on which the authorization server will listen for requests.'
             ssl: str
-            'Whether or not to enable SSL between the Security Verify Access authorization server and the LDAP server.'
+            'Whether or not to enable SSL between the Security Verify Identity Access authorization server and the LDAP server.'
             ssl_port: str
             'The SSL port on which the LDAP server will be contacted. Only valid if ``ssl`` set to ``yes``.'
             key_file: str

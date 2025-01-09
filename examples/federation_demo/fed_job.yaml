@@ -6,7 +6,7 @@ spec:
   template:
     spec:
       containers:
-      - name: verify-access-configurator
+      - name: verify-identity-access-configurator
         image: autoconf:latest
         imagePullPolicy: Never
         volumeMounts:
@@ -17,11 +17,11 @@ spec:
         - "-c"
         - |
           echo "Starting SP Config"
-          ISVA_CONFIG_YAML=federation_idp.yaml ISVA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m verify_access_autoconf;
+          IVIA_CONFIG_YAML=federation_idp.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
           echo "Starting SP Config" && sleep 10;
-          ISVA_CONFIG_YAML=federation_sp.yaml ISVA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m verify_access_autoconf;
+          IVIA_CONFIG_YAML=federation_sp.yaml IVIA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m ibmvia_autoconf;
           echo "Starting IDP partner Config" && sleep 10;
-          ISVA_CONFIG_YAML=federation_idp_partner.yaml ISVA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m verify_access_autoconf;
+          IVIA_CONFIG_YAML=federation_idp_partner.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
         envFrom:
         - secretRef:
             name: fed-env
