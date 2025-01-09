@@ -1423,6 +1423,7 @@ class FED_Configurator(object):
         class Federation(typing.TypedDict):
 
             class Webseal(typing.TypedDict):
+
                 reuse_acls: bool
                 'A flag to indicate that any existing ACLs with the same name should be reused. If they are not reused, they will be replaced.'
                 reuse_certs: bool
