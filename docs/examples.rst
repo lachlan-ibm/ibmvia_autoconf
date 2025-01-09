@@ -307,3 +307,29 @@ _____________
   * IdP initiated SSO
   
   * SP initiated SSO
+
+
+.. _example_idp_yaml:
+
+IdP Configuration:
+__________________
+
+.. include:: ../examples/federation_demo/federation_idp.yaml
+   :literal:
+
+.. _example_sp_yaml:
+
+SP Configuration:
+_________________
+
+.. include:: ../examples/federation_demo/federation_sp.yaml
+   :literal:
+
+.. _example_idp_partner_yaml:
+
+IdP Partner Configuration:
+__________________________
+
+.. include:: ../examples/federation_demo/federation_idp_partner.yaml
+   :literal:
+
