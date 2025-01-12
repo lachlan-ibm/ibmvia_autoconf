@@ -3,6 +3,6 @@
 @copyright: IBM
 """
 
-from verify_access_autoconf import configurator
+from ibmvia_autoconf import configurator
 
 configurator.configure()

@@ -1,6 +1,6 @@
 WebSEAL Reverse Proxy Configuration
 ###################################
-This section covers the WebSEAL configuration of a Verify Access deployment. This includes configuring the reverse proxy
+This section covers the WebSEAL configuration of a Verify Identity Access deployment. This includes configuring the reverse proxy
 policy server and user registry.
 
 Administrators can also use this section to cover WebSEAL specific functionality such as HTTP transformation rules, 
@@ -91,11 +91,11 @@ Runtime Configuration Wizards
 _____________________________
 Every WebSEAL instance can optional provide more advanced authentication and authorization logic by integrating 
 the Advanced Access Control runtime server as an External Authentication Interface (EAI). To simplify this configuration,
-a number of wizards are available for :ref:`Access Control<>access-control.rst#Context Based Access Control`,
- :ref:`Federations<federations.rst#Federations>` and :ref:`Mobile Multi-Factor Authentication<access-control.rst#Mobile Multi-Factor Authentication>`
+a number of wizards are available for :ref:`Access Control<>access-control.rst#Context Based Access Control`, :ref:`Federations<federations.rst#Federations>` 
+and :ref:`Mobile Multi-Factor Authentication<access-control.rst#Mobile Multi-Factor Authentication>`
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.Reverse_Proxy
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Reverse_Proxy
    :members:
 
 
@@ -108,7 +108,7 @@ used to: create Access Control Lists (ACL's); create Protected Object Policies (
 as attaching ACL's or POP's to a reverse proxy instance's object space.
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.PD_Admin
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.PD_Admin
    :members:
 
 
@@ -119,11 +119,11 @@ Client certificate mapping
 Client certificate mapping can be used by a reverse proxy to map X500 Name attribute from a client certificate (part of 
 a mutual TLS connection) to authenticate a user as an identity from the User Registry. These mapping rules are written 
 in XSLT. A rule is read from a file and uploaded to an appliance, where the resulting rule name is the filename minus the 
-XSLT extension. A complete list of the available configuration properties can be found `here <https://ibm-security.github.io/pyisva>`_. 
+XSLT extension. A complete list of the available configuration properties can be found `here <https://lachlan-ibm.github.io/pyivia>`_. 
 An example configuration is:
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.Client_Certificate_Mapping
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Client_Certificate_Mapping
    :members:
 
 
@@ -133,11 +133,11 @@ Junction Mapping
 ================
 A Junction mapping table maps specific target resources to junction names. Junction mapping is an alternative to 
 cookie-based solutions for filtering dynamically generated server-relative URLs. A rule is read from a file and uploaded 
-to a Verify Access deployment. The name of the file which contains the junction mapping config is the resulting rule name
-in Verify Access. An example configuration is:
+to a Verify Identity Access deployment. The name of the file which contains the junction mapping config is the resulting rule name
+in Verify Identity Access. An example configuration is:
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.Junction_Mapping
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Junction_Mapping
    :members:
 
 
@@ -150,7 +150,7 @@ generated URLs, such as URLs with query string parameters. URLs can be matched u
 matching (including wildcards). A complete list of supported regex can be found `here <https://www.ibm.com/docs/en/sva/latest?topic=configuration-supported-wildcard-pattern-matching-characters#ref_wildcard_sup>`_
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.Url_Mapping
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Url_Mapping
    :members:
 
 
@@ -159,12 +159,12 @@ matching (including wildcards). A complete list of supported regex can be found 
 User Mapping
 ============
 User mapping can be used to modify or enrich an authenticated user's credential data. This can be used to both switch the 
-identity of a user or add attributes to a user's existing credential. User mapping rules are added to a Verify Access 
+identity of a user or add attributes to a user's existing credential. User mapping rules are added to a Verify Identity Access 
 deployment using XLST rules. Detailed information about user mapping XSLT configuration can be found `here <https://www.ibm.com/docs/en/sva/latest?topic=methods-authenticated-user-mapping>`_. 
 The name of the XSLT file will be used as the name of the user mapping rule.
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.User_Mapping
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.User_Mapping
    :members:
 
 
@@ -176,10 +176,10 @@ The FSSO (forms single sing-on) module can be used by WebSEAL to authenticate a 
 The module is capable of intercepting authentication requests from an application server, and then supplying the required 
 identity information (retrieved from either the WebSEAl user registry or a HTTP service) to the application server to complete 
 the authentication challenge. More detailed information about FSSO concepts can be found `here <https://www.ibm.com/docs/en/sva/latest?topic=solutions-forms-single-sign-concepts>`_. 
-The name of the FSSO configuration file will be used as the name of the resulting FSSO configuration in Verify Access.
+The name of the FSSO configuration file will be used as the name of the resulting FSSO configuration in Verify Identity Access.
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.Form_Single_Sign_On
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Form_Single_Sign_On
    :members:
 
 
@@ -192,10 +192,10 @@ reverse proxy. HTTP transforms can be applied: when the request is received (by 
 made; and when the response is received (by WebSEAL). Prior to Verify Access 10.0.4.0 only XSLT rules were supported, 
 from 10.0.4.0 onwards, LUA scripts can also be used to write HTTP transforms. Detailed information about HTTP 
 transformation concepts can be found `here <https://www.ibm.com/docs/en/sva/latest?topic=junctions-http-transformations>`_. 
-The name of the HTTP transform file will be used as the name of the resulting HTTP transformation rule in Verify Access. 
+The name of the HTTP transform file will be used as the name of the resulting HTTP transformation rule in Verify Identity Access. 
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.Http_Transformations
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Http_Transformations
    :members:
 
 
@@ -209,7 +209,7 @@ can be used to configure Kerberos Realms, Local Domain Realms, Certificate Autho
 configuration is:
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.Kerberos
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Kerberos
    :members:
 
 
@@ -217,13 +217,13 @@ configuration is:
 
 Password Strength Rules
 =======================
-The password strength  module can be used to enforce XLST defined password requirements for basic and full Verify Access 
+The password strength  module can be used to enforce XLST defined password requirements for basic and full Verify Identity Access 
 users. More detailed information about rule syntax can be found `here <https://www.ibm.com/docs/en/sva/latest?topic=methods-password-strength>`_. 
 Rules are uploaded to a deployment from files, the name of the file is used as the resulting password strength rule in 
-Verify Access. An example configuration is:
+Verify Identity Access. An example configuration is:
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.Password_Strength
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Password_Strength
 
 
 .. _webseal_rsa_config:
@@ -236,7 +236,7 @@ with WebSEAL login can be found `here <https://www.ibm.com/docs/en/sva/latest?to
 example configuration is:
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.RSA
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.RSA
    :members:
 
 .. _webseal_runtime_server:
@@ -247,14 +247,14 @@ The WebSEAL runtime server is the Directory Server which contains the reverse pr
 This is typically a LDAP server external to the deployment, however an example LDAP server is made available to 
 deployments for testing.
 
-The Verify Access specific LDAP schemas can be found in the System -> File Downloads section of an appliance/configuration
+The Verify Identity Access specific LDAP schemas can be found in the System -> File Downloads section of an appliance/configuration
 container in the ``isva`` directory.
 
 Any PKI required to verify this connection should be imported into a SSL database before the runtime component is 
 configured.
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.Runtime
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Runtime
    :members:
 
 
@@ -267,7 +267,7 @@ Resource Sharing (CORS) policies.
 Authorization Server
 ____________________
 Authorization servers are the points of contact for external traffic to access protected resource servers. Each server 
-has its own object space in the Verify Access policy server.
+has its own object space in the Verify Identity Access policy server.
 
 Resource Servers
 ________________
@@ -285,5 +285,5 @@ The CORS properties can be used to configure the URI's which are permitted to ma
 well as the types of resources which are permitted to be shared.
 
 
-.. autoclass:: src.verify_access_autoconf.webseal.WEB_Configurator.Api_Access_Control
+.. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Api_Access_Control
    :members:

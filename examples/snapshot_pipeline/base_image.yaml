@@ -1,10 +1,7 @@
 container:
-  compose_services:
-    - "isvawrprp1"
+  deployments:
+    - "isvawrp"
     - "isvaruntime"
-  docker_compose_yaml: "iamlab/docker-compose.yaml"
-  admin_cfg:
-    session_timeout: 720
   account_management:
     users:
     - name: "cfgsvc"
@@ -21,14 +18,22 @@ container:
       features:
       - name: "shared_volume"
         access: "w"
+  management_authentication:
+    auth_type: "federation"
+    oidc:
+      client_id: !environment OIDC_CLIENT_ID
+      client_secret: !environment OIDC_CLIENT_SECRET
+      discovery_endpoint: !environment OIDC_WELL_KNOWN
+      enable_pkce: true
   ssl_certificates:
   - name: "lmi_trust_store"
     signer_certificates:
-    - "pki/postgresql/postgres.crt"
-    - "pki/openldap/ca.crt"
+    - "pki/base/postgresql/postgres.crt"
+    - "pki/base/openldap/ca.crt"
+    - "pki/base/verify.crt"
   - name: "rt_profile_keys"
     signer_certificates:
-    - "pki/postgresql/postgres.crt"
+    - "pki/base/postgresql/postgres.crt"
   cluster:
     runtime_database:
       host: "postgresql"
@@ -42,19 +47,3 @@ container:
     webseal: !environment IVIA_BASE_CODE
     access_control: !environment IVIA_AAC_CODE
     federation: !environment IVIA_FED_CODE
-webseal:
-  runtime:
-    policy_server: "ldap"
-    user_registry: "ldap"
-    ldap:
-      host: "openldap"
-      port: 636
-      dn: "cn=root,secAuthority=Default"
-      dn_password: "Passw0rd"
-      key_file: "lmi_trust_store"
-    clean_ldap: True
-    domain: "Default"
-    admin_user: "sec_master"
-    admin_password: "Passw0rd"
-    admin_cert_lifetime: 1460
-    ssl_compliance: "fips"

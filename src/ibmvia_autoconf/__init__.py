@@ -1,7 +1,7 @@
 """
 @copyright: IBM
 """
-from .configure import ISVA_Configurator as Configurator
+from .configure import IVIA_Configurator as Configurator
 from .appliance import Appliance_Configurator
 from .container import Docker_Configurator
 from .access_control import AAC_Configurator

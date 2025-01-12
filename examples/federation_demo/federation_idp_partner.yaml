@@ -1,0 +1,6 @@
+federation:
+  federations:
+  - name: "saml20idp"
+    import_partners:
+    - name: "sp_partner"
+      metadata: "spmetadata.xml"

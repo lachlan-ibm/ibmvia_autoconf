@@ -1,0 +1,567 @@
+container:
+  admin_cfg:
+    session_timeout: 720
+  management_authorization:
+    authorization_enforcement: True
+    roles:
+    - operation: "update"
+      name: "Configuration Service"
+      users:
+      - name: "cfgsvc"
+        type: "local"
+      features:
+      - name: "shared_volume"
+        access: "w"
+  ssl_certificates:
+  - name: "wrp_trust_store"
+    personal_certificates:
+    - p12_file: "www.mmfa.ibm.com.p12"
+      name: mmfa-key
+      password: !environment MMFAKEYP12_SECRET
+    signer_certificates:
+    - "ssl_certificates/"
+  - name: "lmi_trust_store"
+    signer_certificates:
+    - "ssl_certificates/postgresql.pem"
+    - "ssl_certificates/ldap.pem"
+  - name: "rt_profile_keys"
+    signer_certificates:
+    - "ssl_certificates/postgresql.pem"
+    - "ssl_certificates/ldap.pem"
+    - "ssl_certificates/GeoTrustGlobalCA.pem"
+  cluster:
+    runtime_database:
+      host: !environment HVDB_HOST
+      port: !environment HVDB_PORT
+      type: "postgresql"
+      user: !environment HVDB_USER
+      password: !environment HVDB_PW
+      ssl: True
+      db_name: !environment HVDB_DB
+  activation: #Activation codes
+    webseal: !environment IVIA_BASE_CODE
+    access_control: !environment IVIA_AAC_CODE
+  advanced_tuning_parameters:
+  - name: "scim_demo_enabled"
+    value: "true"
+  advanced_configuration:
+  - name: "mmfa.devicePrompt.skipIfOneDevice"
+    value: "true"
+  - name: "live.demos.enabled"
+    value: "true"
+  - name: "live.demos.settings"
+    value: !environment LIVE_DEMO_CONFIG
+  - name: "riskEngine.reportsEnabled"
+    value: "true"
+  - name: "attributeCollection.enableGetAttributes"
+    value: "true"
+  - name: "attributeCollection.cookieName"
+    value: "ac.uuid"
+  - name: "attributeCollection.serviceLocation"
+    value: "/mga"
+  - name: "attributeCollection.authenticationContextAttributes"
+    value: "resource,action,ac.uuid,header:userAgent,transferAmount"
+  server_connections:
+  - name: "wrp_runtime"
+    description: "Connection to LDAP user registry"
+    type: "isamruntime"
+    properties:
+      bind_dn: !environment LDAP_BIND_DN
+      bind_pwd: !environment LDAP_BIND_PW
+      ssl: True
+      ssl_truststore: "lmi_trust_store"
+  - name: "localscim"
+    description: "Local SCIM Server"
+    type: "ws"
+    properties:
+      url: "https://mmfa-runtime:9443/scim"
+      user: !environment RUNTIME_USER
+      password: !environment RUNTIME_PASSWORD
+      ssl: True
+      key_file: "rt_profile_keys"
+  template_files:
+  - "template_files.zip"
+  mapping_rules:
+    type: "InfoMap"
+    files:
+    - "mapping_rules/"
+webseal:
+  runtime:    
+    policy_server: "ldap"
+    user_registry: "ldap"
+    ldap:
+      host: !environment LDAP_HOST
+      port: !environment LDAP_PORT
+      dn: !environment LDAP_BIND_DN
+      dn_password: !environment LDAP_BIND_PW
+      key_file: "lmi_trust_store"
+    clean_ldap: True
+    domain: "Default"
+    admin_user: "sec_master"
+    admin_password: !environment LDAP_SEC_PW
+    admin_cert_lifetime: 1460
+    ssl_compliance: "fips"
+  pdadmin:
+    pops:
+    - name: "level1pop"
+      description: "Level 1 POP"
+      ip_auth:
+        anyother: "1"
+    - name: "level0pop"
+      description: "Level 0 POP"
+    users:
+    - username: "scimadmin"
+      dn: "cn=scimadmin,dc=ibm,dc=com"
+      password: !environment TEST_PASSWORD
+    - username: "testuser"
+      dn: "cn=testuser,dc=ibm,dc=com"
+      password: !environment TEST_PASSWORD
+    groups:
+    - name: "adminGroup"
+      dn: "cn=adminGroup,dc=ibm,dc=com"
+      description: "adminGroup"
+      users:
+      - "scimAdmin"
+    reverse_proxies:
+    - host: "mmfa-wrp-browser"
+      instance: "default"
+      acls:
+      - name: "isam_mobile_anyauth"
+        junctions:
+        - "/app/mobile-demo"
+      - name: "isam_mobile_unauth"
+        junctions:
+        - "/app/mobile-demo/theme"
+        - "/app/mobile-demo/oauth/oauth2Client.jsp"
+      - name: "isam_mobile_rest"
+        junctions:
+        - "/scim"
+      - name: "isam_mobile_rest_unauth"
+        junctions:
+        - "/mga/websock/mmfa-wss"
+      pops:
+      - name: "level1pop"
+        junctions:
+        - ""
+      - name: "level0pop"
+        junctions:
+        - "/mga/sps/authsvc"
+        - "/mga/sps/apiauthsvc"
+        - "/mga/sps/static"
+        - "/mga/sps/ac"
+        - "/mga/websock/mmfa-wss"
+    - host: "mmfa-wrp-browser"
+      instance: "mobile"
+      acls:
+      - name: "isam_mobile_rest"
+        junctions:
+        - "/scim"
+    objects:
+    - host: "mmfa-wrp-browser"
+      instance: "default"
+      junction: "/app"
+      attributes:
+      - key: "HTTP-Tag-Value"
+        value: "AUTHENTICATION_LEVEL=authentication_level"
+  reverse_proxy:
+  - name: "default"
+    host: "mmfa-wrp-browser"
+    http:
+      enabled: "no"
+    https:
+      enabled: "yes"
+    domain: "Default"
+    ldap:
+      ssl: "yes"
+      port: !environment LDAP_PORT
+      key_file: "lmi_trust_store"
+    management_root:
+    - "reverse_proxy.zip"
+    mmfa_configuration:
+      channel: "browser"
+      lmi:
+        host: "mmfa-config"
+        port: "9443"
+        username: admin
+        password: !environment IVIA_MGMT_PASSWORD
+      runtime:
+        host: "mmfa-runtime"
+        port: "9443"
+        username: !environment RUNTIME_USER
+        password: !environment RUNTIME_PASSWORD
+      reuse_acls: True
+      reuse_certs: True
+    aac_configuration:
+      junction: "/mga"
+      runtime:
+        host: "mmfa-runtime"
+        port: "9443"
+        username: !environment RUNTIME_USER
+        password: !environment RUNTIME_PASSWORD
+      reuse_acls: True
+      reuse_certs: True
+    junctions:
+    - junction_point: "/app"
+      junction_type: "ssl"
+      server_hostname: "mmfa-runtime"
+      server_port: "9443"
+      remote_http_header:
+      - "iv-user"
+      - "iv-groups"
+      - "iv-creds"
+    - junction_point: "/stepup"
+      junction_type: "ssl"
+      server_hostname: "mmfa-runtime"
+      server_port: "9443"
+      basic_auth_mode: "ignore"
+      insert_session_cookies: "yes"
+      client_ip_http: "yes"
+      remote_http_header:
+      - "iv-user"
+      - "iv-user-l"
+      - "iv-groups"
+      - "iv-creds"
+      junction_cookie_javascript_block: "inhead"
+    stanza_configuration:
+    - stanza: "server"
+      entry_name: "web-host-name"
+      value: "www.mmfa.ibm.com"
+      operation: "update"
+    - stanza: "server"
+      entry_name: "force-tag-value-prefix"
+      value: "no"
+      operation: "update"
+    - stanza: "ssl"
+      entry_name: "webseal-cert-keyfile"
+      value: "wrp_trust_store"
+      operation: "update"
+    - stanza: "ssl"
+      entry_name: "webseal-cert-keyfile-stash"
+      value: "wrp_trust_store.sth"
+      operation: "update"
+    - stanza: "ssl"
+      entry_name: "webseal-cert-keyfile-label"
+      value: "CN=mmfa.ibm.com,OU=Security,O=IBM,C=AU"
+      operation: "update"
+    - stanza: "authentication-levels"
+      entry_id: "level"
+      value: "ext-auth-interface"
+      operation: "add"
+    - stanza: "authentication-levels"
+      entry_id: "level"
+      value: "password"
+      operation: "add"
+    - stanza: "azn-decision-info"
+      entry_id: "urn:ibm:demo:transferamount"
+      value: "post-data:transaction-amount"
+      operation: "add"
+    - stanza: "user-attribute-definitions"
+      entry_id: "urn:ibm:security:worklight:version:platform.category"
+      value: "Environment"
+      operation: "add"
+    - stanza: "user-attribute-definitions"
+      entry_id: "urn:ibm:security:worklight:version:platform.datatype"
+      value: "string"
+      operation: "add"
+    - stanza: "user-attribute-definitions"
+      entry_id: "urn:ibm:demo:transferamount.datatype"
+      value: "double"
+      operation: "add"
+    - stanza: "user-attribute-definitions"
+      entry_id: "urn:ibm:demo:transferamount.category"
+      value: "Environment"
+      operation: "add"
+    - stanza: "eai-trigger-urls"
+      entry_id: "trigger"
+      value: "/stepup/sps/authsvc*"
+      operation: "add"
+  - name: "mobile"
+    host: "mmfa-wrp-mobile"
+    http:
+      enabled: "no"
+    https:
+      enabled: "yes"
+    domain: "Default"
+    ldap:
+      ssl: "yes"
+      port: !environment LDAP_PORT
+      key_file: "lmi_trust_store"
+    mmfa_configuration:
+      channel: "mobile"
+      lmi:
+        host: "mmfa-config"
+        port: "9443"
+        username: admin
+        password: !environment IVIA_MGMT_PASSWORD
+      runtime:
+        host: "mmfa-runtime"
+        port: "9443"
+        username: !environment RUNTIME_USER
+        password: !environment RUNTIME_PASSWORD
+      reuse_acls: True
+      reuse_certs: True
+    aac_configuration:
+      junction: "/mga"
+      runtime:
+        host: "mmfa-runtime"
+        port: "9443"
+        username: !environment RUNTIME_USER
+        password: !environment RUNTIME_PASSWORD
+      reuse_acls: True
+      reuse_certs: True
+    junctions:
+    - junction_point: "/scim"
+      junction_type: "ssl"
+      transparent_path_junction: "yes"
+      server_hostname: "mmfa-runtime"
+      server_port: "9443"
+      username: !environment RUNTIME_USER
+      password: !environment RUNTIME_PASSWORD
+      remote_http_header:
+      - "iv-user"
+      - "iv-groups"
+      - "iv-creds"
+    stanza_configuration:
+    - stanza: "server"
+      entry_name: "web-host-name"
+      value: "www.mmfa.ibm.com"
+      operation: "update"
+    - stanza: "server"
+      entry_name: "force-tag-value-prefix"
+      value: "no"
+      operation: "update"
+    - stanza: "ssl"
+      entry_name: "webseal-cert-keyfile"
+      value: "wrp_trust_store"
+      operation: "update"
+    - stanza: "ssl"
+      entry_name: "webseal-cert-keyfile-stash"
+      value: "wrp_trust_store.sth"
+      operation: "update"
+    - stanza: "ssl"
+      entry_name: "webseal-cert-keyfile-label"
+      value: "CN=mmfa.ibm.com,OU=Security,O=IBM,C=AU"
+      operation: "update"
+    - stanza: "filter-content-types"
+      entry_name: "type"
+      value: "application/scim+json"
+      operation: "add"
+    - stanza: "script-filtering"
+      entry_id: "script-filter"
+      value: "yes"
+      operation: "update"
+    - stanza: "script-filtering"
+      entry_id: "rewrite-absolute-with-absolute"
+      value: "yes"
+      operation: "update"
+access_control:
+  scim:
+    schemas:
+    - uri: "urn:ietf:params:scim:schemas:core:2.0:User"
+      properties:
+        connection_type: "isamruntime"
+        ldap_connection: "wrp_runtime"
+        search_suffix: "dc=ibm,dc=com"
+        user_suffix: "dc=ibm,dc=com"
+        user_id: "cn"
+    - uri: "urn:ietf:params:scim:schemas:extension:isam:1.0:User"
+      properties:
+        ldap_connection: "isamruntime"
+        isam_domain: "Default"
+        update_native_users: True
+        connection_type: "isamruntime"
+    attribute_modes:
+    - schema: "urn:ietf:params:scim:schemas:extension:isam:1.0:MMFA:Transaction"
+      modes:
+      - attribute: "transactionsPending"
+        mode: "readwrite"
+      - attribute: "transactionsPending"
+        subattribute: "txnStatus"
+        mode: "readwrite"
+  api_protection:
+    definitions:
+    - name: "Authenticator"
+      description: "MMFA Authenticatior"
+      grant_types:
+      - "AUTHORIZATION_CODE"
+      enforce_single_use_grant: True
+      post_token_mapping_rule: mapping_rules/mmfa_oauth_posttoken_mapping.js
+    clients:
+    - name: "AuthenticatorClient"
+      description: "Authenticator Client"
+      client_id: "AuthenticatorClient"
+      company_name: "IBM"
+      redirect_uris:
+      - "https://www.mmfa.ibm.com/mga/sps/mmfa/user/mgmt/html/mmfa/qr_code.html?client_id=AuthenticatorClient"
+  mmfa:
+    client_id: "AuthenticatorClient"
+    endpoints:
+      details_url: "https://mmfa-browser-wrp:9443/mga/sps/mmfa/user/mgmt/details"
+      token_endpoint: "https://mmfa-browser-wrp:9443/mga/sps/oauth/oauth20/token"
+      hotp_shared_secret_endpoint: "https://mmfa-browser-wrp:9443/mga/sps/mga/user/mgmt/otp/hotp"
+      totp_shared_secret_endpoint: "https://mmfa-browser-wrp:9443/mga/sps/mga/user/mgmt/otp/totp"
+      enrollment_endpoint: "https://mmfa-browser-wrp:9443/scim/Me"
+      authntrxn_endpoint:  "https://mmfa-browser-wrp:9443/scim/Me?attributes=urn:ietf:params:scim:schemas:extension:isam:1.0:MMFA:Transaction:transactionsPending,urn:ietf:params:scim:schemas:extension:isam:1.0:MMFA:Transaction:attributesPending"
+      mobile_endpoint_prefix: "https://mmfa-browser-wrp:9443/mga"
+    discovery_mechanisms:
+    - "urn:ibm:security:authentication:asf:mechanism:mobile_user_approval:fingerprint"
+    - "urn:ibm:security:authentication:asf:mechanism:mobile_user_approval:user_presence"
+    - "urn:ibm:security:authentication:asf:mechanism:totp"
+    options: "ignoreSslCerts=true"
+  authentication:
+    policies:
+    - name: "MMFA Initiate Login Policy"
+      uri: "urn:ibm:security:authentication:asf:mmfa_initiate_simple_login"
+      description: "IBM MMFA Login Policy"
+      enable: True
+      policy: "TODO"
+    - name: "MMFA User Presence Response"
+      uri: "urn:ibm:security:authentication:asf:mmfa_response_userpresence"
+      description: "IBM MMFA Demo User Presence challenge response"
+      enabled: True
+      policy: "TODO"
+    - name: "MMFA Transfer Demo Initiate Policy"
+      description: "IBM MMFA Banking Demo example transaction initiate policy"
+      uri: "urn:ibm:security:authentication:asf:mmfa_initiate_demotransfer"
+      enabled: True
+      policy: "TODO"
+    - name: "MMFA Fingerprint Response"
+      uri: "urn:ibm:security:authentication:asf:mmfa_response_fingerprint"
+      description: "IBM MMFA Demo Fingerprint challenge response"
+      enabled: True
+      policy: "TODO"
+    - name: "Username Login"
+      description: "Username-only Login"
+      uri: "urn:ibm:security:authentication:asf:username_login"
+      enabled: True
+      policy: "TODO"
+    - name: "Set Authentication Level"
+      description: "Set authentication level"
+      uri: "urn:ibm:security:authentication:asf:set_authentication_level"
+      enabled: True
+      policy: "TODO"
+    - name: "MMFA Stepup Login Recaptcha"
+      description: "MMFA Stepup Login Recaptcha"
+      uri: "urn:ibm:security:authentication:asf:mmfa_initiate_stepup_login_recaptcha"
+      enabled: True
+      policy: "TODO"
+    - name: "MMFA Stepup Login"
+      description: "MMFA Stepup Login"
+      uri: "urn:ibm:security:authentication:asf:mmfa_initiate_stepup_login"
+      enabled: True
+      policy: "TODO"
+    mechanisms:
+    - name: "Set Authentication Level"
+      description: "Set authentication level"
+      uri: "urn:ibm:security:authentication:asf:mechanism:set_authentication_level"
+      properties:
+      - mapping_rule: "SetAuthenticationLevel"
+      - template_file: "/authsvc/authenticator/setauthenticationlevel/error.html"
+    - name: "MMFA Demo Transfer Amount Message"
+      description: "MMFA example information mapping for transaction amount"
+      type: "InfoMapAuthenticationName"
+      uri: "urn:ibm:security:authentication:asf:mechanism:demotransfer"
+      properties:
+      - mapping_rule: "DemoTransferAmount"
+      - template_file: ""
+    - name: "RememberMe Username Login"
+      description: "RememberMe Username Login"
+      type: "InfoMapAuthenticationName"
+      uri: "urn:ibm:security:authentication:asf:mechanism:username_remember_me"
+      properties:
+      - mapping_rule: "RememberMeUsername"
+      - template_file: "/authsvc/authenticator/rememberme/username.html"
+    - name: "Verify Stepup Via CBA"
+      description: "Verify Stepup Via CBA"
+      type: "InfoMapAuthenticationName"
+      uri: "urn:ibm:security:authentication:asf:mechanism:verify_stepup_via_cba"
+      properties:
+      - mapping_rule: "VerifyStepupViaCBA"
+      - template_file: "/authsvc/authenticator/verifystepupviacba/error.html"
+    - name: "BuildMMFAStepupLoginPrompt"
+      description: "Build MMFA Stepup Login Prompt"
+      type: "InfoMapAuthenticationName"
+      uri: "urn:ibm:security:authentication:asf:mechanism:stepup_login_prompt"
+      properties:
+      - mapping_rule: "BuildMMFAStepupLoginPrompt"
+      - template_file: "/authsvc/authenticator/buildmmfastepuploginprompt/error.html"
+    - name: "SCIM Endpoint Configuration"
+      type: "SCIM"
+      description: "SCIM Endpoint Configuration"
+      uri: "urn:ibm:security:authentication:asf:mechanism:scim"
+      properties:
+        server.connection: "localscim"
+    - name: "reCAPTCHA Verification"
+      type: "recaptcha"
+      uri: "urn:ibm:security:authentication:asf:mechanism:recaptcha"
+      properties:
+        recaptcha.secret.key: !environment RECAPTCHA_SECRET_KEY
+        recaptcha.site.key: !environment RECAPTCHA_SITT_KEY
+        recaptcha.template.page: "/authsvgc/authenticator/recaptcha/standalone.html"
+  attributes:
+  - name: "transferAmount"
+    description: "The transaction-amount POST parameter sent to result.jsp"
+    uri: "urn:ibm:demo:transferamount"
+    category: "Environment"
+    datatype: "double"
+    matcher: "exact-match"
+    type: "Policy"
+  - name: "fingerprintCookie"
+    description: "Persistent cookie for tagging browsers to achieve device registration"
+    uri: "urn:ibm:security:environment:fingerprintCookie"
+    category: "Environment"
+    storage:
+    - "device"
+    - "session"
+    type: "Risk"
+    datatype: "string"
+    matcher: "exact-match"
+  - name: "RememberMe"
+    description: "Remember Me"
+    uri: "rememberme"
+    type: "Policy"
+    category: "Subject"
+    datatype: "string"
+    matcher: "exact-match"
+  access_control:
+    risk_profiles:
+    - name: "BrowserFingerprintCookie"
+      description: "Browser Fingerprint Cookie Profile"
+      attributes:
+      - name: "fingerprintCookie"
+        weight: 50
+      active: True
+    policies:
+    - name: "MMFA Demo Transfer Policy"
+      description: "Trigger MMFA transaction verification for transaction-amount greater than or equal to 1000"
+      policy: "TODO"
+    - name: "Stepup Login Policy"
+      description: "Permits step-up login via MMFA. If user not coming from trusted device, requires recaptcha as well."
+      policy: "TODO"
+    resources:
+    - server: "mmfa-wrp-browser"
+      resource_uri: "/app/mobile-demo/payload/result.jsp"
+      policies:
+      - "MMFA Demo Transfer Policy"
+      cache: 0
+    - server: "mmfa-wrp-browser"
+      resource_uri: "/stepup"
+      policies:
+      - "Stepup Login Policy"
+      cache: 0
+  push_notification_providers:
+  - platform: "android"
+    app_id: !environment ANDROID_APP_ID
+    provider: "imc"
+    provider_address: !environment PUSH_PROVIDER_HOST
+    imc_client_id: !environment ANDROID_CLIENT_ID
+    imc_client_secret: !environment ANDROID_CLIENT_SECRET
+    imc_refresh_token: !environment ANDROID_REFRESH_TOKEN
+    imc_app_key: !environment ANDROID_APP_KEY
+  - platform: "apple"
+    app_id: !environment APPLE_APP_ID
+    provider: "imc"
+    imc_client_id: !environment APPLE_CLIENT_ID
+    imc_client_secret: !environment APPLE_CLIENT_SECRET
+    imc_refresh_token: !environment APPLE_REFRESH_TOKEN
+    imc_app_key: !environment APPLE_APP_KEY
