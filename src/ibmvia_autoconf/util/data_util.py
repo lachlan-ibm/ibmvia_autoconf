@@ -7,8 +7,12 @@ import yaml
 import base64
 import kubernetes
 import pathlib
+import logging
 from copy import deepcopy
 from . import constants as const
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+_logger = logging.getLogger(__name__)
 
 def to_camel_case(snake_case):
     parts = snake_case.split('_')
