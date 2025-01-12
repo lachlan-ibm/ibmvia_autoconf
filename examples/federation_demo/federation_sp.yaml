@@ -1,0 +1,314 @@
+container:
+  admin_cfg:
+    session_timeout: 720
+  management_authorization:
+    authorization_enforcement: True
+    roles:
+    - operation: "update"
+      name: "Configuration Service"
+      users:
+      - name: "cfgsvc"
+        type: "local"
+      features:
+      - name: "shared_volume"
+        access: "w"
+  ssl_certificates:
+  - name: "lmi_trust_store"
+    signer_certificates:
+    - "postgresql.pem"
+    - "ldap.pem"
+  - name: "rt_profile_keys"
+    signer_certificates:
+    - "postgresql.pem"
+    load_certificates:
+    - label: "OP WebSEAL Cert"
+      server: "isva-idp-webseal"
+      port: 9443
+  - name: "myspkeys"
+    personal_certificates:
+    - p12_file: "spkeys.p12"
+      name: myspkey
+      password: !environment SPKEYSP12_SECRET
+  cluster:
+    runtime_database:
+      host: !environment SP_HVDB_HOST
+      port: !environment HVDB_PORT
+      type: "postgresql"
+      user: !environment HVDB_USER
+      password: !environment HVDB_PW
+      ssl: True
+      db_name: "isva"
+  activation: #Activation codes
+    webseal: !environment IVIA_BASE_CODE
+    access_control: !environment IVIA_AAC_CODE
+    federation: !environment IVIA_FED_CODE
+  mapping_rules:
+  - type: "saml2"
+    files:
+    - "mapping_rules/sp/sp_saml20_dynamic_group.js"
+    - "mapping_rules/sp/sp_saml20.js"
+  - type: "oidc"
+    files:
+    - "mapping_rules/sp/oidc_adv_claims.js"
+    - "mapping_rules/sp/oidc_adv.js"
+  advanced_configuration:
+  - name: "live.demos.enabled"
+    value: "true"
+  - name: "live.demos.settings"
+    value: !environment SP_LIVE_DEMO_CONFIG
+  point_of_contact:
+    active_profile: "Non-Access Manager Username, Access Manager groups and extended attributes"
+webseal:
+  runtime:
+    policy_server: "ldap"
+    user_registry: "ldap"
+    ldap:
+      host: !environment SP_LDAP_HOST
+      port: !environment LDAP_PORT
+      dn: !environment LDAP_BIND_DN
+      dn_password: !environment LDAP_BIND_PW
+      key_file: "lmi_trust_store"
+    clean_ldap: True
+    domain: "Default"
+    admin_user: "sec_master"
+    admin_password: !environment LDAP_SEC_PW
+    admin_cert_lifetime: 1460
+    ssl_compliance: "fips"
+  reverse_proxy:
+  - name: "default"
+    host: "isva-sp-webseal"
+    http:
+      enabled: "no"
+    https:
+      enabled: "yes"
+    domain: "Default"
+    ldap:
+      ssl: "yes"
+      port: !environment LDAP_PORT
+      key_file: "lmi_trust_store"
+    stanza_configuration:
+    - stanza: "server"
+      entry_id: "web-host-name"
+      value: "www.mysp.ibm.com"
+      operation: "update"
+    - stanza: "step-up"
+      entry_id: "verify-step-up-user"
+      value: "no"
+      operation: "update"
+    - stanza: "session"
+      entry_id: "user-session-ids"
+      value: "yes"
+      operation: "update"
+    - stanza: "session"
+      entry_id: "inactive-timeout"
+      value: "1800"
+      operation: "update"
+    - stanza: "session"
+      entry_id: "create-unauth-sessions"
+      value: "yes"
+      operation: "update"
+    - stanza: "junction:/isam"
+      operation: "add"
+    - stanza: "junction:/isam"
+      operation: "add"
+      entry_id: "reset-cookies-list"
+      value: "*ac.uuid,*JSESSIONID"
+  pdadmin:
+    users:
+    - username: "anonymous"
+      dn: "cn=anonymous,dc=ibm,dc=com"
+      password: !environment FED_ANON_PASSWORD
+    - username: "testuser"
+      dn: "cn=testuser,dc=ibm,dc=com"
+      password: !environment TEST_PASSWORD
+    groups:
+    - name: "testgroup"
+      dn: "cn=testgroup,dc=ibm,dc=com"
+    - name: "testgroup2"
+      dn: "cn=testgroup2,dc=ibm,dc=com"
+    reverse_proxies:
+    - host: "isva-sp-webseal"
+      instance: "default"
+      acls:
+      - name: "default-webseal"
+        junctions:
+        - "/isam/mobile-demo"
+federation:
+  federations:
+  - name: "saml20sp"
+    protocol: "SAML2_0"
+    role: "sp"
+    import_partners:
+    - name: "idp_partner"
+      metadata: "idpmetadata.xml"
+    export_metadata: "spmetadata.xml"
+    webseal:
+      name: default
+      runtime:
+        username: !environment RUNTIME_USER
+        password: !environment RUNTIME_PASSWORD
+        hostname: isva-sp-runtime
+        port: 9443
+      reuse_acls: true
+      reuse_certs: true
+    configuration:
+      company_name: "SP Company"
+      point_of_contact_url: "https://www.mysp.ibm.com/isam"
+      assertion_settings:
+        valid_before: 300
+        valid_after: 300
+      need_consent_to_federate: false
+      signature_settings:
+        validation_options:
+          validate_authn_request: true
+        signing_options:
+          sign_authn_response: true
+          sign_logout_request: true
+          sign_logout_response: true
+        signing_key_identifier:
+          store: "myspkeys"
+          label: "CN=sp,OU=Security,O=IBM,C=AU"
+        key_info_elements:
+          include_x509_certificate_data: true
+          include_x509_subject_name: false
+          include_x509_subject_key_identifier: false
+          include_x509_issuer_details: false
+          include_public_key: false
+      identity_mapping:
+        active_delegate_id: "default-map"
+        properties:
+          mapping_rule: "sp_saml20_dynamic_group"
+      extension_mapping:
+        active_delegate_id: "skip-extension-map"
+      name_id_format:
+        default: "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+      assertion_consumer_services:
+      - binding: "post"
+        index: "1"
+        default: "false"
+      - binding: "redirect"
+        index: "2"
+        default: "false"
+      single_logout_service:
+      - binding: "post"
+      exclude_session_index_in_single_logout_request: false
+      encryption_settings:
+        decryption_key_identifier:
+          store: "myspkeys"
+          label: "CN=sp,OU=Security,O=IBM,C=AU"
+      message_valid_time: 300
+      session_timeout: 7200
+  - name: "isvarp"
+    protocol: "OIDC10"
+    role: "rp"
+    webseal:
+      name: default
+      runtime:
+        username: !environment RUNTIME_USER
+        password: !environment RUNTIME_PASSWORD
+        hostname: isva-sp-runtime
+        port: 9443
+    configuration:
+      redirect_uri_prefix: "https://www.mysp.ibm.com/mga"
+      response_types:
+      - "code"
+      - "id_token"
+      - "token"
+      identity_mapping:
+        active_delegate_id: "default-map"
+        properties:
+          mapping_rule: "OIDCRP"
+      advanced_configuration:
+        active_delegate_id: "default-map"
+        mapping_rule: "oidc_adv_claims"
+    partners:
+    - name: "isva_op_partner"
+      enabled: True
+      role: "rp"
+      configuration:
+        client_id: "clientID"
+        client_secret: "clientSecret"
+        basic_configuration:
+          active_delegate_id: "metadataEndpointUrl"
+          metadata_endpoint_url: "https://isva-idp-webseal:9443/mga/sps/oauth/oauth20/metadata/OIDCDefinition"
+        scope:
+        - "openid"
+        signature_algorithm: "RS256"
+        token_endpoint_auth_method: "client_secret_basic"
+        advance_configuration:
+          active_delegate_id: "federation-config"
+  - name: "isvarp_implicit"
+    protocol: "OIDC10"
+    role: "rp"
+    webseal:
+      name: default
+      runtime:
+        username: !environment RUNTIME_USER
+        password: !environment RUNTIME_PASSWORD
+        hostname: isva-sp-runtime
+        port: 9443
+    configuration:
+      redirect_uri_prefix: "https://www.mysp.ibm.com/mga"
+      response_types:
+      - "id_token"
+      - "token"
+      identity_mapping:
+        active_delegate_id: "default-map"
+        properties:
+          mapping_rule: "OIDCRP"
+      advanced_configuration:
+        active_delegate_id: "default-map"
+        mapping_rule: "oidc_adv"
+    partners:
+    - name: "isva_op_partner"
+      enabled: True
+      role: "rp"
+      configuration:
+        client_id: "clientID"
+        client_secret: "clientSecret"
+        basic_configuration:
+          active_delegate_id: "metadataEndpointUrl"
+          metadata_endpoint_url: "https://isva-idp-webseal:9443/mga/sps/oauth/oauth20/metadata/OIDCDefinition"
+        scope:
+        - "openid"
+        signature_algorithm: "RS256"
+        token_endpoint_auth_method: "client_secret_basic"
+        advance_configuration:
+          active_delegate_id: "federation-config"
+  - name: "isvarp_code"
+    protocol: "OIDC10"
+    role: "rp"
+    webseal:
+      name: default
+      runtime:
+        username: !environment RUNTIME_USER
+        password: !environment RUNTIME_PASSWORD
+        hostname: isva-sp-runtime
+        port: 9443
+    configuration:
+      redirect_uri_prefix: "https://www.mysp.ibm.com/mga"
+      response_types:
+      - "code"
+      identity_mapping:
+        active_delegate_id: "default-map"
+        properties:
+          mapping_rule: "OIDCRP"
+      advanced_configuration:
+        active_delegate_id: "default-map"
+        mapping_rule: "oidc_adv"
+    partners:
+    - name: "isva_op_partner"
+      enabled: True
+      role: "rp"
+      configuration:
+        client_id: "clientID"
+        client_secret: "clientSecret"
+        basic_configuration:
+          active_delegate_id: "metadataEndpointUrl"
+          metadata_endpoint_url: "https://isva-idp-webseal:9443/mga/sps/oauth/oauth20/metadata/OIDCDefinition"
+        scope:
+        - "openid"
+        signature_algorithm: "RS256"
+        token_endpoint_auth_method: "client_secret_basic"
+        advance_configuration:
+          active_delegate_id: "federation-config"

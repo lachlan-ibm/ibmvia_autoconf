@@ -1,0 +1,223 @@
+### IDP OpenLDAP ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openldap-idp
+  labels:
+    app: openldap-idp
+spec:
+  selector:
+    matchLabels:
+      app: openldap-idp
+  replicas: 1 
+  template: 
+    metadata:
+      labels:
+        app: openldap-idp
+    spec:
+      volumes:
+        - name: keys
+          secret:
+            secretName: openldap-keys
+      containers:
+        - name: openldap
+          image: icr.io/isva/verify-access-openldap:10.0.6.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 636
+          env:
+            - name: LDAP_DOMAIN
+              value: ibm.com
+            - name: LDAP_ADMIN_PASSWORD
+              value: Passw0rd
+            - name: LDAP_CONFIG_PASSWORD
+              value: Passw0rd
+          volumeMounts:
+            - mountPath: /container/service/slapd/assets/certs
+              name: keys
+          args: ["--copy-service"]
+---
+# The service to connect to OpenLDAP. For external service access, see https://console.bluemix.net/docs/containers/cs_apps.html#cs_apps_public_nodeport
+apiVersion: v1
+kind: Service
+metadata:
+  name: openldap-idp
+  labels:
+    app: openldap-idp
+spec:
+  ports:
+    - port: 636
+      name: ldaps
+      protocol: TCP
+  selector:
+    app: openldap-idp
+  type: NodePort
+---
+### IDP PostgreSQL ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql-idp
+  labels:
+    app: postgresql-idp
+spec:
+  selector:
+    matchLabels:
+      app: postgresql-idp
+  replicas: 1 
+  template: 
+    metadata:
+      labels:
+        app: postgresql-idp
+    spec:
+      volumes:
+        - name: idp-postgresqldata
+          emptyDir: {}
+        - name: keys
+          secret:
+            secretName: postgresql-keys
+      containers:
+        - name: postgresql-idp
+          image: icr.io/isva/verify-access-postgresql:10.0.6.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: Passw0rd
+            - name: POSTGRES_DB
+              value: isva
+            - name: POSTGRES_SSL_KEYDB
+              value: /var/local/server.crt
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: idp-postgresqldata
+            - mountPath: /var/local
+              name: keys
+---
+# The service to connect to Postgresql. Note this is a cluster ip service only.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-idp
+spec:
+  ports:
+    - port: 5432
+      name: postgresql-idp
+      protocol: TCP
+  selector:
+    app: postgresql-idp
+---
+### SP OpenLDAP ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openldap-sp
+  labels:
+    app: openldap-sp
+spec:
+  selector:
+    matchLabels:
+      app: openldap-sp
+  replicas: 1 
+  template: 
+    metadata:
+      labels:
+        app: openldap-sp
+    spec:
+      volumes:
+        - name: keys
+          secret:
+            secretName: openldap-keys
+      containers:
+        - name: openldap
+          image: icr.io/isva/verify-access-openldap:10.0.6.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 636
+          env:
+            - name: LDAP_DOMAIN
+              value: ibm.com
+            - name: LDAP_ADMIN_PASSWORD
+              value: Passw0rd
+            - name: LDAP_CONFIG_PASSWORD
+              value: Passw0rd
+          volumeMounts:
+            - mountPath: /container/service/slapd/assets/certs
+              name: keys
+          args: ["--copy-service"]
+---
+# The service to connect to OpenLDAP. For external service access, see https://console.bluemix.net/docs/containers/cs_apps.html#cs_apps_public_nodeport
+apiVersion: v1
+kind: Service
+metadata:
+  name: openldap-sp
+  labels:
+    app: openldap-sp
+spec:
+  ports:
+    - port: 636
+      name: ldaps
+      protocol: TCP
+  selector:
+    app: openldap-sp
+  type: NodePort
+---
+### SP PostgreSQL ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql-sp
+  labels:
+    app: postgresql-sp
+spec:
+  selector:
+    matchLabels:
+      app: postgresql-sp
+  replicas: 1 
+  template: 
+    metadata:
+      labels:
+        app: postgresql-sp
+    spec:
+      volumes:
+        - name: sp-postgresqldata
+          emptyDir: {}
+        - name: keys
+          secret:
+            secretName: postgresql-keys
+      containers:
+        - name: postgresql-sp
+          image: icr.io/isva/verify-access-postgresql:10.0.6.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: Passw0rd
+            - name: POSTGRES_DB
+              value: isva
+            - name: POSTGRES_SSL_KEYDB
+              value: /var/local/server.crt
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: sp-postgresqldata
+            - mountPath: /var/local
+              name: keys
+---
+# The service to connect to Postgresql. Note this is a cluster ip service only.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-sp
+spec:
+  ports:
+    - port: 5432
+      name: postgresql-sp
+      protocol: TCP
+  selector:
+    app: postgresql-sp

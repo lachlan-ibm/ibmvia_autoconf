@@ -7,8 +7,7 @@ import os
 import logging
 import json
 import requests
-import yaml
-import pyisva
+import pyivia
 import time
 import typing
 
@@ -17,14 +16,14 @@ from .container import Docker_Configurator as CONTAINER
 from .access_control import AAC_Configurator as AAC
 from .webseal import WEB_Configurator as WEB
 from .federation import FED_Configurator as FED
-from .util.data_util import Map, FILE_LOADER, optional_list, filter_list
-from .util.configure_util import deploy_pending_changes, creds, old_creds, config_base_dir, mgmt_base_url, config_yaml
-from .util.constants import API_HEADERS, HEADERS, LOG_LEVEL
+from .util.data_util import FILE_LOADER, optional_list
+from .util.configure_util import deploy_pending_changes, creds, old_creds, mgmt_base_url, config_yaml
+from .util.constants import HEADERS, LOG_LEVEL
 
 logging.basicConfig(stream=sys.stdout, level=os.environ.get(LOG_LEVEL, logging.DEBUG))
 _logger = logging.getLogger(__name__)
 
-class ISVA_Configurator(object):
+class IVIA_Configurator(object):
     #Only restart containers if we import PKI or apply a license
     needsRestart = False
 
@@ -59,7 +58,7 @@ class ISVA_Configurator(object):
             mgmt_pwd: 'S3cr37Pa55w0rd!'
             mgmt_old_pwd: 'administrator'
 
-        *note:* These properties are overridden by ``ISVA_MGMT_*`` environment variables
+        .. note:: These properties are overridden by ``IVIA_MGMT_*`` environment variables
 
         '''
 
@@ -82,7 +81,6 @@ class ISVA_Configurator(object):
 
 
     def accept_eula(self):
-        payload = {"accepted": True}
         rsp = self.factory.get_system_settings().first_steps.set_sla_status()
         if rsp.success == True:
             _logger.info("Accepted SLA")
@@ -114,7 +112,12 @@ class ISVA_Configurator(object):
                 config.appliance.fips.fips_enabled == True:
             fips_settings = self.factory.get_system_settings().fips.get_settings().json
             if fips_settings.get("fipsEnabled", False) == False:
-                response = self.factory.get_system_settings().fips.update_settigns(**config.appliance.fips)
+                response = self.factory.get_system_settings().fips.update_settings(**config.appliance.fips)
+                if response.success == True:
+                    _logger.info("Successfully enabled FIPS mode.")
+                else:
+                    _logger.error("Failed to enable FIPS mode using config:\n{}\n{}".format(
+                                                json.dumps(fips_settings, indent=4), response.data))
 
 
     def complete_setup(self):
@@ -164,10 +167,8 @@ class ISVA_Configurator(object):
 
         webseal: typing.Optional[str]
         'License code for the WebSEAL Reverse Proxy module.'
-
         access_control: typing.Optional[str]
         'License code for the Advanced Access Control module.'
-
         federation: typing.Optional[str]
         'License for the Federations module.'
 
@@ -211,16 +212,20 @@ class ISVA_Configurator(object):
                 str(server) + ":" + str(port), database, rsp.data))
 
 
-    def _import_personal_certs(self, database, parsed_file):
+    def _import_personal_cert(self, db_name, cert):
         ssl = self.factory.get_system_settings().ssl_certificates
-        rsp = ssl.import_personal(database, os.path.abspath(parsed_file['path']))
+        personal_parsed_file = optional_list(FILE_LOADER.read_file(cert.p12_file))[0]
+        rsp = ssl.import_personal(db_name, 
+                                    file_path=os.path.abspath(personal_parsed_file['path']), 
+                                    password=cert.get("secret", ""))
         if rsp.success == True:
             _logger.info("Successfully uploaded {} personal certificate to {}".format(
-                parsed_file['name'], database))
+                personal_parsed_file['name'], db_name))
             self.needsRestart = True
         else:
             _logger.error("Failed to upload {} personal certificate to {}/n{}".format(
-                parsed_file['name'], database, rsp.data))
+               personal_parsed_file['path'], db_name, rsp.data))
+
 
     class SSL_Certificates(typing.TypedDict):
         '''
@@ -243,21 +248,30 @@ class ISVA_Configurator(object):
 
         class Personal_Certificate(typing.TypedDict):
             path: str
-            'Path to file to import as a personal certificate'
-
+            'Path to file to import as a personal certificate.'
             secret: typing.Optional[str]
-            'Optional secret to decrypt personal certificate'
+            'Optional secret to decrypt personal certificate.'
+
+        class Load_Certificate(typing.TypedDict):
+            server: str
+            'Domain name or address of web service.'
+            port: int
+            'Port Web service is listening on.'
+            label: str
+            'Name of retrieved X509 certificate alias in SSL database.'
 
         name: typing.Optional[str]
-        'Name of SSL database to configure. If database does not exist it will be created. Either `name` or `kdb_file` must be defined.'
+        'Name of SSL database to configure. If database does not exist it will be created. Either ``name`` or ``kdb_file`` must be defined.'
         kdb_file: typing.Optional[str]
         'Path to the .kdb file to import as a SSL database. Required if importing a SSL KDB.'
         stash_file: typing.Optional[str]
-        'Path to the .sth file for the specified `kdb_file`. Required if `kdb_file` is set.'
+        'Path to the .sth file for the specified ``kdb_file``. Required if ``kdb_file`` is set.'
         signer_certificates: typing.Optional[typing.List[str]]
         'List of file paths for signer certificates (PEM or DER) to import.'
         personal_certificates: typing.Optional[typing.List[Personal_Certificate]]
         'List of file paths for personal certificates (PKCS#12) to import.'
+        load_certificates: typing.Optional[typing.List[Load_Certificate]]
+        'Load X509 certificates from a TCPS endpoints.'
 
     def import_ssl_certificates(self, config):
         ssl_config = config.ssl_certificates
@@ -267,7 +281,7 @@ class ISVA_Configurator(object):
             for database in ssl_config:
                 if database.name != None: # Create the database
                     if database.name not in old_databases:
-                        rsp = ssl.create_database(database.name, type='kdb')
+                        rsp = ssl.create_database(database.name, db_type='kdb')
                         if rsp.success == True:
                             _logger.info("Successfully created {} SSL Certificate database".format(
                                 database.name))
@@ -275,31 +289,29 @@ class ISVA_Configurator(object):
                             _logger.error("Failed to create {} SSL Certificate database".format(
                                 database.name))
                             continue
-                elif database.kdb_file != None: #Import the database
-                    kdb_f = FILE_LOADER.read_file(database.kdb_file)
-                    sth_f = FILE_LOADER.read_file(database.sth_file)
+                elif database.kdb_file != None and database.sth_file != None: #Import the database
+                    kdb_f = optional_list(FILE_LOADER.read_file(database.kdb_file))[0]
+                    sth_f = optional_list(FILE_LOADER.read_file(database.sth_file))[0]
                     rsp = ssl.import_database(kdb_file=kdb_f.get("path"), sth_file=sth_f.get("path"))
                     if rsp.success == True:
-                        _logger.info("Successfully imported a SSL KDB file")
+                        _logger.info("Successfully imported {} SSL KDB file".format(database.kdb_file))
                     else:
-                        _logger.error("Failed to import SSL KDB file:\n{}\n{}".format(
+                        _logger.error("Failed to import {} SSL KDB file:\n{}\n{}".format(database.kdb_file,
                                         json.dumps(database, indent=4), rsp.data))
                 else:
                     _logger.error("SSL Database config provided but cannot be identified: {}".format(
                                                                                 json.dumps(database, indent=4)))
+                if database.personal_certificates:
+                    for cert in database.personal_certificates:
+                        self._import_personal_cert(database.name, cert)
                 if database.signer_certificates:
                     for fp in database.signer_certificates:
                         signer_parsed_files = FILE_LOADER.read_files(fp)
                         for parsed_file in signer_parsed_files:
                             self._import_signer_certs(database.name, parsed_file)
-                if database.personal_certificates:
-                    for fp in database.personal_certificates:
-                        personal_parsed_files = FILE_LOADER.read_files(fp)
-                        for parsed_file in personal_parsed_files:
-                            self._import_personal_certs(database.name, base_dir, parsed_file)
                 if database.load_certificates:
                     for item in database.load_certificates:
-                        self._load_signer_cert(database.name, item.server, item.port, item.label)
+                        self._load_signer_certificates(database.name, item.server, item.port, item.label)
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config)
             self.needsRestart == False
@@ -315,18 +327,64 @@ class ISVA_Configurator(object):
                      console_log_level: "AUDIT"
                      accept_client_certs: true
 
-        The complete list of properties that can be set by this key can be found at :ref:`pyisva:systemsettings#administrator-settings`
+        The complete list of properties that can be set by this key can be found in the `pyivia <https://lachlan-ibm.github.io/pyivia/systemsettings.html#pyivia.core.system.adminsettings.AdminSettings.update>`_ documentation.
         '''
-
+        min_heap_size: typing.Optional[int]
+        'The minimum heap size, in megabytes, for the JVM.'
+        max_heap_size: typing.Optional[int]
+        'The minimum heap size, in megabytes, for the JVM.'
         session_timeout: typing.Optional[int]
+        'The length of time, in minutes, that a session can remain idle before it is deleted (valid values``0 - 720``). A default value of ``120`` is used.'
+        session_inactive_timeout: typing.Optional[int]
+        'The length of time, in minutes, that a session can remain idle before it is deleted (valid values = ``-1 - 720``). A default value of ``30`` is used. A value of ``-1`` disables the inactivity timeout.'
+        http_port: typing.Optional[int]
+        'The TCP port on which the LMI will listen.'
+        https_port: typing.Optional[int]
+        'The SSL port on which the LMI will listen. A default value of ``443`` is used.'
+        sshd_port: typing.Optional[int]
+        'The port on which the SSH daemon will listen. A default value of ``22`` is used. Please note that if using the appliance clustering capability all nodes in the cluster must be configured to use the same port for the SSH daemon.'
         sshd_client_alive: typing.Optional[int]
+        'The number of seconds that the server will wait before sending a null packet to the client. A value of ``-1`` means using the default timeout settings.'
+        swap_size: typing.Optional[int]
+        'The amount of allocated swap space, in Megabytes. There must be enough disk space on the active partition to store the swap file, otherwise an error will be logged in the system log file and the default amount of swap space will be used. (only present in the response if a value has been set).'
+        min_threads: typing.Optional[int]
+        'The minimum number of threads which will handle LMI requests. A default value of ``6`` is used.'
+        max_threads: typing.Optional[int]
+        'The maximum number of threads which will handle LMI requests. A default value of ``6`` is used.'
+        max_pool_size: typing.Optional[int]
+        'The maximum number of connections for the connection pool. The default value is ``100``.'
+        lmi_debugging_enabled: typing.Optional[bool]
+        'A boolean value which is used to control whether LMI debugging is enabled or not. By default debugging is disabled.'
+        validate_client_cert_identity: typing.Optional[bool]
+        'The console messaging level of the LMI (valid values include ``INFO``, ``AUDIT``, ``WARNING``, ``ERROR`` and ``OFF``). A default value of ``OFF`` is used.'
+        exclude_csrf_checking: typing.Optional[str]
+        'A comma-separated string which lists the users for which CSRF checking should be disabled. Regular expressions are accepted, and any embedded commas should be escaped with the " character. This option is required if you wish to access a Web service, using client certificates for authentication, from a non-browser based client. An example might be ``cn=scott,o=ibm,c=us,cn=admin,o=dummyCorp,c=*``.'
+        enabled_server_protocols: typing.Optional[int]
+        'Specifies which secure protocols will be accepted when connecting to the LMI. The supported options include: ``TLS``, ``TLSv1``, ``TLSv1.1`` and ``TLSv1.2``.'
         enabled_tls: typing.Optional[typing.List[str]]
+        'List of Enabled TLS protocols for the local management interface. Valid values include ``TLSv1``, ``TLSv1.1`` and ``TLSv1.2``.'
         console_log_level: typing.Optional[str]
+        'The console messaging level of the LMI (valid values include ``INFO``, ``AUDIT``, ``WARNING``, ``ERROR`` and ``OFF``). A default value of ``OFF`` is used.'
         accept_client_certs: typing.Optional[bool]
+        'A boolean value which is used to control whether SSL client certificates are accepted by the local management interface. By default SSL client certificates are accepted.'
         log_max_files: typing.Optional[int]
+        'The maximum number of log files that are retained. The default value is ``2``.'
         log_max_size: typing.Optional[int]
+        'The maximum size (in MB) that a log file can grow to before it is rolled over. The default value is ``20``'
         http_proxy: typing.Optional[str]
+        'The proxy ``<host>:<port>`` to be used for HTTP communication from the LMI. The port component is optional and will default to ``80``.'
         https_proxy: typing.Optional[str]
+        'The proxy ``<host>:<port>`` to be used for HTTPS communication from the LMI. The port component is optional and will default to ``443``.'
+        login_header: typing.Optional[str]
+        'This is a customizable header that is displayed when accessing the login page in a web browser and after logging in via SSH. Multiple lines of text can be specified by using the sequence "n", which will be interpreted as a line break.'
+        login_msg: typing.Optional[str]
+        'This is a customizable message that is displayed when accessing the login page in a web browser and after logging in via SSH. Multiple lines of text can be specified by using the sequence "n", which will be interpreted as a line break.'
+        access_log_fmt: typing.Optional[str]
+        'The template string to use for the LMI access.log file. If not set the access log is disabled (default).'
+        lmi_msg_timeout: typing.Optional[int]
+        'This is a timeout (in seconds) for notification messages that appear in the LMI. A value of ``0`` indicates that the messages should not timeout. The default value is ``5`` seconds.'
+        valid_verify_domains: typing.Optional[str]
+        'This is a space separated list of valid domains for IBM Security Verify. These domains are used by the IBM Security Verify wizard to ensure that only valid hostnames are used.'
 
     def admin_config(self, config):
         if config.admin_config != None:
@@ -372,7 +430,7 @@ class ISVA_Configurator(object):
                         user.name, rsp.data))
 
     def _system_groups(self, groups):
-        for group in config.account_management.groups:
+        for group in groups:
             rsp = None
             if group.operation == "add" or group.operation == "update":
                 rsp = self.factory.get_system_settings().sysaccount.create_group(group.id)
@@ -419,35 +477,28 @@ class ISVA_Configurator(object):
         '''
         class Management_User(typing.TypedDict):
             operation: str
-            'Operation to perform with user. "add" | "update" | delete".'
-
+            'Operation to perform with user. ``add`` | ``update`` | ``delete``.'
             name: str
             'Name of the user to create, remove or update.'
-
             password: typing.Optional[str]
             'Password to authenticate as user. Required if creating user.'
-
             groups: typing.Optional[typing.List[str]]
             'Optional list of groups to add user to.'
 
 
         class Management_Group(typing.TypedDict):
             '''
-            *note*: Groups are created before users; therefore if a user is being created and added to a group then
-                    this should be done in the user configuration entry.
+            .. note:: Groups are created before users; therefore if a user is being created and added to a group then this should be done in the user configuration entry.
             '''
             operation: str
-            'Operation to perform with group. "add" | "update" | delete".'
-
+            'Operation to perform with group. ``add`` | ``update`` | ``delete``.'
             id: str
             'Name of group to create.'
-
             users: typing.Optional[typing.List[str]]
             'Optional list of users to add to group.'
 
         users: typing.Optional[typing.List[Management_User]]
         'Optional list of management users to configure'
-
         groups: typing.Optional[typing.List[Management_Group]]
         'Optional list of management groups to configure.'
 
@@ -513,22 +564,22 @@ class ISVA_Configurator(object):
                 name: str
                 'Name of user'
                 type: str
-                'Type of user. "local" | "remote".'
+                'Type of user. ``local`` | ``remote``.'
 
             class Group(typing.TypedDict):
                 name: str
                 'name of group.'
                 type: str
-                'Type of group. "local" | "remote".'
+                'Type of group. ``local`` | ``remote``.'
 
             class Feature(typing.TypedDict):
                 name: str
                 'Name of feature.'
                 access: str
-                'Access to grant to feature. "r" | "w".'
+                'Access to grant to feature. ``r`` | ``w``.'
 
             operation: str
-            'Operation to perform on authorization role. "add" | "remove" | "update".'
+            'Operation to perform on authorization role. ``add`` | ``remove`` | ``update``.'
             name: str
             'Name of role.'
             users: typing.Optional[typing.List[User]]
@@ -557,6 +608,136 @@ class ISVA_Configurator(object):
                     _logger.error("Failed to enable role based authorization:\n{}".format(rsp.data))
 
 
+    class Management_Authentication(typing.TypedDict):
+        '''
+        Example::
+
+                management_authentication:
+                  auth_type: "federation"
+                  oidc:
+                    client_id: "27d55f1c-285a-11ef-81ec-14755ba358db"
+                    client_secret: "SDFGc3ffFSD3m4Xtg1"
+                    discovery_endpoint: "https://verify.ibm.com/.well-known/openid-configuration"
+                    require_pkce: true
+                    enable_admin_group: false
+                    enable_tokenmapping: false
+
+        '''
+
+        class LDAP(typing.TypedDict):
+            host: str
+            'Specifies the name of the LDAP server. '
+            port: str
+            'Specifies the port over which to communicate with the LDAP server.'
+            ssl: bool
+            'Specifies whether SSL is used when the system communicates with the LDAP server.'
+            key_database: str
+            'Specifies the name of the key database file (without any path information). This parameter is required if ``ssl`` is ``true``'
+            cert_label: str
+            'Specifies the name of the certificate within the Key database that is used if client authentication is requested by the LDAP server.'
+            user_attribute: str
+            'Specifies the name of the LDAP attribute which holds the supplied authentication user name of the user.'
+            group_member_attribute: str
+            'Specifies the name of the LDAP attribute which is used to hold the members of a group. '
+            base_dn: str
+            'Specifies the base DN which is used to house all administrative users.'
+            admin_group_dn: str
+            'Specifies the DN of the group to which all administrative users must belong.'
+            anon_bind: bool
+            'Specifies whether the LDAP user registry supports anonymous bind. If set to false, ``bind_dn`` and ``bind_password`` are required.'
+            bind_dn: typing.Optional[str]
+            'Specifies the DN of the user which will be used to bind to the registry. This user must have read access to the directory. This parameter is required if anon_bind is ``false``'
+            bind_password:typing.Optional[str]
+            'Specifies the password which is associated with the bind_dn. This parameter is required if anon_bind is ``false``.'
+            debug: bool
+            'Specifies whether the capturing of LDAP debugging information is enabled or not.'
+            enable_usermapping: bool
+            'Specifies whether mapping of the incoming client certificate DN is enabled.'
+            usermapping_script: str
+            'Specifies the javascript script that will map the incoming client certificate DN. The script will be passed a Map containing the certificate dn, rdns, principal, cert, san and the user_attribute, group_member_attribute and base_dn from this configuration. If not specified a default script is used. Only valid if ``enable_usermapping`` is ``true``.'
+            enable_ssh_pubkey_auth: typing.Optional[bool]
+            'Specifies whether or not users in the LDAP server can log in via SSH using SSH public key authentication. If this value is not provided, it will default to ``false``.'
+            ssh_pubkey_auth_attribute: str
+            'Specifies the name of the LDAP attribute which contains a user\'s public key data. This field is required if SSH public key authentication is enabled.'
+
+        class OIDC(typing.TypedDict):
+            client_id: str
+            'The OIDC Client Identifier.'
+            client_secret: str
+            'The OIDC Client Secret.'
+            discovery_endpoint: str
+            'The OIDC Discovery (well-known) endpoint.'
+            enable_pkce: bool
+            'Specifies whether the Public key Code Exchange extension is enforced.'
+            enable_admin_group: bool
+            'Specifies whether a user must be a member of a particular group to be considered an administrator user.'
+            group_claim: typing.Optional[str]
+            'The OIDC token claim to use as group membership. This claim can either be a String, or a list of Strings. The default value is ``groupIds``.'
+            admin_group: typing.Optional[str]
+            'The name of the group which a user must be a member of to be considered an administrator user. The default value is ``adminGroup``.'
+            user_claim: typing.Optional[str]
+            'Specifies the OIDC token claim to use as the username. The default value is ``sub``.'
+            keystore: typing.Optional[str]
+            'The SSL Truststore to verify connections the the OIDC OP. The default value if ``lmi_trust_store``.'
+            enable_tokenmapping: bool
+            'Specifies whether custom claim to identity mapping is performed using a JavaScript code fragment.'
+            tokenmapping_script: str
+            'The custom JavaScript code fragment to map an identity token to a username/group membership.'
+
+        auth_type: str
+        'Specifies whether the local user database or the remote LDAP user registry is used for authentication. If this parameter is set to local, then all other fields are ignored. Valid values include ``local``, ``federation`` and ``remote``.'
+        ldap: typing.Optional[LDAP]
+        'LDAP specific configuration properties. Only one of LDAP or OIDC should be defined'
+        oidc: typing.Optional[OIDC]
+        'OIDC specific configuration properties. Only one of LDAP or OIDC should be defined'
+
+    def management_authentication(self, config):
+        if config.management_authentication != None:
+            ma = config.management_authentication
+            methodArgs = {}
+            if ma.ldap:
+                methodArgs.update({
+                    "ldap_host": ma.ldap.host,
+                    "ldap_port": ma.ldap.port, 
+                    "enable_ssl": ma.ldap.ssl, 
+                    "key_database": ma.ldap.key_database,
+                    "cert_label": ma.ldap.cert_label,
+                    "user_attribute": ma.ldap.user_attribute,
+                    "group_member_attribute": ma.ldap.group_member_attribute,
+                    "base_dn": ma.ldap.base_dn,
+                    "admin_group_dn": ma.ldap.admin_group_dn,
+                    "anon_bind": ma.ldap.anon_bind,
+                    "bind_dn": ma.ldap.bind_dn,
+                    "bind_password": ma.ldap.bind_password,
+                    "ldap_debug": ma.ldap.ldap_debug,
+                    "enable_usermapping": ma.ldap.enable_usermapping,
+                    "usermapping_script": ma.ldap.usermapping_script,
+                    "enable_ssh_pubkey_auth": ma.ldap.enable_ssh_pubkey_auth,
+                    "ssh_pubkey_auth_attribute": ma.ldap.ssh_pubkey_auth_attribute, 
+                    })
+            elif ma.oidc:
+                methodArgs.update({
+                    "oidc_client_id": ma.oidc.oidc_client_id,
+                    "oidc_client_secret": ma.oidc.oidc_client_secret,
+                    "oidc_discovery_endpoint": ma.oidc.oidc_discovery_endpoint,
+                    "oidc_enable_pkce": ma.oidc.oidc_enable_pkce,
+                    "oidc_enable_admin_group": ma.oidc.oidc_enable_admin_group,
+                    "oidc_group_claim": ma.oidc.oidc_group_claim,
+                    "oidc_admin_group": ma.oidc.oidc_admin_group,
+                    "oidc_user_claim": ma.oidc.oidc_user_claim,
+                    "oidc_keystore": ma.oidc.oidc_keystore,
+                    "enable_tokenmapping": ma.oidc.enable_tokenmapping, 
+                    "tokenmapping_script": ma.oidc.tokenmapping_script
+                })
+            ma = config.management_authentication
+            rsp = self.factory.get_system_settings().management_authentication.update(ma.auth_type, **methodArgs)
+            if rsp.success == True:
+                _logger.info("Successfully updated the management authentication configuration")
+            else:
+                _logger.error("Failed to update the management authentication configuration:\n{}\nconfig:\n{}".format(
+                                                                                    rsp.data, json.dumps(ma, indent=4)))
+
+
     class Advanced_Tuning_Parameter:
         '''
         Example::
@@ -575,14 +756,16 @@ class ISVA_Configurator(object):
         'Value of the Advanced Tuning Parameter.'
         description: typing.Optional[str]
         'optional description of the Advanced Tuning Parameter.'
+        operation: str
+        'Operation which should be performed on advanced tuning parameter. Valid values include ``add`` | ``delete`` | ``update``.'
 
     def advanced_tuning_parameters(self, config):
         if config.advanced_tuning_parameters != None:
-            params = self.factory.get_system-settings().advance_tining.list_params().json
+            old_atps = optional_list(self.factory.get_system_settings().advance_tining.list_params().json)
             for atp in config.advanced_tuning_parameters:
                 if atp.operation == "delete":
                     uuid = None
-                    for p in params:
+                    for p in old_atps:
                         if p['key'] == atp.name:
                             uuid = p['uuid']
                             break
@@ -593,18 +776,18 @@ class ISVA_Configurator(object):
                         _logger.error("Failed to remove {} Advanced Tuning Parameter:\n{}".format(
                             atp.name, rsp.data))
                 elif atp.operation == "update":
-                    exits = False
-                    for p in params:
+                    exists = False
+                    for p in old_atps:
                         if p['key'] == atp.name:
                             exists = True
                             break
                     rsp = None
                     if exists == True:
                         rsp = self.factory.get_system_settings().advanced_tuning.update_parameter(
-                            key=atp.name, value=atp.value, comment=atp.comment)
+                            key=atp.name, value=atp.value, comment=atp.description)
                     else:
                         rsp = self.factory.get_system_settings().advanced_tuning.create_parameter(
-                            key=atp.name, value=atp.value, comment=atp.comment)
+                            key=atp.name, value=atp.value, comment=atp.description)
                     if rsp.success == True:
                         _logger.info("Successfully updated {} Advanced Tuning Parameter".format(atp.name))
                     else:
@@ -612,7 +795,7 @@ class ISVA_Configurator(object):
                             atp.name, json.dumps(atp, indent=4), rsp.data))
                 elif atp.operation == "add":
                     rsp = self.factory.get_system_settings().advanced_tuning.create_parameter(
-                        key=atp.name, value=atp.value, comment=atp.comment)
+                        key=atp.name, value=atp.value, comment=atp.description)
                     if rsp.success == True:
                         _logger.info("Successfully add {} Advanced Tuning Parameter".format(atp.name))
                     else:
@@ -665,9 +848,9 @@ class ISVA_Configurator(object):
         '''
 
         extension: str
-        'The signed extension file to be installed on Verify Access.'
+        'The signed extension file to be installed on Verify Identity Access.'
         third_party_packages: typing.Optional[str]
-        'An optional list of third party packages to be uploaded to Verify Access as part of the installation process.'
+        'An optional list of third party packages to be uploaded to Verify Identity Access as part of the installation process.'
         properties: typing.Optional[dict]
         'Key-Value properties to give the extension during the installation process. This list of properties will vary with the type of extension being installed.'
 
@@ -688,6 +871,70 @@ class ISVA_Configurator(object):
                     _logger.error("Failed to install extension:\n{}\n{}".format(
                                             json.dumps(extension, indent=4), rsp.data))
 
+    class Remote_Syslog(typing.TypedDict):
+        '''
+        Example::
+
+                remote_syslog:
+                - server: "127.12.7.1"
+                  port: 514
+                  debug: False
+                  protocol: "udp"
+                  sources:
+                  - name: "WebSEAL:ISAM:request.log"
+                    tag: "isva-dev"
+                    facility: "local0"
+                    severity: "debug"
+                  - name: "Runtime Messages"
+                    tag: "isva-dev"
+                    facility: "syslog"
+                    severity: "info"
+
+        .. note: This is an array of elements.
+        '''
+
+        class Forwarder(typing.TypedDict):
+            name: str
+            'The name of the log file source. The list of available source names can be retrieved via the ``source_names`` Web service.'
+            tag: str
+            'The tag to be used to designate the messages which originate from this source. This tag will be prepended to all messages that are sent to the remote syslog server.'
+            facility: str
+            'The syslog facility which will be used when sending messages to the remote syslog server. Valid values include ``kern``, ``user``, ``mail``, ``daemon``, ``auth``, ``syslog``, ``lpr``, ``news``, ``uucp``, ``cron``, ``security``, ``ftp``, ``ntp``, ``logaudit``, ``logalert``, ``clock``, ``local0``, ``local1``, ``local2``, ``local3``, ``local4``, ``local5``, ``local6`` and ``local7``.'
+            severity: int
+            'The syslog severity which will be used when sending messages to the remote syslog server. Valid values include ``emerg``, ``alert``, ``crit``, ``error``, ``warning``, ``notice``, ``info`` and ``debug``. '
+
+        server: str
+        'The IP address or host name of the remote syslog server.'
+        port: int
+        'The port on which the remote syslog server is listening.'
+        debug: bool
+        'Whether the forwarder process will be started in debug mode. All trace messages will be sent to the log file of the remote syslog forwarder.'
+        protocol: str
+        'The protocol which will be used when communicating with the remote syslog server. Valid values include ``udp``, ``tcp`` and ``tls``.'
+        format: typing.Optional[str]
+        'The format of the messages which are forwarded to the rsyslog server. Valid options include ``rfc-3164`` and ``rfc-5424``. Default value is ``rfc-3164``'
+        keyfile: typing.Optional[str]
+        'The name of the key file which contains the SSL certificates used when communicating with the remote syslog server (e.g. pdsrv). This option is required if the protocol is ``tls``.'
+        ca_certificate: typing.Optional[str]
+        'The label which is used to identify within the SSL key file the CA certificate of the remote syslog server. This option is required if the protocol is ``tls``.'
+        client_certificate: typing.Optional[str]
+        'The label which is used to identify within the SSL key file the client certificate which will be used during mutual authentication with the remote syslog server.'
+        permitted_peers: typing.Optional[str]
+        'The subject DN of the remote syslog server. If this policy data is not specified any certificates which have been signed by the CA will be accepted.'
+        sources: typing.List[Forwarder]
+        'The source of the log file entries which will be sent to the remote syslog server. '
+
+    def remote_syslog(self, config):
+        if config != None and config.remote_syslog != None and isinstance(config.remote_syslog, list):
+            for server in config.remote_syslog:
+                rsp = self.factory.get_analysis_diagnostics().remote_syslog.add_server(**server)
+                if rsp.success == True:
+                    _logger.info("Successfully added {} to the remote syslog configuration.".format(server.server))
+                    self.needsRestart = True
+                else:
+                    _logger.error("Failed to update the remote syslog configuration with:\n{}\n{}".format(
+                        json.dumps(server, indent=4) , rsp.data))
+
 
     def configure_base(self, appliance, container):
         base_config = None
@@ -705,12 +952,57 @@ class ISVA_Configurator(object):
         self.admin_config(base_config)
         self.import_ssl_certificates(base_config)
         self.account_management(base_config)
+        self.management_authentication(base_config) # This may cause an appliance to become un-contactable; eg. if auth changes from basic to bearer
         self.management_authorization(base_config)
         self.advanced_tuning_parameters(base_config)
         model.configure()
 
         self.activate_appliance(base_config)
         self.install_extensions(base_config)
+
+    def _check_aac_fed_licenses(self):
+        activations = self.factory.get_system_settings().licensing.get_activated_modules().json
+        result = False
+        _logger.debug("Existing activations: {}".format(activations))
+        if any(module.get('id', None) == 'mga' and module.get('enabled', "False") == "True" for module in activations):
+            result = True
+        if any(module.get('id', None) == 'federation' and module.get('enabled', "False") == "True" for module in activations):
+            result = True
+        return result
+
+    def global_config(self, aac, fed):
+        config = None
+        if self.config.appliance is not None:
+            config = self.config.appliance
+        elif self.config.container is not None:
+            config = self.config.container
+        else:
+            _logger.error("Deployment model cannot be found in config.yaml, skipping global configuration.")
+            return
+
+        options = ['template_files', 'mapping_rules', 'server_connections', 'runtime_properties', 
+                        'point_of_contact', 'advanced_configuration', 'access_policies', 'attribute_sources']
+        configRequired = False
+        for k in config.keys():
+            if k in options:
+                configRequired = True
+                break
+        if configRequired == True and self._check_aac_fed_licenses() == False:
+            _logger.error("You must activate the Advanced Access Control or Federation modules to configure global properties.")
+            return
+        elif configRequired == False:
+            _logger.info("Skipping global configuration")
+            return
+
+        aac.upload_files(config)
+        aac.server_connections(config)
+        aac.runtime_configuration(config)
+        fed.configure_poc(config)
+        aac.advanced_config(config)
+        fed.configure_access_policies(config)
+        fed.configure_attribute_sources(config)
+
+        deploy_pending_changes(self.factory, self.config)
 
 
     def get_modules(self):
@@ -731,23 +1023,31 @@ class ISVA_Configurator(object):
             sys.exit(1)
         _logger.info("LMI responding, begin configuration")
         if self.old_password(self.config):
-            self.factory = pyisva.Factory(mgmt_base_url(self.config), *old_creds(self.config))
+            self.factory = pyivia.Factory(mgmt_base_url(self.config), *old_creds(self.config))
             self.accept_eula()
             self.fips(self.config)
             self.complete_setup()
             self.set_admin_password(old_creds(self.config), creds(self.config))
-            self.factory = pyisva.Factory(mgmt_base_url(self.config), *creds(self.config))
+            self.factory = pyivia.Factory(mgmt_base_url(self.config), *creds(self.config))
         else:
-            self.factory = pyisva.Factory(mgmt_base_url(self.config), *creds(self.config))
+            self.factory = pyivia.Factory(mgmt_base_url(self.config), *creds(self.config))
             self.accept_eula()
             self.fips(self.config)
             self.complete_setup()
         appliance, container, web, aac, fed = self.get_modules()
         self.configure_base(appliance, container)
+        self.global_config(aac, fed)
         web.configure()
         aac.configure()
         fed.configure()
+        #Configure the remote syslog after everything else as it might rely on config we create
+        if self.config.appliance is not None:
+            self.remote_syslog(self.config.appliance)
+        elif self.config.container is not None:
+            self.remote_syslog(self.config.container)
+        if self.needsRestart == True:
+            deploy_pending_changes(self.factory, self.config)
+            self.needsRestart = False
 
 if __name__ == "__main__":
-    from isva_configurator import configurator
-    configurator.configure()
+    IVIA_Configurator().configure()

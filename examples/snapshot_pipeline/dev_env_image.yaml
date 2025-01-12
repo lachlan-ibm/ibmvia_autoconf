@@ -1,0 +1,49 @@
+container:
+  deployments:
+    - "isvawrp"
+    - "isvaruntime"
+  snapshot: "snapshots/isva_10.0.8.0.base.snapshot"
+  ssl_certificates:
+  - name: "lmi_trust_store"
+    signer_certificates:
+    - "pki/dev/postgresql/postgres.crt"
+    - "pki/dev/openldap/ca.crt"
+  - name: "rt_profile_keys"
+    signer_certificates:
+    - "pki/dev/postgresql/postgres.crt"
+  template_pages:
+  - "template_pages.zip"
+  mapping_rules:
+  - "mapping_rules.zip"
+webseal:
+  runtime:
+    policy_server: "ldap"
+    user_registry: "ldap"
+    ldap:
+      host: "openldap"
+      port: 636
+      dn: "cn=root,secAuthority=Default"
+      dn_password: !environment LDAP_PWD
+      key_file: "lmi_trust_store"
+    clean_ldap: True
+    domain: "Default"
+    admin_user: "sec_master"
+    admin_password: !environment LDAP_PWD
+    admin_cert_lifetime: 1460
+    ssl_compliance: "fips"
+  reverse_proxy:
+  - name: "wrp_instance"
+    host: "isvawrp"
+    junction_point: "/app"
+    junction_type: "tpc"
+    server_hostname: "my.backend.app"
+    server_port: "9080"
+  aac_configuration:
+    hostname: "isvaruntime"
+    port: 9443
+    runtime:
+      user: !environment RUNTIME_USER
+      password: !environment RUNTIME_PWD
+    junction: "/mga"
+    reuse_acls: True
+    reuse_certs: True

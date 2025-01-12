@@ -27,6 +27,18 @@ class AAC_Configurator(object):
         self.config = config
 
 
+
+    def _mapping_rule_to_id(self, rule_name):
+        '''
+        Helper method to convert rule name to Verify Identity Access ID
+        '''
+        rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
+        mapping_rule = optional_list(filter_list('name', rule_name, rules))[0]
+        if mapping_rule:
+            return mapping_rule['id']
+        else:
+            return None
+
     class Push_Notification_Provider(typing.TypedDict):
         '''
         Example::
@@ -54,15 +66,15 @@ class AAC_Configurator(object):
         app_id: str
         'The application identifier associated with the registration.'
         platform: str
-        'The platform the registration is for. Valid values are "apple", or "android".'
+        'The platform the registration is for. Valid values are ``apple``, or ``android``.'
         provider_address: str
-        'The "host:port" address of the push notification service provider.'
+        'The ``host:port`` address of the push notification service provider.'
         apple_key_store: typing.Optional[str]
-        'The key store database containing the APNS certificate. Only valid if ``platform`` is "apple".'
+        'The key store database containing the APNS certificate. Only valid if ``platform`` is ``apple``.'
         apple_key_label: typing.Optional[str]
-        'The key label of the imported APNS certificate. Only valid if ``platform`` is "apple".'
+        'The key label of the imported APNS certificate. Only valid if ``platform`` is ``apple``.'
         firebase_server_key: typing.Optional[str]
-        'The server key for access to the Firebase push notification service. Only valid if ``platform`` is "android".'
+        'The server key for access to the Firebase push notification service. Only valid if ``platform`` is ``android``.'
         imc_client_id: typing.Optional[str]
         'The IBM Marketing Cloud issued Oauth client ID.'
         imc_client_secret: typing.Optional[str]
@@ -92,77 +104,6 @@ class AAC_Configurator(object):
                                                                 json.dumps(provider, indent=4), rsp.data))
 
 
-    class Risk_Profiles(typing.TypedDict):
-        '''
-        Example::
-
-                risk_profiles:
-                - name: "myLocation"
-                  active: true
-                  attributes:
-                  - weight: 50
-                    id: "28"
-                  - weight: 10
-                    name: "geoCountryCode"
-                  - weight: 10
-                    name: "geoRegionCode"
-                  - weight: 10
-                    name: "geoCity"
-                  predefined: false
-
-        '''
-        class Attribute(typing.TypedDict):
-            weight: int
-            'Determines the importance of this attribute within the associated risk profile. A higher weight value indicates the attribute has more importance within the risk profile. The weight values of the attributes are used in determining the risk score or the level of risk associated with permitting a request to access a resource.'
-            id: typing.Optional[str]
-            'Internally assigned ID value of the attribute. The attribute must have a type field value of ``true`` for "risk". Either the name or id of the attribute must be defined.'
-            name: typing.Optional[str]
-            'Name of the attribute. The attribute must have a type field value of ``true`` for "risk". Either the name or id of the attribute must be defined.'
-
-        name: str
-        'A unique name for the risk profile.'
-        description: typing.Optional[str]
-        'An optional brief description of the risk profile.'
-        active: bool
-        'True indicates this risk profile is the currently active risk profile. Only one profile can be active at a time.'
-        attributes: typing.Optional[typing.List[Attribute]]
-        'Array of attributes comprising this risk profile and the weight value of each attribute which is used in determining the risk score.'
-        predefined: typing.Optional[bool]
-        'False to indicate this risk profile is custom defined.'
-
-    def _remap_attribute_name_to_id(self, all_attributes, risk_profile):
-        for attribute in risk_profile['attributes']:
-            for attribute_def in all_attributes:
-                if "name" in attribute and attribute['name'] == attribute_def['name']:
-                    attribute.pop('name')
-                    attribute["attributeID"] = attribute_def["id"]
-                elif "id" in attr:
-                    attribute["attributeID"] = attribute.pop("id")
-
-    def risk_profiles(self, config):
-        if config.risk_profiles:
-            attributes = optional_list(self.aac.attributes.list_attributes().json)
-            old_profiles = optional_list(self.aac.risk_profiles.list().json)
-            for profile in config.risk_profiles:
-                methodArgs = copy.deepcopy(profile)
-                #Re-map attribute name and id keys to correct property
-                if "attributes" in methodArgs.keys():
-                    self._remap_attribute_name_to_id(attributes, methodArgs)
-                rsp = None
-                verb = None
-                old_profile = optional_list(filter_list('name', profile.name, old_profiles))[0]
-                if old_profile:
-                    rsp = self.aac.risk_profiles.update(old_profile['id'], **methodArgs)
-                    verb = "updated" if rsp.success == True else "update"
-                else:
-                    rsp = self.aac.risk_profiles.create(**methodArgs)
-                    verb = "created" if rsp.success == True else "create"
-                if rsp.success == True:
-                    self.needsRestart = True
-                    _logger.info("Successfully {} {} risk profile".format(verb, profile.name))
-                else:
-                    _logger.error("Failed to {} risk profile:\n{}\n{}".format(
-                                            verb, json.dumps(profile, indent=4), rsp.data))
 
 
     class Policy_Information_Points(typing.TypedDict):
@@ -200,9 +141,9 @@ class AAC_Configurator(object):
                 value: str
                 'Value given to the property.'
                 datatype: str
-                'Data type of the property. Valid values include "Binary", "Boolean", "Double", "Integer", "String", "JavaScript", "KeyStore", "Email", "X500", "URI", "URL", and "Hostname".'
+                'Data type of the property. Valid values include ``Binary``, ``Boolean``, ``Double``, ``Integer``, ``String``, ``JavaScript``, ``KeyStore``, ``Email``, ``X500``, ``URI``, ``URL``, and ``Hostname``.'
                 key: str
-                'Name of the property as used by the policy information point. A key of "javascript.code" or "fileContent" identify special properties whose values can be imported and exported by a file.'
+                'Name of the property as used by the policy information point. A key of ``javascript.code`` or ``fileContent`` identify special properties whose values can be imported and exported by a file.'
                 sensitive: bool
                 'Used internally to indicate properties with values private in nature, such as passwords.'
 
@@ -210,16 +151,16 @@ class AAC_Configurator(object):
                 name: str
                 'Name of the attribute whose value will come from the selected data portion of the policy information point response. The attribute must be defined on the appliance before it can be assigned to this selector.'
                 selector: str
-                'Identifies how to select the part of the policy information point response that will be assigned as the attribute value. The format of the selector for a RESTful Web Service policy information point is dependent on the "responseFormat" property value, "JSON", "XML", or "Text".'
+                'Identifies how to select the part of the policy information point response that will be assigned as the attribute value. The format of the selector for a RESTful Web Service policy information point is dependent on the ``responseFormat`` property value, ``JSON", ``XML``, or ``Text``.'
 
             name: str
             'A unique name for the policy information point. This name is used as the Issuer for custom attributes whose value is returned by this policy information point.'
             description: typing.Optional[str]
             'A description of the policy information point.'
             type: str
-            'The policy information point type for this policy information point. Valid types are: "JavaScript", "RESTful Web Service", "Database", "LDAP", "FiberLink MaaS360", and "QRadar User Behavior Analytics".'
+            'The policy information point type for this policy information point. Valid types include ``JavaScript``, ``RESTful Web Service``, ``Database``, ``LDAP``, ``FiberLink MaaS360``, and ``QRadar User Behavior Analytics``.'
             attributes: typing.List[Attribute_Selector]
-            'A list of custom attributes whose values are retrieved from select portions of the response from this policy information point. Specify when the policy information point type of this policy information point has supportSelector true.'
+            'A list of custom attributes whose values are retrieved from select portions of the response from this policy information point. Specify when the policy information point type of this policy information point has ``supportSelector`` ``true``.'
             properties: typing.List[Property]
             'Configurable properties defining this policy information point. These entries are specific to the policy information point type.'
 
@@ -309,18 +250,64 @@ class AAC_Configurator(object):
             _logger.error("Failed to {} Access Control Policy with config:\n{}\n{}".format(verb,
                                                                     json.dumps(policy, indent=4), rsp.data))
 
+    def _remap_attribute_name_to_id(self, all_attributes, risk_profile):
+        for attribute in risk_profile['attributes']:
+            for attribute_def in all_attributes:
+                if "name" in attribute and attribute['name'] == attribute_def['name']:
+                    attribute.pop('name')
+                    attribute["attributeID"] = attribute_def["id"]
+                elif "id" in attribute:
+                    attribute["attributeID"] = attribute.pop("id")
+
+    def _risk_profiles(self, config):
+        attributes = optional_list(self.aac.attributes.list_attributes().json)
+        old_profiles = optional_list(self.aac.risk_profiles.list().json)
+        for profile in config.risk_profiles:
+            methodArgs = copy.deepcopy(profile)
+            #Re-map attribute name and id keys to correct property
+            if "attributes" in methodArgs.keys():
+                self._remap_attribute_name_to_id(attributes, methodArgs)
+            rsp = None
+            verb = None
+            old_profile = optional_list(filter_list('name', profile.name, old_profiles))[0]
+            if old_profile:
+                rsp = self.aac.risk_profiles.update(old_profile['id'], **methodArgs)
+                verb = "updated" if rsp.success == True else "update"
+            else:
+                rsp = self.aac.risk_profiles.create(**methodArgs)
+                verb = "created" if rsp.success == True else "create"
+            if rsp.success == True:
+                self.needsRestart = True
+                _logger.info("Successfully {} {} risk profile".format(verb, profile.name))
+            else:
+                _logger.error("Failed to {} risk profile:\n{}\n{}".format(
+                                        verb, json.dumps(profile, indent=4), rsp.data))
+
 
     class Access_Control(typing.TypedDict):
         '''
         Example::
 
                 access_control:
+                  risk_profiles:
+                  - name: "myLocation"
+                    active: true
+                    attributes:
+                    - weight: 50
+                        id: "28"
+                    - weight: 10
+                        name: "geoCountryCode"
+                    - weight: 10
+                        name: "geoRegionCode"
+                    - weight: 10
+                        name: "geoCity"
+                    predefined: false
                   policies:
                   - name: "Verify Demo - MFA Login Policy"
-                  policy: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!-- PolicyTag=urn:ibm:security:isam:8.0:xacml:2.0:config-policy --><!-- PolicyName='Verify Demo - MFA Login Policy' --><PolicySet xmlns=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os\" xmlns:xacml-context=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os http://docs.oasis-open.org/xacml/access_control-xacml-2.0-policy-schema-os.xsd\" PolicySetId=\"urn:ibm:security:config-policy\" PolicyCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:policy-combining-algorithm:deny-overrides\"><Description>Example CBA Policy for the MFA Banking Demo password-less login</Description><Target/><Policy PolicyId=\"urn:ibm:security:rule-container:0\" RuleCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:first-applicable\"><Target/><Rule RuleId=\"urn:ibm:security:rule:0\" Effect=\"Permit\"></Rule><Obligations><Obligation ObligationId=\"urn:ibm:security:authentication:asf:verify_mmfa_request_fingerprint\" FulfillOn=\"Permit\"/></Obligations></Policy></PolicySet>"
+                    policy: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!-- PolicyTag=urn:ibm:security:isam:8.0:xacml:2.0:config-policy --><!-- PolicyName='Verify Demo - MFA Login Policy' --><PolicySet xmlns=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os\" xmlns:xacml-context=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os http://docs.oasis-open.org/xacml/access_control-xacml-2.0-policy-schema-os.xsd\" PolicySetId=\"urn:ibm:security:config-policy\" PolicyCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:policy-combining-algorithm:deny-overrides\"><Description>Example CBA Policy for the MFA Banking Demo password-less login</Description><Target/><Policy PolicyId=\"urn:ibm:security:rule-container:0\" RuleCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:first-applicable\"><Target/><Rule RuleId=\"urn:ibm:security:rule:0\" Effect=\"Permit\"></Rule><Obligations><Obligation ObligationId=\"urn:ibm:security:authentication:asf:verify_mmfa_request_fingerprint\" FulfillOn=\"Permit\"/></Obligations></Policy></PolicySet>"
                   - name: "Verify Demo - EULA"
-                  policy: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!-- PolicyTag=urn:ibm:security:isam:8.0:xacml:2.0:config-policy --><!-- PolicyName='Verify Demo - EULA' --><PolicySet xmlns=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os\" xmlns:xacml-context=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\" xmlns:xsi=\"http:\/\/www.w3.org\/2001\/XMLSchema-instance\" xsi:schemaLocation=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os http:\/\/docs.oasis-open.org\/xacml\/access_control-xacml-2.0-policy-schema-os.xsd\" PolicySetId=\"urn:ibm:security:config-policy\" PolicyCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:policy-combining-algorithm:first-applicable\"><Description>GDPR Compliance (Acceptance of ToS)<\/Description><Target\/><Policy PolicyId=\"urn:ibm:security:rule-container:0\" RuleCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:first-applicable\"><Target\/><Rule RuleId=\"urn:ibm:security:rule:0\" Effect=\"Permit\"><Condition><Apply FunctionId=\"urn:oasis:names:tc:xacml:1.0:function:and\"><Apply FunctionId=\"urn:oasis:names:tc:xacml:1.0:function:string-at-least-one-member-of\"><Apply FunctionId=\"urn:oasis:names:tc:xacml:1.0:function:string-bag\"><AttributeValue DataType=\"http:\/\/www.w3.org\/2001\/XMLSchema#string\">urn:ibm:security:authentication:asf:mechanism:eula<\/AttributeValue><\/Apply><SubjectAttributeDesignator AttributeId=\"urn:ibm:security:subject:authenticationMechanismTypes\" DataType=\"http:\/\/www.w3.org\/2001\/XMLSchema#string\" MustBePresent=\"false\"\/><\/Apply><\/Apply><\/Condition><\/Rule><\/Policy><Policy PolicyId=\"urn:ibm:security:rule-container:1\" RuleCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:first-applicable\"><Target\/><Rule RuleId=\"urn:ibm:security:rule:1\" Effect=\"Permit\"><\/Rule><Obligations><Obligation ObligationId=\"urn:ibm:security:authentication:asf:eula\" FulfillOn=\"Permit\"\/><\/Obligations><\/Policy><\/PolicySet>"
-                  description: "GDPR Compliance (Acceptance of ToS)"
+                    policy: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!-- PolicyTag=urn:ibm:security:isam:8.0:xacml:2.0:config-policy --><!-- PolicyName='Verify Demo - EULA' --><PolicySet xmlns=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os\" xmlns:xacml-context=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\" xmlns:xsi=\"http:\/\/www.w3.org\/2001\/XMLSchema-instance\" xsi:schemaLocation=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os http:\/\/docs.oasis-open.org\/xacml\/access_control-xacml-2.0-policy-schema-os.xsd\" PolicySetId=\"urn:ibm:security:config-policy\" PolicyCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:policy-combining-algorithm:first-applicable\"><Description>GDPR Compliance (Acceptance of ToS)<\/Description><Target\/><Policy PolicyId=\"urn:ibm:security:rule-container:0\" RuleCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:first-applicable\"><Target\/><Rule RuleId=\"urn:ibm:security:rule:0\" Effect=\"Permit\"><Condition><Apply FunctionId=\"urn:oasis:names:tc:xacml:1.0:function:and\"><Apply FunctionId=\"urn:oasis:names:tc:xacml:1.0:function:string-at-least-one-member-of\"><Apply FunctionId=\"urn:oasis:names:tc:xacml:1.0:function:string-bag\"><AttributeValue DataType=\"http:\/\/www.w3.org\/2001\/XMLSchema#string\">urn:ibm:security:authentication:asf:mechanism:eula<\/AttributeValue><\/Apply><SubjectAttributeDesignator AttributeId=\"urn:ibm:security:subject:authenticationMechanismTypes\" DataType=\"http:\/\/www.w3.org\/2001\/XMLSchema#string\" MustBePresent=\"false\"\/><\/Apply><\/Apply><\/Condition><\/Rule><\/Policy><Policy PolicyId=\"urn:ibm:security:rule-container:1\" RuleCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:first-applicable\"><Target\/><Rule RuleId=\"urn:ibm:security:rule:1\" Effect=\"Permit\"><\/Rule><Obligations><Obligation ObligationId=\"urn:ibm:security:authentication:asf:eula\" FulfillOn=\"Permit\"\/><\/Obligations><\/Policy><\/PolicySet>"
+                    description: "GDPR Compliance (Acceptance of ToS)"
                   resources:
                   - server: "my.ibmsec.idp"
                     resource_uri: "/login"
@@ -339,13 +326,35 @@ class AAC_Configurator(object):
                       type: "policy"
 
         '''
+
+        class Risk_Profiles(typing.TypedDict):
+
+            class Attribute(typing.TypedDict):
+                weight: int
+                'Determines the importance of this attribute within the associated risk profile. A higher weight value indicates the attribute has more importance within the risk profile. The weight values of the attributes are used in determining the risk score or the level of risk associated with permitting a request to access a resource.'
+                id: typing.Optional[str]
+                'Internally assigned ID value of the attribute. The attribute must have a type field value of ``true`` for ``risk``. Either the name or id of the attribute must be defined.'
+                name: typing.Optional[str]
+                'Name of the attribute. The attribute must have a type field value of ``true`` for ``risk``. Either the name or id of the attribute must be defined.'
+
+            name: str
+            'A unique name for the risk profile.'
+            description: typing.Optional[str]
+            'An optional brief description of the risk profile.'
+            active: bool
+            'True indicates this risk profile is the currently active risk profile. Only one profile can be active at a time.'
+            attributes: typing.Optional[typing.List[Attribute]]
+            'Array of attributes comprising this risk profile and the weight value of each attribute which is used in determining the risk score.'
+            predefined: typing.Optional[bool]
+            'False to indicate this risk profile is custom defined.'
+
         class Policy(typing.TypedDict):
             name: str
             'The name of the policy.'
             description: typing.Optional[str]
             'An optional description of the policy.'
             dialect: typing.Optional[str]
-            'The XACML specification used within the policy. Only valid value is XACML Version 2, "urn:oasis:names:tc:xacml:2.0:policy:schema:os".'
+            'The XACML specification used within the policy. Only valid value is XACML Version 2, ``urn:oasis:names:tc:xacml:2.0:policy:schema:os``.'
             policy: str
             'The configured policy in XACML 2.0.'
             attributes_required: typing.Optional[typing.List[str]]
@@ -356,7 +365,7 @@ class AAC_Configurator(object):
                 name: str
                 'Name of the policy, policy set, or API protection definition.'
                 type: str
-                'The type of attachment. Values include "policy", "policyset", or "definition".'
+                'The type of attachment. Values include ``policy``, ``policyset``, or ``definition``.'
 
             server: str
             'The web container that contains the protected object space for a server instance.'
@@ -365,22 +374,27 @@ class AAC_Configurator(object):
             policies: typing.List[Policy_Attachment]
             'Array of attachments (policy, policy sets, and API protection definitions) that define the access protection for this resource.'
             policy_combining_algorithm: typing.Optional[str]
-            '"permitOverrides" to allow access to the resource if any of the attachments return permit; "denyOverrides" to deny access to the resource if any of the attachments return deny. Default is "denyOverrides".'
+            '``permitOverrides`` to allow access to the resource if any of the attachments return permit; ``denyOverrides`` to deny access to the resource if any of the attachments return deny. Default is ``denyOverrides``.'
             cache: int
-            '0 to disable the cache for this resource, -1 to cache the decision for the lifetime of the session or any number greater than 1 to set a specific timeout (in seconds) for the cached decision. If not specified a default of 0 will be used.'
+            '``0`` to disable the cache for this resource, ``-1`` to cache the decision for the lifetime of the session or any number greater than ``1`` to set a specific timeout (in seconds) for the cached decision. If not specified a default of ``0`` will be used.'
 
+        risk_profiles: typing.Optional[typing.List[Risk_Profiles]]
+        'List of Risk Profiles to create.'
         policies: typing.Optional[typing.List[Policy]]
         'List of Risk Based Access policies to create.'
         resources: typing.Optional[typing.List[Resource]]
         'List of resources to be created and corresponding policies which should be attached to each resource.'
 
     def access_control(self, aac_config):
+
         if aac_config.access_control != None:
             cba = aac_config.access_control
+            if cba.risk_profiles != None:
+                self._risk_profiles(cba.risk_profiles)
             if cba.policies != None:
                 old_policies = self.aac.access_control.list_policies().json
                 if old_policies == None: old_policies = []
-                for policy in ac.policies:
+                for policy in cba.policies:
                     self._cba_policy(old_policies, policy)
             if cba.resources != None:
                 for resource in cba.resources:
@@ -399,7 +413,7 @@ class AAC_Configurator(object):
 
         '''
         id: typing.Optional[int]
-        'The Verify Access assigned property id. Either the property ID or name must be defined.'
+        'The Verify Identity Access assigned property id. Either the property ID or name must be defined.'
         name: typing.Optional[str]
         'The name of the advanced configuration property. Either the property ID or name must be defined.'
         value: str
@@ -436,6 +450,7 @@ class AAC_Configurator(object):
                    schemas:
                    - schema: "urn:ietf:params:scim:schemas:core:2.0:User"
                      properties:
+                       connection_type: "ldap"
                        ldap_connection: "Local LDAP connection"
                        search_suffix: "dc=ibm,dc=com"
                        user_suffix: "dc=ibm,dc=com"
@@ -456,7 +471,7 @@ class AAC_Configurator(object):
                 attribute: str
                 'The name of the attribute.'
                 mode: str
-                'The mode for the attribute: "readonly", "writeonly", "readwrite", "adminwrite" or "immutable".'
+                'The mode for the attribute. Valid value include ``readonly``, ``writeonly``, ``readwrite``, ``adminwrite`` or ``immutable``.'
                 subatttribute: str
                 'For a multivalued attribute - the second level SCIM attribute name. '
 
@@ -469,16 +484,16 @@ class AAC_Configurator(object):
 
             class UserSchemaProperties(typing.TypedDict):
                 '''
-                "urn:ietf:params:scim:schemas:core:2.0:User"
+                uri: ``urn:ietf:params:scim:schemas:core:2.0:User``
                 '''
                 class SCIMMapping(typing.TypedDict):
                     class Mapping(typing.TypedDict):
                         type: str
-                        'The type of attribute to map to the SCIM attribute: "ldap" "session" or "fixed".'
+                        'The type of attribute to map to the SCIM attribute. Valid values are ``ldap``, ``session`` or ``fixed``.'
                         source: str
                         'The attribute to map to the SCIM attribute.'
                         scim_subattribute: str
-                        'For a multivalued attribute - the second level SCIM attribute name to be mapped. Eg: work or home for SCIM attribute email.'
+                        'For a multivalued attribute - the second level SCIM attribute name to be mapped. eg. ``work`` or ``home`` for SCIM attribute email.'
 
                     scim_attribute: str
                     'The name of the SCIM attribute being mapped.'
@@ -498,30 +513,30 @@ class AAC_Configurator(object):
                 user_suffix: str
                 'The suffix that will house any users that are created through the SCIM interface.'
                 user_dn: typing.Optional[str]
-                'The LDAP attribute that will be used to construct the user DN. Defaults to "cn".'
+                'The LDAP attribute that will be used to construct the user DN. Defaults to ``cn``.'
                 connection_type: typing.Optional[str]
-                'Indicates the type of ldap server connection type: "ldap" or "isamruntime". Defaults to "ldap"'
+                'Indicates the type of ldap server connection type. Valid values include ``ldap``  and ``isamruntime``. Defaults to ``ldap``'
                 attrs_dir: typing.Optional[str]
-                'The name of a federated directory used to generate the list of available ldap object classes and ldap attribute names. Only valid if the connection_type is set to "isamruntime".'
+                'The name of a federated directory used to generate the list of available ldap object classes and ldap attribute names. Only valid if the connection_type is set to ``isamruntime``.'
                 enforce_password_policy: bool
                 'Set this field to true if SCIM needs to honour the backend password policy when changing a user password.'
                 user_id: typing.Optional[str]
-                'The LDAP attribute that will be used as the user ID. Defaults to "uid".'
+                'The LDAP attribute that will be used as the user ID. Defaults to ``uid``.'
                 mappings: typing.Optional[typing.List[SCIMMapping]]
                 'The list of SCIM attribute mappings.'
 
             class EnterpriseSchemaProperties(typing.TypedDict):
                 '''
-                "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+                uri: ``urn:ietf:params:scim:schemas:extension:enterprise:2.0:User``
                 '''
                 class SCIMMapping(typing.TypedDict):
                     class Mapping(typing.TypedDict):
                         type: str
-                        'The type of attribute to map to the SCIM attribute: "ldap" "session" or "fixed".'
+                        'The type of attribute to map to the SCIM attribute. Valid vales include ``ldap``, ``session`` or ``fixed``.'
                         source: str
                         'The attribute to map to the SCIM attribute.'
                         scim_subattribute: str
-                        'For a multivalued attribute - the second level SCIM attribute name to be mapped. Eg: work or home for SCIM attribute email.'
+                        'For a multivalued attribute - the second level SCIM attribute name to be mapped. eg. work or home for SCIM attribute email.'
 
                     scim_attribute: str
                     'The name of the SCIM attribute being mapped.'
@@ -533,7 +548,7 @@ class AAC_Configurator(object):
 
             class GroupSchemaProperties(typing.TypedDict):
                 '''
-                "urn:ietf:params:scim:schemas:core:2.0:Group"
+                uri: ``urn:ietf:params:scim:schemas:core:2.0:Group``
                 '''
                 class LDAPObjectClass(typing.TypedDict):
                     name: str
@@ -543,30 +558,31 @@ class AAC_Configurator(object):
                 group_dn: str
                 'The LDAP attribute that will be used to construct the group DN.'
 
-            class ISVAUserSchemaProperties(typing.TypedDict):
+            class IVIAUserSchemaProperties(typing.TypedDict):
                 '''
-                "urn:ietf:params:scim:schemas:extension:isam:1.0:User"
+                uri: ``urn:ietf:params:scim:schemas:extension:isam:1.0:User``
                 '''
                 ldap_connection: typing.Optional[str]
-                'The name of the ldap server connection to the Verify Access user registry.  If a connection is not specified the SCIM application will not attempt to manage Verify Access users.'
+                'The name of the ldap server connection to the Verify Identity Access user registry. If a connection is not specified the SCIM application will not attempt to manage Verify Identity Access users.'
                 isam_domain: typing.Optional[str]
-                'The name of the Verify Access domain. This will default to: "Default"'
+                'The name of the Verify Identity Access domain. This will default to ``Default``'
                 update_native_users: typing.Optional[bool]
+                'Enable update of Verify Identity Access specific attributes when LDAP standard attributes are updated.'
                 connection_type: typing.Optional[str]
-                'Indicates the type of ldap server connection "ldap" or "isamruntime". Defaults to "ldap".'
+                'Indicates the type of ldap server connection ``ldap`` or ``isamruntime``. Defaults to ``ldap``.'
                 attrs_dir: typing.Optional[str]
-                'The name of a federated directory used to generate the list of available ldap object classes and ldap attribute names. Only valid if the connection_type is set to "isamruntime". Default is not set.'
+                'The name of a federated directory used to generate the list of available ldap object classes and ldap attribute names. Only valid if the connection_type is set to ``isamruntime``. Default is not set.'
                 enforce_password_policy: typing.Optional[bool]
-                'Set this field to true if SCIM needs to honour the backend password policy when changing a user password. Defaults to false.'
+                'Set this field to true if SCIM needs to honour the backend password policy when changing a user password. Defaults to ``false``.'
 
-            scheama: str
-            'Name of schema properties to modify. See `.*SchemaProperties` classes for the valid schema names.'
-            properties: typing.Union[ISVAUserSchemaProperties, GroupSchemaProperties, EnterpriseSchemaProperties, UserSchemaProperties]
+            uri: str
+            'Name of schema properties to modify. See ``.*SchemaProperties`` classes for the valid schema names.'
+            properties: typing.Union[IVIAUserSchemaProperties, GroupSchemaProperties, EnterpriseSchemaProperties, UserSchemaProperties]
             'Schema unique properties to apply.'
 
         admin_group: str
         'The name of the administrator group. Used to determine if the authenticated user is an administrator.'
-        schema: typing.Optional[typing.List[Schema]]
+        schemas: typing.Optional[typing.List[Schema]]
         'List of managed schema to modify'
         enable_header_authentication: typing.Optional[bool]
         'Whether or not SCIM header authentication is enabled.'
@@ -575,7 +591,7 @@ class AAC_Configurator(object):
         attribute_modes: typing.Optional[typing.List[AttributeMode]]
         'The customized attribute modes.'
         max_user_response: typing.Optional[int]
-        'The maximum number of entries that can be returned from a single call to the /User endpoint.'
+        'The maximum number of entries that can be returned from a single call to the ``/User`` endpoint.'
 
     def scim_configuration(self, aac_config):
         if aac_config.scim != None:
@@ -598,12 +614,13 @@ class AAC_Configurator(object):
                 else:
                     _logger.error("Failed to update SCIM general configuration:\n{}\n{}".format(
                                                         json.dumps(generalConfig, indent=4), rsp.data))
-            for schema in aac_config.scim:
+            for schema in aac_config.scim.schemas:
                 rsp = self.aac.scim_config.get_schema(schema.uri)
                 if rsp.success == False:
                     _logger.error("Failed to get config for schema [{}]".format(schema.uri))
                     return
                 config = {**rsp.json, **schema.properties} # I wonder how this resolves conflicts
+                _logger.debug("Merged config for {}:\n{}".format(schema.uri, json.dumps(config, indent=4)))
                 rsp = self.aac.scim_config.update_schema(schema.uri, config)
                 if rsp.success == True:
                     self.needsRestart = True
@@ -623,10 +640,18 @@ class AAC_Configurator(object):
     def _ldap_server_connection(self, connection):
         props = connection.properties
         rsp = self.aac.server_connections.create_ldap(name=connection.name, description=connection.description,
-                locked=connection.locked, connection_host_name=prop.hostname, connection_bind_dn=props.bind_dn,
+                locked=connection.locked, connection_host_name=props.hostname, connection_bind_dn=props.bind_dn,
                 connection_bind_pwd=props.bind_password, connection_ssl_truststore=props.key_file,
-                connection_ssl_auth=props.key_label, connection_host_port=props.port, connection_ssl=props.ssl,
-                connection_timeout=props.timeout, servers=props.servers)
+                connection_ssl_auth_key=props.key_label, connection_host_port=props.port, connection_ssl=props.ssl,
+                connect_timeout=props.timeout, servers=props.servers)
+        return rsp
+
+    def _runtime_server_connection(self, connection):
+        props = connection.properties
+        rsp = self.aac.server_connections.create_isam_runtime(name=connection.name, description=connection.description,
+                locked=connection.locked, connection_bind_dn=props.bind_dn, connection_bind_pwd=props.bind_pwd,
+                connection_ssl_truststore=props.ssl_truststore, connection_ssl_auth_key=props.ssl_key_label,
+                connection_ssl=props.ssl, connect_timeout=props.timeout, servers=props.servers)
         return rsp
 
     def _jdbc_server_connection(self, connection):
@@ -658,17 +683,14 @@ class AAC_Configurator(object):
 
     def _remove_server_connection(self, connection):
         configured_connections = self.aac.server_connections.list_all().json
-        print(configured_connections)
         for connectionType in configured_connections:
-            print(connectionType)
             for c in configured_connections[connectionType]:
-                print(c)
                 if c.get('name') == connection.name and c.get('locked') == True:
                     _logger.error("Connection {} exists and is locked, skipping".format(connection.name))
                     return False
                 elif c.get('name') == connection.name:
                     default_fcn = lambda x: _logger.error("Server connection id [{}] not found".format(x))
-                    logger.info("connection {} exists, deleting before recreating".format(connection.name))
+                    _logger.info("connection {} exists, deleting before recreating".format(connection.name))
                     rsp = {"ci": self.aac.server_connections.delete_ci,
                           "ldap": self.aac.server_connections.delete_ldap,
                           "isamruntime": self.aac.server_connections.delete_runtime,
@@ -743,7 +765,7 @@ class AAC_Configurator(object):
                 ssl: bool
                 'Controls whether SSL is used to establish the connection.'
                 ssl_truststore: typing.Optional[str]
-                'The key database to be used as an SSL truststore. This field is required when "ssl" is ``true``.'
+                'The key database to be used as an SSL truststore. This field is required when ``ssl`` is ``true``.'
                 ssl_key_label: typing.Optional[str]
                 'The name of the key which should be used during mutual authentication with the web server.'
                 user_endpoint: typing.Optional[str]
@@ -773,29 +795,29 @@ class AAC_Configurator(object):
                 password: str
                 'The password used to to authenticate with the database.'
                 type: typing.Optional[str]
-                'The Oracle JDBC driver type. Valid types are "thin" and "oci". Only applicable for Oracle connection, this parameter is required for all Oracle connections.'
+                'The Oracle JDBC driver type. Valid types are ``thin`` and ``oci``. Only applicable for Oracle connection, this parameter is required for all Oracle connections.'
                 service_name: typing.Optional[str]
                 'The name of the database service to connect to. Only applicable for Oracle connection, this parameter is required for all Oracle connections.'
                 database_name: typing.Optional[str]
                 'The name of the database to connect to. Only applicable for DB2 and PostgreSQL connections, this parameter is required for all DB2 and PostgreSQL connections.'
                 age_timeout: typing.Optional[int]
-                'Amount of time before a physical connection can be discarded by pool maintenance. A value of -1 disables this timeout. Specify a positive integer followed by a unit of time, which can be hours (h), minutes (m), or seconds (s). For example, specify 30 seconds as 30s. You can include multiple values in a single entry. For example, 1m30s is equivalent to 90 seconds. (Default value: "-1")'
+                'Amount of time before a physical connection can be discarded by pool maintenance. A value of ``-1`` disables this timeout. Specify a positive integer followed by a unit of time, which can be hours (h), minutes (m), or seconds (s). For example, specify 30 seconds as ``30s``. You can include multiple values in a single entry. For example, ``1m30s`` is equivalent to 90 seconds. (Default value is ``-1``)'
                 connection_timeout: typing.Optional[int]
-                'Amount of time after which a connection request times out. A value of -1 disables this timeout. Specify a positive integer followed by a unit of time, which can be hours (h), minutes (m), or seconds (s). For example, specify 30 seconds as 30s. You can include multiple values in a single entry. For example, 1m30s is equivalent to 90 seconds. (Default value: "30s")'
+                'Amount of time after which a connection request times out. A value of ``-1`` disables this timeout. Specify a positive integer followed by a unit of time, which can be hours (h), minutes (m), or seconds (s). For example, specify 30 seconds as ``30s``. You can include multiple values in a single entry. For example, ``1m30s`` is equivalent to 90 seconds. (Default value is ``30s``)'
                 max_connections_per_thread: typing.Optional[int]
                 'Limits the number of open connections on each thread.'
                 max_idle_time: typing.Optional[int]
-                'Amount of time after which an unused or idle connection can be discarded during pool maintenance, if doing so does not reduce the pool below the minimum size. A value of -1 disables this timeout. Specify a positive integer followed by a unit of time, which can be hours (h), minutes (m), or seconds (s). For example, specify 30 seconds as 30s. You can include multiple values in a single entry. For example, 1m30s is equivalent to 90 seconds. (Default value: "30m")'
+                'Amount of time after which an unused or idle connection can be discarded during pool maintenance, if doing so does not reduce the pool below the minimum size. A value of ``-1`` disables this timeout. Specify a positive integer followed by a unit of time, which can be hours (h), minutes (m), or seconds (s). For example, specify 30 seconds as ``30s``. You can include multiple values in a single entry. For example, ``1m30s`` is equivalent to 90 seconds. (Default value is ``30m``)'
                 max_pool_size: typing.Optional[int]
-                'Maximum number of physical connections for a pool. A value of 0 means unlimited. (Default value: 50)'
+                'Maximum number of physical connections for a pool. A value of 0 means unlimited. (Default value is ``50``)'
                 min_pool_size: typing.Optional[int]
                 'Minimum number of physical connections to maintain in the pool. The pool is not pre-populated. Aged timeout can override the minimum.'
                 connections_per_thread: typing.Optional[int]
                 'Caches the specified number of connections for each thread.'
                 connection_purge_policy: typing.Optional[str]
-                'Specifies which connections to destroy when a stale connection is detected in a pool. Valid values are: "EntirePool" (When a stale connection is detected, all connections in the pool are marked stale, and when no longer in use, are closed.) "FailingConnectionOnly" (When a stale connection is detected, only the connection which was found to be bad is closed.) "ValidateAllConnections" (When a stale connection is detected, connections are tested and those found to be bad are closed.) (Default value: "EntirePool")'
+                'Specifies which connections to destroy when a stale connection is detected in a pool. Valid values include ``EntirePool`` (When a stale connection is detected, all connections in the pool are marked stale, and when no longer in use, are closed.) ``FailingConnectionOnly`` (When a stale connection is detected, only the connection which was found to be bad is closed.) ``ValidateAllConnections`` (When a stale connection is detected, connections are tested and those found to be bad are closed.) (Default value is ``EntirePool``)'
                 connection_reap_time: typing.Optional[str]
-                'Amount of time between runs of the pool maintenance thread. A value of "-1" disables pool maintenance. Default value is "3m".'
+                'Amount of time between runs of the pool maintenance thread. A value of "-1" disables pool maintenance. Default value is ``3m``.'
 
 
             class RedisConnection(typing.TypedDict):
@@ -809,11 +831,11 @@ class AAC_Configurator(object):
                     'The port that the Redis server is listening on.'
 
                 deployment_model: str
-                'The Redis deployment model. Valid values are "standalone" and "sentinel".'
+                'The Redis deployment model. Valid values are ``standalone`` and ``sentinel``.'
                 master_name: str
                 'The key used in the redis sentinel node to store the master/slave configuration.'
                 hostname: typing.Optional[str]
-                'The IP address or hostname of the Redis server. This is only required if the ``deployment_model`` is set as "standalone".'
+                'The IP address or hostname of the Redis server. This is only required if the ``deployment_model`` is set as ``standalone``.'
                 port: int
                 'The port that the Redis server is listening on.'
                 user: typing.Optional[str]
@@ -822,7 +844,7 @@ class AAC_Configurator(object):
                 'The password used to to authenticate with the Redis server.'
                 ssl: bool
                 'Controls whether SSL is used to establish the connection.'
-                ssl_trustsotre: typing.Optional[str]
+                ssl_truststore: typing.Optional[str]
                 'The key database to be used as an SSL truststore. Only required if ``ssl`` is set to ``true``.'
                 ssl_key_label: typing.Optional[str]
                 'The key database to be used as an SSL keystore. Only required if ``ssl`` is set to ``true``.'
@@ -848,7 +870,7 @@ class AAC_Configurator(object):
                 class Server(typing.TypedDict):
                     order: int
                     'The order of precedence for this server.'
-                    connection: typing.TypedDict
+                    connection: dict
                     'The connection properties. This dictionary uses the properties from ``LDAPConnection``.'
 
                 hostname: str
@@ -892,15 +914,15 @@ class AAC_Configurator(object):
                 isamruntime
                 '''
                 bind_dn: str
-                'The distinguished name to use to bind to the Verify Access Runtime LDAP server.'
+                'The distinguished name to use to bind to the Verify Identity Access Runtime LDAP server.'
                 bind_pwd: str
-                'The password for bindDN to use when binding to the Verify Access Runtime LDAP server.'
+                'The password for bindDN to use when binding to the Verify Identity Access Runtime LDAP server.'
                 ssl: bool
                 'Controls whether SSL is used to establish the connection.'
                 ssl_truststore: typing.Optional[str]
-                'The key database to be used as an SSL truststore. This field is required when "ssl" is true.'
+                'The key database to be used as an SSL truststore. This field is required when ``ssl`` is ``true``.'
                 ssl_key_label: typing.Optional[str]
-                'The name of the key which should be used during mutual authentication with the Verify Access runtime LDAP server.'
+                'The name of the key which should be used during mutual authentication with the Verify Identity Access runtime LDAP server.'
 
             class WebServiceConnection(typing.TypedDict):
                 '''
@@ -915,7 +937,7 @@ class AAC_Configurator(object):
                 ssl: bool
                 'Controls whether SSL is used to establish the connection.'
                 key_file: typing.Optional[str]
-                'The key database to be used as an SSL truststore. This field is required when ``ssl`` is true.'
+                'The key database to be used as an SSL truststore. This field is required when ``ssl`` is ``true``.'
                 key_label: typing.Optional[str]
                 'The name of the key which should be used during mutual authentication with the web server.'
 
@@ -924,30 +946,30 @@ class AAC_Configurator(object):
             description: typing.Optional[str]
             'A description of the connection.'
             type: str
-            'The type of server connection.'
+            'The type of server connection. Valid types are: ``ci``, ``ldap``, ``isamruntime``, ``oracle``, ``db2``, ``soliddb``, ``psotgresql``, ``smtp`` and ``ws``.'
             locked: typing.Optional[bool]
             'Controls whether the connection is allowed to be deleted. If not present, a default of ``false`` will be assumed.'
             properties: typing.Union[IbmsecVerifyConnection, Java_Database_Connection, RedisConnection, LDAPConnection, SMTPConnection, VerifyAccessRuntimeConnection, WebServiceConnection]
             'Connection specific properties.'
 
         connections: typing.List[Server_Connection]
-        'List of server connections to create or update. Properties of individual connections are described in the `_Connection` subclasses.'
+        'List of server connections to create or update. Properties of individual connections are described in the ``_Connection`` subclasses.'
 
     def server_connections(self, config):
         if config.server_connections:
             for connection in config.server_connections:
-                if not _remove_server_connection(connection):
+                if not self._remove_server_connection(connection):
                     continue
 
-                method = {"ci": _ci_server_connection,
-                          "ldap": _ldap_server_connection,
-                          "isamruntime": _runtime_server_connection,
-                          "oracle": _jdbc_server_connection,
-                          "db2": _jdbc_server_connection,
-                          "soliddb": _jdbc_server_connection,
-                          "postgresql": _jdbc_server_connection,
-                          "smtp": _smtp_server_connection,
-                          "ws": _ws_server_connection}.get(connection.type, None)
+                method = {"ci": self._ci_server_connection,
+                          "ldap": self._ldap_server_connection,
+                          "isamruntime": self._runtime_server_connection,
+                          "oracle": self._jdbc_server_connection,
+                          "db2": self._jdbc_server_connection,
+                          "soliddb": self._jdbc_server_connection,
+                          "postgresql": self._jdbc_server_connection,
+                          "smtp": self._smtp_server_connection,
+                          "ws": self._ws_server_connection}.get(connection.type, None)
                 if method == None:
                     _logger.error("Unable to create a connection for type {} with config:\n{}".format(
                         connection.type, json.dumps(connection, indent=4)))
@@ -972,7 +994,7 @@ class AAC_Configurator(object):
 
         '''
         template_files: typing.List[str]
-        'List of files or zip-files to upload as HTML template pages. Path to files can be relative to the ``ISVA_CONFIG_BASE`` property or fully-qualified file paths.'
+        'List of files or zip-files to upload as HTML template pages. Path to files can be relative to the ``IVIA_CONFIG_BASE`` property or fully-qualified file paths.'
 
     def _strip_base_dir(self, path):
         return path.lstrip(config_base_dir())
@@ -1016,24 +1038,27 @@ class AAC_Configurator(object):
 
         class Mapping_Rule(typing.TypedDict):
             type: str
-            'Type of JavaScript rule to create. Valid values are: "InfoMap", "AuthSVC", "FIDO2", OAUTH","OTP", "OIDC" and "SAML2_0".'
+            'Type of JavaScript rule to create. Valid values include ``InfoMap``, ``AuthSVC``, ``FIDO2``, ``OAUTH``, ``OTP``, ``OIDC`` and ``SAML2_0``.'
             files: typing.List[str]
-            'List of files or directories to upload as JavaScript mapping rules. Path to files can be relative to the ``ISVA_CONFIG_BASE`` property or fully-qualified file paths.'
+            'List of files or directories to upload as JavaScript mapping rules. Path to files can be relative to the ``IVIA_CONFIG_BASE`` property or fully-qualified file paths.'
 
         mapping_rules: typing.List[Mapping_Rule]
         'List of mapping rule types/files to upload.'
 
     def upload_mapping_rules(self, _type, mapping_rules):
-        for mapping_rule in mapping_rules:
-            rsp = self.aac.mapping_rule.create_rule(rule_name=mapping_rule['name'], category=_type, content=mapping_rule['contents'])
+        for mapping_rule in mapping_rules: 
+            # name === basename split on '.' and grab the first group
+            rule_name = os.path.splitext(mapping_rule['name'])[0]
+            rsp = self.aac.mapping_rules.create_rule(rule_name=rule_name, category=_type, content=mapping_rule['contents'].decode())
             if rsp.success == True:
                 self.needsRestart = True
-                _logger.info("Successfully uploaded {} mapping rule".format(mapping_rule['name']))
+                _logger.info("Successfully uploaded {} mapping rule".format(rule_name))
             else:
                 _logger.error("Failed to upload {} mapping rule from [{}]".format(mapping_rule['name'], mapping_rule['path']))
 
 
     def upload_files(self, config):
+        _logger.info("Uploading Template Files and Mapping rules")
         if config.template_files != None:
             for entry in config.template_files:
                 #Convert list of files/directories to flattened list of files
@@ -1044,8 +1069,9 @@ class AAC_Configurator(object):
                 self.upload_template_files(parsed_files)
         if config.mapping_rules != None:
             for entry in config.mapping_rules:
+                parsed_files = []
                 for file_pointer in entry.files:
-                    parsed_files = FILE_LOADER.read_files(file_pointer)
+                    parsed_files += FILE_LOADER.read_files(file_pointer)
                 self.upload_mapping_rules(entry.type, parsed_files)
 
 
@@ -1072,7 +1098,7 @@ class AAC_Configurator(object):
                 label: str
                 'Label for the parameter. Set it to the value of the name.'
                 datatype: str
-                'Data type for the parameter. Valid values are "Boolean", "Date", "Double", "Integer", "String", "Time", or "X500Name".'
+                'Data type for the parameter. Valid values are ``Boolean``, ``Date``, ``Double``, ``Integer``, ``String``, ``Time``, or ``X500Name``.'
 
             class Property(typing.TypedDict):
                 key: str
@@ -1089,7 +1115,7 @@ class AAC_Configurator(object):
             type: typing.Optional[str]
             'Should be set to "Obligation".'
             type_id: typing.Optional[str]
-            'The obligation type id. If not provided, the value will be set to "1", which is the "Enforcement Point" type.'
+            'The obligation type id. If not provided, the value will be set to ``1``, which is the ``Enforcement Point`` type.'
             parameters: typing.List[Parameter]
             'Array of parameters associated with the obligation.'
             properties: typing.Optional[typing.List[Property]]
@@ -1161,7 +1187,7 @@ class AAC_Configurator(object):
             behavior: bool
             'True if historic data for this attribute is stored in the database and used for behavior-based attribute matching.'
             device: bool
-            'True if the attribute is stored when a device is registered as part of the device fingerprint. '
+            'True if the attribute is stored when a device is registered as part of the device fingerprint.'
 
         name: str
         'A unique name for the attribute.'
@@ -1172,11 +1198,11 @@ class AAC_Configurator(object):
         type: Type
         'Type of attribute being used.'
         datatype: str
-        'The type of values that the attribute can accept: "String", "Integer", "Double", "Boolean", "Time", "Date", "X500Name".'
+        'The type of values that the attribute can accept ``String``, ``Integer``, ``Double``, ``Boolean``, ``Time``, ``Date`` or ``X500Name``.'
         issuer: typing.Optional[str]
         'The name of the policy information point from which the value of the attribute is retrieved.'
         category: str
-        'The part of the XACML request that the attribute value comes from: "Subject", "Environment", "Action", "Resource".'
+        'The part of the XACML request that the attribute value comes from ``Subject``, ``Environment``, ``Action`` or ``Resource``.'
         matcher: str
         'ID of the attribute matcher that is used to compare the value of this attribute in an incoming device fingerprint with an existing device fingerprint of the user.'
         storage: Storage
@@ -1184,8 +1210,7 @@ class AAC_Configurator(object):
 
     def attributes_configuration(self, aac_config):
         if aac_config.attributes != None:
-            existing = self.aac.attribute.list_attributes().json
-            if existing == None: existing = []
+            existing = optional_list(self.aac.attributes.list_attributes().json)
             for attribute in aac_config.attributes:
                 methodArgs = copy.deepcopy(attribute)
                 attr_id = optional_list(filter_list("uri", attribute.uri, existing))[0].get("id", None)
@@ -1193,14 +1218,14 @@ class AAC_Configurator(object):
                     if k in methodArgs.keys():
                         old = methodArgs.pop(k)
                         for oldKey, value in old.items():
-                            methodArgs[k + "_" + old_key] = value
+                            methodArgs[k + "_" + oldKey] = value
 
                 rsp = None
                 if attr_id:
-                    rsp = self.aac.attribute.update_attribute(attr_id, **methodArgs)
+                    rsp = self.aac.attributes.update_attribute(attr_id, **methodArgs)
                     verb = "updated" if rsp.success else "update"
                 else:
-                    rsp = self.aac.attribute.create_attribute(**methodArgs)
+                    rsp = self.aac.attributes.create_attribute(**methodArgs)
                     verb = "created" if rsp.success == True else "create"
                 if rsp.success == True:
                     self.needsRestart = True
@@ -1210,25 +1235,35 @@ class AAC_Configurator(object):
                                                                                     attribute, indent=4), rsp.data))
 
 
+
     def _configure_api_protection_definition(self, definition):
         methodArgs = {"name": definition.name, "description": definition.description, "token_char_set": definition.access_token_char_set,
                 "access_token_lifetime": definition.access_token_lifetime, "access_token_length": definition.access_token_length, 
                 "authorization_code_lifetime": definition.authorization_code_lifetime, "authorization_code_length": definition.authorization_code_length,
-                "refresher_token_length": definition.refresh_token_length, "max_authorization_grant_lifetime": definition.max_authorization_grant_lifetime,
+                "refresh_token_length": definition.refresh_token_length, "max_authorization_grant_lifetime": definition.max_authorization_grant_lifetime,
                 "pin_length": definition.pin_length, "enforce_single_use_authorization_grant": definition.enforce_single_use_grant, 
                 "issue_refresh_token": definition.issue_refresh_token, "enforce_single_access_token_per_grant": definition.single_token_per_grant, 
                 "enable_multiple_refresh_tokens_for_fault_tolerance": definition.multiple_refresh_tokens, "pin_policy_enabled": definition.pin_policy, 
-                "grant_types": definition.grant_types, "attribute_sources": definition.attribute_sources
+                "grant_types": definition.grant_types, "tcm_behavior": definition.tcm_behavior
             }
         if definition.oidc:
             methodArgs.update({
                 "oidc_enabled": True, "iss": definition.oidc.iss, "poc": definition.oidc.poc, "lifetime": definition.oidc.lifetime,
-                "alg": definition.oidc.alg, "db": definition.oidc.db, "Cert": definition.oidc.cert
+                "alg": definition.oidc.alg, "db": definition.oidc.db, "cert": definition.oidc.cert
             })
             if definition.oidc.enc:
                 methodArgs.update({
                     "enc_enabled": True, "enc_alg": definition.oidc.enc.alg, "enc_enc": definition.oidc.enc.enc
                 })
+        if definition.attribute_sources:
+            attrs = []
+            attrSrcCfg = optional_list(self.factory.get_federation().attribute_sources.list_attribute_sources().json)
+            for attrSrc in definition.attribute_sources:
+                attrSrcId = optional_list(filter_list("name", attrSrc.source, attrSrcCfg))[0].get("id", "MISSING")
+                attrs += [{"attributeName": attrSrc.name, "attributeSourceId": attrSrcId}]
+            methodArgs.update({"attribute_sources": attrs})
+        if definition.access_policy:
+            methodArgs["access_policy_id"] = self._mapping_rule_to_id(definition.access_policy)
         rsp = self.aac.api_protection.create_definition(**methodArgs)
         if rsp.success == True:
             self.needsRestart = True
@@ -1262,14 +1297,11 @@ class AAC_Configurator(object):
                     _logger.error("Failed to create {} Post-Token Mapping Rule".format(definition.name))
 
     def _configure_api_protection_client(self, definitions, client):
-        for definition in definitions:
-            if definition['name'] == client.api_definition:
-                client.api_definition = definition['id']
-                break
+        apiDefId = optional_list(filter_list('name', client.definition, definitions))[0].get('id', "NULL")
         rsp = self.aac.api_protection.create_client(name=client.name, redirect_uri=client.redirect_uri,
                 company_name=client.company_name, company_url=client.company_url, contact_person=client.contact_person,
                 contact_type=client.contact_type, email=client.email, phone=client.phone, other_info=client.other_info,
-                definition=client.api_definition, client_id=client.client_id, client_secret=client.client_secret)
+                definition=apiDefId, client_id=client.client_id, client_secret=client.client_secret)
         if rsp.success == True:
             self.needsRestart = True
             _logger.info("Successfully created {} API Protection client.".format(client.name))
@@ -1331,18 +1363,18 @@ class AAC_Configurator(object):
                     enabled: bool
                     'Is encryption enabled for this definition.'
                     alg: str
-                    'The key agreement algorithm for encryption. See LMI for choices. Default value is "RSA-OAEP-256".'
+                    'The key agreement algorithm for encryption. See LMI for choices. Default value is ``RSA-OAEP-256``.'
                     enc: str
-                    'The encryption algorithm. Default value is "A128CBC-HS256".'
+                    'The encryption algorithm. Default value is ``A128CBC-HS256``.'
 
                 iss: str
-                'The issuer identifier of this definition. Should have the prefix "https://".'
+                'The issuer identifier of this definition. Should have the prefix ``https://``.'
                 poc: str
                 'The Point of Contact URL for this definition, must be a valid URL. Should include the junction portion.'
                 lifetime: int
                 'The lifetime of the id_tokens issued'
                 alg: str
-                'The signing algorithm for the JWT, can be any combination of the following: HS/ES/RS 256/384/512, Eg RS256. If HS* signing is used, clients MUST have a client secret to form JWTs. Default value is "RS256"'
+                'The signing algorithm for the JWT, valid values include combinations of ``HS``/``ES``/``RS`` and ``256``/``384``/``512``, eg ``RS256``. If ``HS*`` signing is used, clients MUST have a client secret to form JWTs. Default value is ``RS256``'
                 db: str
                 'The database containing the signing key for RS/ES signing methods.'
                 cert: str
@@ -1369,37 +1401,39 @@ class AAC_Configurator(object):
             description: typing.Optional[str]
             'An optional description of the API protection definition.'
             grant_types: typing.List[str]
-            'A list of supported authorization grant types. Valid values are "AUTHORIZATION_CODE", "RESOURCE_OWNER_PASSWORD_CREDENTIALS", "CLIENT_CREDENTIALS", "IMPLICIT_GRANT", "SAML_BEARER", "JWT_BEARER", and "DEVICE". At least one must be specified.'
-            tcm_behaviour: str
-            'Identifies the Trusted Client Manager behavior concerning trusted clients and consent. Specify "ALWAYS_PROMPT" to always prompt the user to provide their consent for a new authorization grant. Specify "NEVER_PROMPT" to allow implicit consent whereby the user is never shown a consent to authorize prompt. Specify "PROMPT_ONCE_AND_REMEMBER" to have the user prompted for consent to authorize when a previous consent for the client with the particular scope is not already stored and to have the Trusted Client Manager store the consent decision when consent is granted so it can be referred to during the next access attempt.'
+            'A list of supported authorization grant types. Valid values are ``AUTHORIZATION_CODE``, ``RESOURCE_OWNER_PASSWORD_CREDENTIALS``, ``CLIENT_CREDENTIALS``, ``IMPLICIT_GRANT``, ``SAML_BEARER``, ``JWT_BEARER``, and ``DEVICE``. At least one must be specified.'
+            tcm_behavior: str
+            'Identifies the Trusted Client Manager behavior concerning trusted clients and consent. Specify ``ALWAYS_PROMPT`` to always prompt the user to provide their consent for a new authorization grant. Specify ``NEVER_PROMPT`` to allow implicit consent whereby the user is never shown a consent to authorize prompt. Specify ``PROMPT_ONCE_AND_REMEMBER`` to have the user prompted for consent to authorize when a previous consent for the client with the particular scope is not already stored and to have the Trusted Client Manager store the consent decision when consent is granted so it can be referred to during the next access attempt.'
             access_token_lifetime: typing.Optional[int]
-            'Validity of the access token, in seconds. When this lifetime expires, the client cannot use the current access token to access the protected resource. If not provided, the access token lifetime is set to 3600 seconds.'
+            'Validity of the access token, in seconds. When this lifetime expires, the client cannot use the current access token to access the protected resource. If not provided, the access token lifetime is set to ``3600`` seconds.'
             access_token_length: typing.Optional[int]
-            'Length (characters) of an access token. Maximum value is 500 characters. If not provided, the access token length is set to 20 characters.'
+            'Length (characters) of an access token. Maximum value is 500 characters. If not provided, the access token length is set to ``20`` characters.'
             enforce_single_use_grant: typing.Optional[bool]
             'True if all tokens of the authorization grant should be revoked after an access token is validated. If not provided, the single-use authorization grant is not enforced (``false``).'
             authorization_code_lifetime: typing.Optional[int]
-            'Validity period, in seconds, of the authorization code. This field is required if grantTypes includes "AUTHORIZATION_CODE". If not provided, the authorization code lifetime is set to 300 seconds.'
+            'Validity period, in seconds, of the authorization code. This field is required if ``grant_types`` includes ``AUTHORIZATION_CODE``. If not provided, the authorization code lifetime is set to ``300`` seconds.'
             authorization_code_length: typing.Optional[int]
-            'Length of an authorization code. This field is required if grantTypes includes "AUTHORIZATION_CODE". Maximum value is 500 characters. If not provided, the authorization code length is set to 30 characters.'
+            'Length of an authorization code. This field is required if ``grant_types`` includes ``AUTHORIZATION_CODE``. Maximum value is ``500`` characters. If not provided, the authorization code length is set to ``30`` characters.'
             issue_refresh_token: typing.Optional[int]
-            'True if a refresh token should be issued to the client. This option is only applicable when grantTypes includes "AUTHORIZATION_CODE" or "RESOURCE_OWNER_PASSWORD_CREDENTIALS". Otherwise, include this field with a value of ``false``. If not provided, it is set to ``true``.'
+            'True if a refresh token should be issued to the client. This option is only applicable when ``grant_types`` includes ``AUTHORIZATION_CODE`` or ``RESOURCE_OWNER_PASSWORD_CREDENTIALS``. Otherwise, include this field with a value of ``false``. If not provided, it is set to ``true``.'
             refresh_token_length: typing.Optional[int]
             'Length of a refresh token. Maximum value is 500 characters.If not provided, the refresh token length is set to 40 characters.'
             max_authorization_grant_lifetime: typing.Optional[int]
-            'The maximum duration of a grant, in seconds, where the resource owner authorized the client to access the protected resource. The maximum value is 604800 seconds; the minimum is 1. The value for this lifetime must be greater than the values specified for the authorization code and access token lifetimes. If not provided, the value is set to 604800.'
+            'The maximum duration of a grant, in seconds, where the resource owner authorized the client to access the protected resource. The maximum value is ``604800`` seconds; the minimum is ``1``. The value for this lifetime must be greater than the values specified for the authorization code and access token lifetimes. If not provided, the value is set to ``604800``.'
             single_token_per_grant: typing.Optional[bool]
-            'True if previously granted access tokens should be revoked after a new access token is generated by presenting the refresh token to the authorization server. Applicable if issueRefreshToken is ``true``. Otherwise, include this field with a value of ``false``. If not provided, the single access token per authorization grant is enforced (``true``).'
+            'True if previously granted access tokens should be revoked after a new access token is generated by presenting the refresh token to the authorization server. Applicable if ``issue_refresh_token`` is ``true``. Otherwise, include this field with a value of ``false``. If not provided, the single access token per authorization grant is enforced (``true``).'
             multiple_refresh_tokens: typing.Optional[bool]
-            'True if multiple refresh tokens are stored so that the old refresh token is valid until the new refresh token is successfully delivered. Applicable if issueRefreshToken is ``true``. Otherwise, include this field with a value of ``false``. If not provided, the default value is ``false``.'
+            'True if multiple refresh tokens are stored so that the old refresh token is valid until the new refresh token is successfully delivered. Applicable if ``issue_refresh_token`` is ``true``. Otherwise, include this field with a value of ``false``. If not provided, the default value is ``false``.'
             pin_policy: typing.Optional[bool]
-            'True if the refresh token will be further protected with a PIN provided by the API protection client. Applicable when issueRefreshToken is ``true``. Otherwise, include this field with a value of ``false``. If not provided, the PIN policy is disabled (``false``).'
+            'True if the refresh token will be further protected with a PIN provided by the API protection client. Applicable when ``issue_refresh_token`` is ``true``. Otherwise, include this field with a value of ``false``. If not provided, the PIN policy is disabled (``false``).'
             pin_length: typing.Optional[int]
-            'The length of a PIN. Applicable when pinPolicyEnabled is true. Maximum value is 12 characters. Minimum value is 3 characters. If not provided, the PIN length is set to 4 characters.'
+            'The length of a PIN. Applicable when ``pin_policy`` is ``true``. Maximum value is ``12`` characters. Minimum value is ``3`` characters. If not provided, the PIN length is set to ``4`` characters.'
             token_char_set: typing.Optional[str]
-            'String of characters that can be used to generate tokens. If not provided, the value will be set to alphanumeric character set, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz". The maximum number of token characters that can be specified is 200.'
+            'String of characters that can be used to generate tokens. If not provided, the value will be set to alphanumeric character set, ``0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz``. The maximum number of token characters that can be specified is ``200``.'
             oidc: typing.Optional[OIDC]
             'The OIDC configuration for this API protection definition.'
+            access_policy: typing.Optional[str]
+            'The name of access policy assigned to this definition.'
             attribute_sources: typing.Optional[typing.List[Attribute_Source]]
             'Array of configured attribute sources to use in id_token generation and userinfo requests.'
             pre_token_mapping_rule: typing.Optional[str]
@@ -1413,27 +1447,27 @@ class AAC_Configurator(object):
             defintition: str
             'The name of the related API protection definition which owns and defines this client. A client registration can only belong to one definition, but a definition can own many client registrations. The definition cannot be modified.'
             redirect_uri: typing.Optional[str]
-            'The redirect URI to use for this client. If omitted, the value is set to null.'
+            'The redirect URI to use for this client. If omitted, the value is set to ``null``.'
             company_name: typing.Optional[str]
             'Name of the company associated with this client.'
             comapny_url: typing.Optional[str]
-            'URL for the company associated with this client. If omitted, the value is set to null.'
+            'URL for the company associated with this client. If omitted, the value is set to ``null``.'
             contact_person: typing.Optional[str]
-            'Name of the contact person for this client. If omitted, the value is set to null.'
+            'Name of the contact person for this client. If omitted, the value is set to ``null``.'
             contact_type: typing.Optional[str]
-            'Further describes the contact. Specify one of the following values: "TECHNICAL", "SUPPORT", "ADMINISTRATIVE", "BILLING", or "OTHER". If omitted, the value is set to null.'
+            'Further describes the contact. Valid values are ``TECHNICAL``, ``SUPPORT``, ``ADMINISTRATIVE``, ``BILLING``, or ``OTHER``. If omitted, the value is set to ``null``.'
             email: typing.Optional[str]
-            'The email address of the contact person for this client. If omitted, the value is set to null.'
+            'The email address of the contact person for this client. If omitted, the value is set to ``null``.'
             phone: typing.Optional[str]
-            'The telephone number of the contact person for this client. Input must be completely numeric with no parenthesis or dashes. If omitted, value is set to null.'
+            'The telephone number of the contact person for this client. Input must be completely numeric with no parenthesis or dashes. If omitted, value is set to ``null``.'
             other_info: typing.Optional[str]
-            'Other information about the client contact. If omitted, the value is set to null.'
+            'Other information about the client contact. If omitted, the value is set to ``null``.'
             client_id: typing.Optional[str]
             'A unique OAUTH client identifier to identify this client to the authorization server. It is sent in the token endpoint request to perform client authentication. If omitted, a random and unique alphanumeric string is generated and used as the client identifier.'
             client_secret: typing.Optional[str]
             'A string that identifies this client as confidential and serves as this client\'s secret. The client secret mechanism is a means of authorizing a client. Applications requesting an access token must know the client secret in order to gain the token. If omitted, the value is set to null and the client is considered a public client.'
             require_pkce: typing.Optional[bool]
-            'Whether or not this client must perform proof of key exchange when performing an authorization code flow. This follows RFC 7636. Defaults to false.'
+            'Whether or not this client must perform proof of key exchange when performing an authorization code flow. This follows RFC 7636. Defaults to ``false``.'
             encryption_db: typing.Optional[str]
             'The database containing the JWT encryption key. Not required for dir/AES key wrap / AES GCM key wrap.'
             encryption_cert: typing.Optional[str]
@@ -1442,7 +1476,7 @@ class AAC_Configurator(object):
             'URI which is the location that a clients published JWK set. Used in validating client assertions, request JWTs and for encrypting id_tokens.'
             introspect_with_secret: typing.Optional[bool]
             'Does this client require a client secret when introspecting. When not provided defaults to ``true``.'
-            ext_properties: typing.Optional[typing.TypedDict]
+            ext_properties: typing.Optional[dict]
             'Dynamic Client information. This is free form JSON.'
 
 
@@ -1457,7 +1491,7 @@ class AAC_Configurator(object):
                 self._configure_api_protection_definition(definition)
 
             if aac_config.api_protection.clients != None:
-                definitions = self.aac.api_protection.list_definitions()
+                definitions = optional_list(self.aac.api_protection.list_definitions().json)
                 for client in aac_config.api_protection.clients:
                     self._configure_api_protection_client(definitions, client)
 
@@ -1606,7 +1640,7 @@ class AAC_Configurator(object):
                 selector: str
                 'Name of a registry attribute to obtain.'
                 namespace: str
-                'Authentication service namespace of "name".'
+                'Authentication service namespace of ``name``.'
                 name: str
                 'Authentication service context attribute.'
 
@@ -1617,8 +1651,8 @@ class AAC_Configurator(object):
             uri: str
             'The unique resource identifier of the authentication mechanism.'
             type: str
-            'Type of mechanism to create, eg: "InfoMapAuthenticationName", "Username Password" or "Mobile Multi Factor Authenticatior".'
-            properties: typing.List[typing.TypedDict]
+            'Type of mechanism to create, eg. ``InfoMapAuthenticationName``, ``Username Password`` or ``Mobile Multi Factor Authenticatior``.'
+            properties: typing.List[dict]
             'List of properties to configure for mechanism. The property names are different for rach of the mechanism types.'
             attributes: typing.Optional[typing.List[Attribute]]
             'List of attribute to add from the request context.'
@@ -1632,7 +1666,7 @@ class AAC_Configurator(object):
             uri: str
             'Specify a unique resource identifier for the authentication policy.'
             dialect: typing.Optional[str]
-            'Authentication policy specification used to format the authentication policy. The only valid value is "urn:ibm:security:authentication:policy:1.0:schema".'
+            'Authentication policy specification used to format the authentication policy. The only valid value is ``urn:ibm:security:authentication:policy:1.0:schema``.'
             policy: str
             'Configured policy content that uses the specified authentication policy dialect.'
             enabled: bool
@@ -1710,7 +1744,7 @@ class AAC_Configurator(object):
         junction: typing.Optional[str]
         'The junction of the MMFA endpoint URI. Must be configured if endpoints is not included.'
         options: typing.Optional[str]
-        'A list of configurable key-value pairs to be presented in the QR code. Recommended formatting "key=value,key=value".'
+        'A list of configurable key-value pairs to be presented in the QR code. Recommended formatting ``key=value,key=value``.'
         endpoints: typing.Optional[Endpoints]
         'An object containing the endpoints returned from the registration QR code or the discovery endpoint. If configured, overwrites hostname, port, and junction configuration.'
         discovery_mechanisms: typing.Optional[typing.List[str]]
@@ -1783,7 +1817,7 @@ class AAC_Configurator(object):
                 rp_metadata += [uploaded_metadata['id']]
 
         if rp.mediator:
-            medaitor_list = self.aac.fido2_config.list_mediator().json
+            mediator_list = self.aac.fido2_config.list_mediator().json
             for mediator in mediator_list:
                 if mediator['fileName'] == rp.mediator:
                     rp.mediator = mediator['id']
@@ -1854,6 +1888,8 @@ class AAC_Configurator(object):
                     metadata:
                     - "fido2/metadata"
                     metadata_services:
+                    - url: "https://mds.fidoalliance.org"
+                      timeout: 30
 
         '''
         class Relying_Party(typing.TypedDict):
@@ -1904,7 +1940,7 @@ class AAC_Configurator(object):
                 url: str
                 'Address of the metadata service.'
                 retry_interval: typing.Optional[int]
-                'When the lifetime of a downloaded metadata has expired and a request to retrieve the new metadata fails, this defines the wait interval (in seconds) before retrying the download. If not specified the default value of 3600 seconds will be used. A value of 0 will result in a retry on each attestation validation.'
+                'When the lifetime of a downloaded metadata has expired and a request to retrieve the new metadata fails, this defines the wait interval (in seconds) before retrying the download. If not specified the default value of ``3600`` seconds will be used. A value of ``0`` will result in a retry on each attestation validation.'
                 jws_truststore: typing.Optional[str]
                 'The name of the JWS verification truststore. The truststore contains the certificate used to verify the signature of the downloaded metadata blob. If not specified the SSL trust store or the trust store configured in the HTTPClientV2 advanced configuration will be used.'
                 truststore: typing.Optional[str]
@@ -1918,9 +1954,9 @@ class AAC_Configurator(object):
                 certificate: typing.Optional[str]
                 'The client key alias. If not specified client certificate authentication will not be used.'
                 protocol: typing.Optional[str]
-                'The SSL protocol to use for the HTTPS connection. Valid values are TLS, TLSv1, TLSv1.1 and TLSv1.2. If not specified the protocol configured in the HTTPClientV2 advanced configuration will be used.'
+                'The SSL protocol to use for the HTTPS connection. Valid values are ``TLS``, ``TLSv1``, ``TLSv1.1`` and ``TLSv1.2``. If not specified the protocol configured in the HTTPClientV2 advanced configuration will be used.'
                 timeout: typing.Optional[int]
-                'The request timeout in seconds. A value of 0 will result in no timeout. If not specified the connect timeout configured in the HTTPClientV2 advanced configuration will be used.'
+                'The request timeout in seconds. A value of ``0`` will result in no timeout. If not specified the connect timeout configured in the HTTPClientV2 advanced configuration will be used.'
                 proxy: typing.Optional[str]
                 'The URL of the proxy server used to connect to the metadata service (including the protocol).'
                 headers: typing.Optional[typing.List[Header]]
@@ -2026,9 +2062,19 @@ class AAC_Configurator(object):
         'List of AAC/Federation runtime JVM tuning parameters.'
         endpoints: typing.Optional[typing.List[Endpoint]]
         'List of http(s) endpoints that the AAC/Federation runtime is listenting on.'
+        trace: typing.Optional[str]
+        'Set the runtime trace specification in Liberty.'
 
     def runtime_configuration(self, aac_config):
         if aac_config.runtime_properties:
+            if aac_config.runtime_properties.trace != None:
+                rsp = self.aac.runtime_parameters.update_trace(trace_string=aac_config.runtime_properties.trace)
+                if rsp.success == True:
+                    self.needsRestart = True
+                    _logger.info("Successfully updated the runtime trace.")
+                else:
+                    _logger.error("Failed to update the runtime trace:\n{}".format(rsp.data))
+
             for parameter in aac_config.runtime_properties.get("tuning_parameters", []):
                 rsp = self.aac.runtime_parameters.update_parameter(
                         parameter=parameter.name, value=parameter.value)
@@ -2039,6 +2085,7 @@ class AAC_Configurator(object):
                 else:
                     _logger.error("Failed to update parameter:\n{}\n{}".format(
                                                             json.dumps(parameter, ident=4), rsp.data))
+
             if aac_config.runtime_properties.endpoints: # Readable name to Verify Access uuid
                 iface_cfg = optional_list(self.factory.get_system_settings().interfaces.list_interfaces().json)
                 for endpoint in aac_config.runtime_properties.endpoints:
@@ -2059,14 +2106,36 @@ class AAC_Configurator(object):
                                                 iface_address_uuids, port=endpoint.port, secure=endpoint.ssl)
                     if rsp.success == True:
                         self.needsRestart = True
-                        _logger.info("Successfully added runtime endpoint at {}:{}".format(address, port))
+                        _logger.info("Successfully added runtime endpoint at {}:{}".format(address, endpoint.port))
                     else:
                         _logger.error("Failed to create endpoint:\n:{}\n{}".format(
                                                                         json.dumps(endpoint, indent=4), rsp.data))
+
+            if aac_config.runtime_properties.groups:
+                old_groups = optional_list(self.aac.user_registry.list_groups().json)
+                for group in aac_config.runtime_properties.groups:
+                    old_group = optional_list(filter_list("id", group.name, old_groups))[0]
+                    if old_group:
+                        _logger.info("Group exists in registry, adding users.")
+                        if group.users != None and isinstance(group.users, list):
+                            for user in group.users:
+                                rsp = self.aac.user_registry.add_user_to_group(user, group.name)
+                                if rsp.success == True:
+                                    _logger.info("Successfully added {} user to {} registry group.".format(user, group.name))
+                                else:
+                                    _logger.error("Failed to add {} user to existing registry group\n{}".format(user, rsp.data))
+                    else:
+                        rsp = self.aac.user_registry.create_group(group.name, users=group.users)
+                        if rsp.success == True:
+                            self.needsRestart = True
+                            _logger.info("Successfully added {} to the runtime user registry".format(group.name))
+                        else:
+                            _logger.error("Failed to create group:\n{}\n{}".format(json.dumps(user, indent=4), rsp.data))
+
             if aac_config.runtime_properties.users:
                 old_users = optional_list(self.aac.user_registry.list_users().json)
                 for user in aac_config.runtime_properties.users:
-                    old_user = optional_list(filter_list("id", user.name, old_users))
+                    old_user = optional_list(filter_list("id", user.name, old_users))[0]
                     if old_user:
                         rsp = self.aac.user_registry.delete_user(old_user['id'])
                         if rsp.success == True:
@@ -2076,49 +2145,32 @@ class AAC_Configurator(object):
                             _logger.error("Failed to remove old user from registry, skipping create {} user.".format(
                                                                                                         user.name))
                             continue
-                    rsp = self.aac.user_registry.create_user(user.name, passowrd=user.password, groups=user.groups)
+                    rsp = self.aac.user_registry.create_user(user.name, password=user.password, groups=user.groups)
                     if rsp.success == True:
                         self.needsRestart = True
                         _logger.info("Successfully added {} to the runtime user registry".format(user.name))
                     else:
                         _logger.error("Failed to create user:\n{}\n{}".format(json.dumps(user, indent=4), rsp.data))
-            if aac_config.runtime_properties.groups:
-                old_groups = optional_list(self.aac.user_registry.list_groups().json)
-                for group in aac_config.runtime_properties.groups:
-                    old_group = optional_list(filter_list("id", group.name, old_groups))
-                    if old_group:
-                        rsp = self.aac.user_registry.deletegroup(old_group['id'])
-                        if rsp.success == True:
-                            _logger.info("Successfully removed old group from user registry.")
-                        else:
-                            _logger.error("Failed to remove old group from registry, skipping create {} group.".format(
-                                                                                                        group.name))
-                            continue
-                    rsp = self.aac.user_registry.create_group(group.name, users=groups.users)
-                    if rsp.success == True:
-                        self.needsRestart = True
-                        _logger.info("Successfully added {} to the runtime user registry".format(group.name))
-                    else:
-                        _logger.error("Failed to create group:\n{}\n{}".format(json.dumps(user, indent=4), rsp.data))
-
 
     def configure(self):
         if self.config.access_control == None:
             _logger.info("No Access Control configuration detected, skipping")
             return
-        self.runtime_configuration(self.config.access_control)
-        self.upload_files(self.config.access_control)
+        else:
+            _logger.info("Starting Access Control configuration.")
+        #self.runtime_configuration(self.config.access_control)
+        #self.upload_files(self.config.access_control)
         self.attributes_configuration(self.config.access_control)
         self.obligation_configuration(self.config.access_control)
         self.pip_configuration(self.config.access_control)
         self.push_notifications(self.config.access_control)
-        self.server_connections(self.config.access_control)
+        #self.server_connections(self.config.access_control)
         self.fido2_configuration(self.config.access_control)
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config)
             self.needsRestart = False
 
-        self.risk_profiles(self.config.access_control)
+        #self.risk_profiles(self.config.access_control)
         self.access_control(self.config.access_control)
         self.api_protection_configuration(self.config.access_control)
         if self.needsRestart == True:
@@ -2128,7 +2180,7 @@ class AAC_Configurator(object):
         self.authentication_configuration(self.config.access_control)
         self.scim_configuration(self.config.access_control)
         self.mmfa_configuration(self.config.access_control)
-        self.advanced_config(self.config.access_control)
+        #self.advanced_config(self.config.access_control)
         if self.needsRestart == True:
            deploy_pending_changes(self.factory, self.config)
            self.needsRestart = False

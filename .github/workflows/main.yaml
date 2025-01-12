@@ -28,7 +28,14 @@ jobs:
       run: |
         sphinx-build docs html
         #TODO build and push to pypi
+        python -m build
 
+    # Push to pypi
+    - name: Publish python module
+      run: |
+        python -m build
+        twine upload --verbose dist/* -u $PYPI_API_USER -p $PYPI_API_KEY
+      if: github.ref == 'refs/head/stable'
 
     # Push the HTML to github-pages
     - name: Deploy
@@ -38,3 +45,4 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: html/
         force_orphan: true
+      if: github.ref == 'refs/head/stable'

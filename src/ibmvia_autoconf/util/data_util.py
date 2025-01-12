@@ -7,8 +7,14 @@ import yaml
 import base64
 import kubernetes
 import pathlib
+import logging
+import sys
+
 from copy import deepcopy
 from . import constants as const
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+_logger = logging.getLogger(__name__)
 
 def to_camel_case(snake_case):
     parts = snake_case.split('_')
@@ -110,7 +116,8 @@ class CustomLoader(yaml.SafeLoader):
         try:
             return os.environ.get(self.construct_scalar(node))
         except KeyError as e:
-            raise ValueError("Environment variable {} does not exist".format(secret)) from e
+            raise ValueError("Environment variable {} does not exist".format(
+                                                self.construct_scalar(node))) from e
 
 class FileLoader():
 
@@ -136,7 +143,7 @@ class FileLoader():
                 parsed_files += [{"name": os.path.basename(path), "path": path, "type": "dir", 
                     "directory": os.path.dirname(path).replace(self.config_base_dir, '')}]
             for file_pointer in os.listdir(path):
-                parsed_files += [self.read_file(path + file_pointer)]
+                parsed_files += [*self.read_file(path + file_pointer)]
         else:
             with open(path, 'rb') as _file:
                 contents = _file.read()
@@ -149,9 +156,15 @@ class FileLoader():
                 parsed_files += [result]
         return parsed_files 
 
-FILE_LOADER = FileLoader(os.environ.get(const.CONFIG_BASE_DIR))
+FILE_LOADER = FileLoader()
+if const.CONFIG_BASE_DIR in os.environ.keys():
+    FILE_LOADER = FileLoader(os.environ.get(const.CONFIG_BASE_DIR))
+elif const.LEGACY_CONFIG_BASE_DIR in os.environ.keys():
+    _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd "
+                     "properties instead".format(const.LEGACY_CONFIG_BASE_DIR))
+    FILE_LOADER = FileLoader(os.environ.get(const.LEGACY_CONFIG_BASE_DIR))
 
-class ISVA_Kube_Client:
+class IVIA_Kube_Client:
     _client = None
     _caught = False
 
@@ -160,17 +173,25 @@ class ISVA_Kube_Client:
         if cls._client == None and cls._caught == False:
             if const.KUBERNETES_CONFIG in os.environ.keys():
                 kubernetes.config.load_kube_config(config_file=os.environ.get(const.KUBERNETES_CONFIG))
+            elif const.LEGACY_KUBERNETES_CONFIG in os.environ.keys():
+                _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd "
+                     "properties instead".format(const.LEGACY_KUBERNETES_CONFIG))
+                kubernetes.config.load_kube_config(config_file=os.environ.get(const.LEGACY_KUBERNETES_CONFIG))
             elif cls._caught == False:
                 try:
                     kubernetes.config.load_config()
-                except kubernetes.config.config_exception.ConfigException:
+                except:
                     cls._caught = True
             cls._client = kubernetes.client
         return cls._client
 
-KUBE_CLIENT = ISVA_Kube_Client.get_client()
+KUBE_CLIENT = IVIA_Kube_Client.get_client()
+
 KUBE_CLIENT_SLEEP = 15
 try:
-    KUBE_CLIENT_SLEEP = int(os.environ.get("ISVA_KUBERNETES_RESTART_SLEEP", 15))
+    if const.KUBERNETES_CLIENT_SLEEP in os.environ.keys():
+        KUBE_CLIENT_SLEEP = int(os.environ.get(const.KUBERNETES_CLIENT_SLEEP))
+    elif const.LEGACY_KUBERNETES_CLIENT_SLEEP in os.environ.keys():
+        KUBE_CLIENT_SLEEP = int(os.environ.get(const.LEGACY_KUBERNETES_CLIENT_SLEEP))
 except ValueError:
     KUBE_CLIENT_SLEEP = 15

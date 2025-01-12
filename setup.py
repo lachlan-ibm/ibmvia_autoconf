@@ -15,7 +15,7 @@ class CleanCommand(Command):
                     print("remove {}".format(os.path.join(root, name)))
                     os.remove(os.path.join(root, name))
             for name in dirs:
-                if name.endswith((".egg-info", "build", "dist", "__pycache__")):
+                if name.endswith((".egg-info", "build", "dist", "__pycache__", "html")):
                     print("remove {}".format(os.path.join(root, name)))
                     #os.rmdir(os.path.join(root, name))
                     os.system('rm -vrf {}'.format(os.path.join(root, name)))
@@ -26,27 +26,33 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 setup(
-    name='verify_access_autoconf',
+    name='ibmvia_autoconf',
     version='0.3.%s' % os.environ.get('TRAVIS_BUILD_NUMBER', 0),
-    description='YAML based configuration automation for IBM Security Verify Access',
+    description='YAML based configuration automation for IBM Verify Identity Access',
     author='Lachlan Gleeson',
     author_email='lgleeson@au1.ibm.com',
     license='Apache2.0',
     package_dir={"": "src"},
     packages=find_packages(where="src"),
-    install_requires=['requests>=2.23.0',
-                      'PyYAML>=5.3',
-                      'pyisva>=0.1',
-                      'kubernetes>=10.0.1',
+    install_requires=['requests',
+                      'PyYAML',
+                      'pyivia',
+                      'kubernetes',
                       'docker-compose',
                       'typing'
     ],
-    url='https://github.com/lachlan-ibm/verify_access_autoconf',
+    project_urls={
+        'Homepage': 'https://github.com/lachlan-ibm/ibmvia_autoconf',
+        'Documentation': 'https://lachlan-ibm.github.io/ibmvia_autoconf',
+        'Source': 'https://github.com/lachlan-ibm/ibmvia_autoconf',
+        'Tracker': 'https://github.com/lachlan-ibm/ibmvia_autoconf/issues'
+    },
     zip_safe=False,
     cmdclass={
         'clean': CleanCommand,
     },
     long_description=long_description,
     long_description_content_type='text/markdown',
-    keywords=["isva", "isam", "ibm security access manager", "ibm security verify access"]
+    keywords=["ivia", "isva", "isam", "ibm verify", "ibm verify identiy access", 
+                    "ibm security access manager", "ibm security verify access"]
 )

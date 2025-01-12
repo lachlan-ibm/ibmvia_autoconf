@@ -1,0 +1,927 @@
+container:
+  admin_cfg:
+    session_timeout: 720
+  management_authorization:
+    authorization_enforcement: True
+    roles:
+    - operation: "update"
+      name: "Configuration Service"
+      users:
+      - name: "cfgsvc"
+        type: "local"
+      features:
+      - name: "shared_volume"
+        access: "w"
+  ssl_certificates:
+  - name: "myidpkeys"
+    personal_certificates:
+    - p12_file: "idpkeys.p12"
+      name: myidpkey
+      password: !environment IDPKEYSP12_SECRET
+    signer_certificates:
+    - "sp.pem"
+  - name: "lmi_trust_store"
+    signer_certificates:
+    - "postgresql.pem"
+    - "ldap.pem"
+  - name: "rt_profile_keys"
+    signer_certificates:
+    - "postgresql.pem"
+    - "ldap.pem"
+  cluster:
+    runtime_database:
+      host: !environment IDP_HVDB_HOST
+      port: !environment HVDB_PORT
+      type: "postgresql"
+      user: !environment HVDB_USER
+      password: !environment HVDB_PW
+      ssl: True
+      db_name: !environment HVDB_DB
+  activation: #Activation codes
+    webseal: !environment IVIA_BASE_CODE
+    access_control: !environment IVIA_AAC_CODE
+    federation: !environment IVIA_FED_CODE
+  mapping_rules:
+  - type: "saml2"
+    files:
+    - "mapping_rules/idp/ip_saml20.js"
+    - "mapping_rules/idp/ip_post_ldap.js"
+    - "mapping_rules/idp/ip_pre_ldap.js"
+    - "mapping_rules/idp/ip_saml20_httpclient.js"
+    - "mapping_rules/idp/ip_saml20_httpclient_wstrust.js"
+    - "mapping_rules/idp/ip_saml20.js"
+    - "mapping_rules/idp/ivc_to_ltpa.js"
+    - "mapping_rules/idp/ivc_to_passticket.js"
+    - "mapping_rules/idp/ivc_to_saml20.js"
+    - "mapping_rules/idp/saml20_ivc_to_saml20.js"
+    - "mapping_rules/idp/saml20_to_saml20.js"
+    - "mapping_rules/idp/stsuutostsuu.js"
+    - "mapping_rules/idp/ut_to_saml20.js"
+  server_connections:
+  - name: "idp-ldap"
+    type: "ldap"
+    description: "A connection to IDP LDAP."
+    locked: false
+    properties:
+      hostname: !environment IDP_LDAP_HOST
+      port: 636
+      bind_dn: "cn=root,secAuthority=Default"
+      bind_password: !environment LDAP_BIND_PW
+      ssl: true
+      key_file: "lmi_trust_store"
+  attribute_sources:
+  - name: "PhoneNumber"
+    type: "ldap"
+    value: "honePhone"
+    properties:
+    - key: "serverConnection"
+      value: "idp-ldap"
+    - key: "scope"
+      value: "subtree"
+    - key: "selector"
+      value: "displayName"
+    - key: "searchFilter"
+      value: "(objectClass=*)"
+    - key: "baseDN"
+      value: "dc=ibm,dc=com"
+  - name: "DisplayName"
+    type: "ldap"
+    value: "displayName"
+    properties:
+    - key: "serverConnection"
+      value: "idp-ldap"
+    - key: "scope"
+      value: "Subtree"
+    - key: "selector"
+      value: "homePhone"
+    - key: "searchFilter"
+      value: "(objectClass=*)"
+    - key: "baseDN"
+      value: "dc=ibm,dc=com"
+  access_policies:
+  - name: "AccessPolicyForPrompt"
+    type: "JavaScript"
+    category: "OIDC"
+    policy_file: "mapping_rules/idp/accesspolicy_prompt.js"
+  advanced_configuration:
+  - name: "live.demos.enabled"
+    value: "true"
+  - name: "live.demos.settings"
+    value: !environment IDP_LIVE_DEMO_CONFIG
+webseal:
+  runtime:
+    policy_server: "ldap"
+    user_registry: "ldap"
+    ldap:
+      host: !environment IDP_LDAP_HOST
+      port: !environment LDAP_PORT
+      dn: !environment LDAP_BIND_DN
+      dn_password: !environment LDAP_BIND_PW
+      key_file: "lmi_trust_store"
+    clean_ldap: True
+    domain: "Default"
+    admin_user: "sec_master"
+    admin_password: !environment LDAP_SEC_PW
+    admin_cert_lifetime: 1460
+    ssl_compliance: "fips"
+  pdadmin:
+    acls:
+    - name: "sts-unauth"
+      groups:
+      - name: "iv-admin"
+        permissions: "TcmdbsvaBRrxl"
+      - name: "webseal-servers"
+        permissions: "Tgmdbsrxl"
+      users:
+      - name: "sec_master"
+        permissions: "TcmdbsvaBRrxl"
+      any_other: "Tr"
+      unauthenticated: "Tr"
+    - name: "unauth-oidc"
+      groups:
+      - name: "iv-admin"
+        permissions: "TcmdbsvaBRrxl"
+      - name: "webseal-servers"
+        permissions: "Tgmdbsrxl"
+      users:
+      - name: "sec_master"
+        permissions: "TcmdbsvaBRrxl"
+      any-other: "Tr"
+      unauthenticated: "Tr"
+    users:
+    - username: "testuser"
+      dn: "cn=testuser,dc=ibm,dc=com"
+      password: !environment TEST_PASSWORD
+    reverse_proxies:
+    - host: "isva-idp-webseal"
+      instance: "default"
+      acls:
+      - name: "unauth-oidc"
+        junctions:
+        - "/mga/sps/auth"
+      - name: "sts-unauth"
+        junctions:
+        - "/isam/TrustServer/SecurityTokenService"
+        - "/isam/TrustServerWST13/services/RequestSecurityToken"
+      - name: "default-webseal"
+        junctions:
+        - "/isam/mobile-demo"
+  reverse_proxy:
+  - name: "default"
+    host: "isva-idp-webseal"
+    http:
+      enabled: "no"
+    https:
+      enabled: "yes"
+    domain: "Default"
+    ldap:
+      ssl: "yes"
+      port: !environment LDAP_PORT
+      key_file: "lmi_trust_store"
+    aac_configuration:
+      runtime:
+        hostname: "isva-idp-runtime"
+        port: "9443"
+        username: !environment RUNTIME_USER
+        password: !environment RUNTIME_PASSWORD
+      junction: "/mga"
+      reuse_acls: True
+      reuse_certs: True
+    api_protection_configuration:
+      junction: "/mga"
+      runtime:
+        hostname: "isva-idp-runtime"
+        port: "9443"
+        username: !environment RUNTIME_USER
+        password: !environment RUNTIME_PASSWORD
+      api: True
+      browser: True
+    junctions:
+    - junction_point: "/samljct"
+      junction_type: "ssl"
+      server_hostname: "isva-idp-runtime"
+      server_port: "9443"
+      tfim_sso: "yes"
+    stanza_configuration:
+    - stanza: "server"
+      entry_id: "web-host-name"
+      value: "www.myidp.ibm.com"
+      operation: "update"
+    - stanza: "step-up"
+      entry_id: "verify-step-up-user"
+      value: "no"
+      operation: "update"
+    - stanza: "session"
+      entry_id: "user-session-ids"
+      value: "yes"
+      operation: "update"
+    - stanza: "session"
+      entry_id: "inactive-timeout"
+      value: "1800"
+      operation: "update"
+    - stanza: "session"
+      entry_id: "create-unauth-sessions"
+      value: "yes"
+      operation: "update"
+    - stanza: "junction:/isam"
+      operation: "add"
+    - stanza: "junction:/isam"
+      operation: "add"
+      entry_id: "reset-cookies-list"
+      value: "*ac.uuid,*JSESSIONID"
+    - stanza: "TAM_CRED_ATTRS_SVC"
+      operation: "add"
+      entry_id: "eperson"
+      value: "azn_cred_registry_id"
+    - stanza: "TAM_CRED_ATTRS_SVC:eperson"   
+      operation: "add"
+    - stanza: "TAM_CRED_ATTRS_SVC:eperson" 
+      entry_id: "emailAddress"
+      value: "mail"
+      operation: "add"
+    - stanza: "TAM_CRED_ATTRS_SVC:eperson" 
+      operation: "add"
+      entry_id: "firstName"
+      value: "cn"
+    - stanza: "TAM_CRED_ATTRS_SVC:eperson" 
+      operation: "add"
+      entry_id: "lastName"
+      value: "sn"
+      operation: "add"
+    - stanza: "tfim-cluster:samljct"
+      operation: "add"
+    - stanza: "tfim-cluster:samljct"
+      operation: "add"
+      entry_id: "server"
+      value: "9,https://isva-idp-runtime:9443/TrustServerWST13/services/RequestSecurityToken"
+    - stanza: "tfim-cluster:samljct"
+      operation: "add"
+      entry_id: "ssl-keyfile"
+      value: "pdsrv.p12"
+    - stanza: "tfim-cluster:samljct"
+      operation: "add"
+      entry_id: "ssl-keyfile-stash"
+      value: "pdsrv.sth"
+    - stanza: "tfim-cluster:samljct"
+      operation: "add"
+      entry_id: "handle-pool-size"
+      value: "10"
+    - stanza: "tfim-cluster:samljct"
+      operation: "add"
+      entry_id: "handle-idle-timeout"
+      value: "240"
+    - stanza: "tfim-cluster:samljct"
+      operation: "add"
+      entry_id: "timeout"
+      value: "240"
+    - stanza: "tfim-cluster:samljct"
+      operation: "add"
+      entry_id: "basic-auth-user"
+      value: !environment RUNTIME_USER
+    - stanza: "tfim-cluster:samljct"
+      operation: "add"
+      entry_id: "basic-auth-passwd"
+      value: !environment RUNTIME_PASSWORD
+    - stanza: "tfimsso:/samljct"
+      operation: "add"
+    - stanza: "tfimsso:/samljct"
+      operation: "add"
+      entry_id: "token-type"
+      value: "http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0"
+    - stanza: "tfimsso:/samljct"
+      operation: "add"
+      entry_id: "applies-to"
+      value: "http://appliesto/saml20"
+    - stanza: "tfimsso:/samljct"
+      operation: "add"
+      entry_id: "renewal-window"
+      value: "15"
+    - stanza: "tfimsso:/samljct"
+      operation: "add"
+      entry_id: "preserve-xml-token"
+      value: "false"
+    - stanza: "tfimsso:/samljct"
+      operation: "add"
+      entry_id: "tfim-cluster-name"
+      value: "samljct"
+    - stanza: "tfimsso:/samljct"
+      operation: "add"
+      entry_id: "token-transmit-type"
+      value: "header"
+    - stanza: "tfimsso:/samljct"
+      operation: "add"
+      entry_id: "token-transmit-name"
+      value: "SAMLAssertion"
+    - stanza: "tfimsso:/samljct"
+      operation: "add"
+      entry_id: "one-time-token"
+      value: "true"
+    - stanza: "tfimsso:/samljct"
+      operation: "add"
+      entry_id: "token-collection-size"
+      value: "1"
+    - stanza: "oidc:default"
+      operation: "add"
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "redirect-uri-host"
+      value: "https://www.myidp.ibm.com"
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "discovery-endpoint"
+      value: "https://www.myidp.ibm.com/mga/sps/oauth/oauth20/metadata/OIDCDefinition"
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "client-id"
+      value: "websealclientID"
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "client-secret"
+      value: !environment WEBSEAL_OIDC_CLIENT_SECRET
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "response-type"
+      value: "id_token token"
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "mapped-identity"
+      value: "{iss}/{sub}"
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "external-user"
+      value: "true"
+access_control:
+  authentication:
+    policies:
+    - name: "Username Password"
+      description: "Username and password authentication policy."
+      enabled: true
+      uri: "urn:ibm:security:authentication:asf:password"
+      policy: "<Policy xmlns=\"urn:ibm:security:authentication:policy:1.0:schema\" PolicyId=\"urn:ibm:security:authentication:asf:password\"><Description>Username and password authentication policy.</Description><Step type=\"Authenticator\"><Authenticator AuthenticatorId=\"urn:ibm:security:authentication:asf:mechanism:password\"/></Step><Actions><Action On=\"null\" type=\"null\"><AttributeAssignments/></Action></Actions></Policy>"
+    mechanisms:
+    - name: "Username Password"
+      type: "Username Password"
+      description: "Username password authentication"
+      uri: "urn:ibm:security:authentication:asf:mechanism:password"
+      properties:
+      - usernamePasswordAuthentication.enableLastLogin: "false"
+      - usernamePasswordAuthentication.loginFailuresPersistent: "false"
+      - usernamePasswordAuthentication.maxServerConnections: "16"
+      - usernamePasswordAuthentication.mgmtDomain: "Default"
+      - usernamePasswordAuthentication.sslServerStartTLS: "false"
+      - usernamePasswordAuthentication.useFederatedDirectoriesConfig: "false"
+      - usernamePasswordAuthentication.userSearchFilter: "(|(objectclass=ePerson)(objectclass=Person))"
+      - usernamePasswordAuthentication.ldapBindDN: !environment LDAP_BIND_DN
+      - usernamePasswordAuthentication.ldapHostName: !environment IDP_LDAP_HOST
+      - usernamePasswordAuthentication.ldapBindPwd: !environment LDAP_BIND_PW
+      - usernamePasswordAuthentication.ldapPort: "636"
+      - usernamePasswordAuthentication.sslEnabled: "true"
+      - usernamePasswordAuthentication.sslTrustStore: "lmi_trust_store"
+      attributes:
+      - selector: "mobile"
+        name: "mobileNumber"
+        namespace: "urn:ibm:security:authentication:asf:mechanism:password"
+      - selector: "mail"
+        name: "emailAddress"
+        namespace: "urn:ibm:security:authentication:asf:mechanism:password"
+  api_protection:
+    definitions:
+    - name: "OIDCDefinition"
+      access_policy: "AccessPolicyForPrompt"
+      oidc:
+        enabled: True
+        alg: "RS256"
+        iss: "https://www.myidp.ibm.com"
+        poc: "https://www.myidp.ibm.com/mga"
+        dynamic_clients: true
+        issue_secret: True
+        lifetime: 3600
+        db: myidpkeys
+        cert: "CN=idp,OU=Security,O=IBM,C=AU"
+        oidc_Complaint: True
+        enc:
+          enabled: True
+          alg: "RSA-OAEP-256"
+          enc: "A128CBC-HS256"
+      attribute_sources:
+      - name: "displayName"
+        source: "DisplayName"
+      - name: "phoneNumber"
+        source: "PhoneNumber"
+      tcm_behavior: "ALWAYS_PROMPT"
+      grant_types:
+      - "AUTHORIZATION_CODE"
+      - "CLIENT_CREDENTIALS"
+      - "RESOURCE_OWNER_PASSWORD_CREDENTIALS"
+      - "IMPLICIT_GRANT"
+      - "SAML_BEARER"
+      - "JWT_BEARER"
+      - "DEVICE"
+    clients:
+    - name: "IVIA Client"
+      client_id: "clientID"
+      definition: "OIDCDefinition"
+      introspect_with_secret: True
+      client_secret: "clientSecret"
+      redirect_uris:
+      - "https://www.mysp.ibm.com/isam/sps/oidc/rp/isamrp/redirect/partner"
+      - "https://www.mysp.ibm.com/isam/sps/oidc/rp/isamrp_implicit/redirect/partner"
+      - "https://www.mysp.ibm.com/isam/sps/oidc/rp/isamrp_code/redirect/partner"
+      company_name: "IBM"
+      contact_person: "Administrative"
+    - name: "WebSEAL Native RP Client"
+      definition: "OIDCDefinition"
+      client_id: "websealclientID"
+      client_secret: !environment WEBSEAL_OIDC_CLIENT_SECRET
+      redirect_uris:
+      - "https://www.mysp.ibm.com/pkmsoidc"
+      company_name: "IBM"
+      contact_person: "Administrative"
+federation:
+  federations:
+  - name: "saml20idp"
+    protocol: "SAML2_0"
+    role: "ip"
+    export_metadata: "idpmetadata.xml"
+    webseal:
+      name: default
+      runtime:
+        username: !environment RUNTIME_USER
+        password: !environment RUNTIME_PASSWORD
+        hostname: isva-idp-runtime
+        port: 9443
+      reuse_acls: true
+      reuse_certs: true
+    configuration:
+      company_name: "IdP Company"
+      point_of_contact_url: "https://www.myidp.ibm.com/isam"
+      assertion_settings:
+        valid_before: 300
+        valid_after: 300
+      need_consent_to_federate: false
+      signature_settings:
+        validation_options:
+          validate_authn_request: true
+        signing_options:
+          sign_authn_response: true
+          sign_logout_request: true
+          sign_logout_response: true
+        signing_key_identifier:
+          store: "myidpkeys"
+          label: "CN=idp,OU=Security,O=IBM,C=AU"
+        key_info_elements:
+          include_x509_certificate_data: true
+          include_x509_subject_name: false
+          include_x509_subject_key_identifier: false
+          include_x509_issuer_details: false
+          include_public_key: false
+      identity_mapping:
+        active_delegate_id: "default-map"
+        properties:
+          mapping_rule: "ip_saml20"
+      extension_mapping:
+        active_delegate_id: "skip-extension-map"
+      name_id_format:
+        default: "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+      single_sign_on_service:
+      - binding: "post"
+      - binding: "redirect"
+      exclude_session_index_in_single_logout_request: false
+      single_logout_service:
+      - binding: "post"
+      - binding: "redirect"
+      encryption_settings:
+        decryption_key_identifier:
+          store: "myidpkeys"
+          label: "CN=idp,OU=Security,O=IBM,C=AU"
+      message_valid_time: 300
+      session_timeout: 7200
+  sts:
+    chain_templates:
+    - name: "UsernameTokentoSAML20"
+      description: "Maps from UsernameToken to SAML20"
+      modules:
+      - id: "Default UserNameToken"
+        mode: "validate"
+      - id: "Default Map Module"
+        mode: "map"
+      - id: "Default SAML 2.0 Token"
+        mode: "issue"
+    - name: "STSUUtoSTSUU"
+      description: "STSUU to STSUU"
+      modules:
+      - id: "Default STSUU"
+        mode: "validate"
+      - id: "Default Map Module"
+        mode: "map"
+      - id: "Default STSUU"
+        mode: "issue"
+    - name: "IVCredsToSAML20JunctionExample"
+      description: "IVCredsToSAML20JunctionExample"
+      modules:
+      - id: "Default IVCred Token"
+        mode: "validate"
+      - id: "Default Map Module"
+        mode: "map"
+      - id: "Default SAML 2.0 Token"
+        mode: "issue"
+    - name: "STSUULDAPAttributeMapper"
+      description: "Maps STSUU to another STSUU reading in LDAP attributes"
+      modules:
+      - id: "Default STSUU"
+        mode: "validate"
+      - id: "Default Map Module"
+        mode: "map"
+      - id: "Default Attribute Mapping Module"
+        mode: "map"
+      - id: "Default Map Module"
+        mode: "map"
+      - id: "Default STSUU"
+        mode: "issue"
+    - name: "SAML20tpSAML20"
+      description: "Maps from SAML20 to SAML20"
+      modules:
+      - id: "Default SAML 2.0 Token"
+        mode: "validate"
+      - id: "Default Map Module"
+        mode: "map"
+      - id: "Default SAML 2.0 Token"
+        mode: "issue"
+    chains:
+    - name: "SAML20ToSAML20Chain"
+      description: "Chain for saml20 to saml20"
+      chain_template: "SAML20tpSAML20"
+      request_type: "validate"
+      applies_to:
+        address: "http://appliesto/saml20"
+      issuer:
+        address: "http://issuer/saml20"
+      sign_responses: false
+      properties:
+        myself:
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.replay.validation"
+          index: 0
+          value:
+          - "false"
+        - name: "map.rule.reference.name"
+          index: 1
+          value:
+          - "saml20_to_saml20"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.issuer"
+          index: 2
+          value:
+          - "https://www.myidp.ibm.com/newissuer"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.pretime.valid"
+          index: 2
+          value:
+          - "60"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.posttime.valid"
+          index: 2
+          value:
+          - "60"
+        partner:
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.verify.signatures"
+          index: 0
+          value:
+          - "true"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.keystore.alias"
+          index: 0
+          value:
+          - "true"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.WantMultipleAttributeStatements"
+          index: 0
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.default.nameidformat"
+          index: 0
+          value:
+          - "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.DecryptionKeyIdentifier.db"
+          index: 0
+          value:
+          - "myidpkeys"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.DecryptionKeyIdentifier.cert"
+          index: 0
+          value:
+          - "CN=idp,OU=Security,O=IBM,C=AU"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.map.unknown.alias"
+          index: 0
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.ValidateKeyIdentifier.db"
+          index: 0
+          value:
+          - "myidpkeys"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.ValidateKeyIdentifier.cert"
+          index: 0
+          value:
+          - "CN=idp,OU=Security,O=IBM,C=AU"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.attribute.types"
+          index: 2
+          value:
+          - "*"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.sign"
+          index: 2
+          value:
+          - "true"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.SigningKeyIdentifier.db"
+          index: 2
+          value:
+          - "myidpkeys"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.SigningKeyIdentifier.cert"
+          index: 2
+          value:
+          - "CN=idp,OU=Security,O=IBM,C=AU"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.WantMultipleAttributeStatements"
+          index: 2
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.cert.data"
+          index: 2
+          value:
+          - "true"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.public.key"
+          index: 2
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.subject.name"
+          index: 2
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.subject.keyid"
+          index: 2
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.issuer.details"
+          index: 2
+          value:
+          - "false"
+    - name: "UsernameTokentoSAML2.0Chain"
+      description: "Chain for UsernameToken to SAML20"
+      chain_template: "UsernameTokentoSAML20"
+      request_type: "validate"
+      applies_to:
+        address: "http://appliesto/saml20"
+      issuer:
+        address: "http://issuer/username"
+      sign_responses: false
+      properties:
+        partner:
+        - name: "username.validate.freshness"
+          index: 0
+          value: 
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.attribute.types"
+          index: 1
+          value:
+          - "*"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.sign"
+          index: 1
+          value:
+          - "true"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.SigningKeyIdentifier.db"
+          index: 1
+          value:
+          - "myidpkeys"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.SigningKeyIdentifier.cert"
+          index: 1
+          value:
+          - "CN=idp,OU=Security,O=IBM,C=AU"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.SignatureAlgorithm"
+          index: 1
+          value:
+          - "RSA-SHA512"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.WantMultipleAttributeStatements"
+          index: 1
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.cert.data"
+          index: 1
+          value:
+          - "true"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.public.key"
+          index: 1
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.subject.name"
+          index: 1
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.subject.keyid"
+          index: 1
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.issuer.details"
+          index: 1
+          value:
+          - "false"
+        myself:
+        - name: "username.skip.password.validation"
+          index: 0
+          value: 
+          - "false"
+        - name: "username.password.validator"
+          index: 0
+          value:
+          - "TAMRD"
+        - name: "username.server.connection.id"
+          index: 0
+          value:
+          - "idp-ldap"
+        - name: "username.tamrd.management.domain"
+          index: 0
+          value:
+          - "Default"
+        - name: "username.tamrd.use.federated.directories.config"
+          index: 0
+          value:
+          - "false"
+        - name: "username.tamrd.login.failures.persistent"
+          index: 0
+          value:
+          - "false"
+        - name: "username.tamrd.maximum.server.connections"
+          index: 0
+          value:
+          - "16"
+        - name: "map.rule.reference.name"
+          index: 1
+          value:
+          - "ut_to_saml20"
+        - name: "map.rule.type"
+          index: 1
+          value:
+          - "JAVASCRIPT"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.issuer"
+          index: 2
+          value:
+          - "https://www.myidp.ibm.com/isam/sps/saml20idp/saml20"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.pretime.valid"
+          index: 2
+          value:
+          - "3600"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.posttime.valid"
+          index: 2
+          value:
+          - "3600"
+    - name: "STSUUMapper"
+      description: "STSUUMapper"
+      chain_template: "STSUULDAPAttributeMapper"
+      request_type: "validate"
+      applies_to:
+        address: "http://stsuu/appliesto"
+      issuer:
+        address: "http://stsuu/issuer"
+      properties:
+        myself:
+        - name: "map.rule.type"
+          index: 1
+          value:
+          - "JAVASCRIPT"
+        - name: "map.rule.reference.name"
+          index: 1
+          value: 
+          - "ip_pre_ldap"
+        - name: "map.rule.type"
+          index: 3
+          value:
+          - "JAVASCRIPT"
+        - name: "map.rule.reference.name"
+          index: 3
+          value:
+          - "ip_post_ldap"
+    - name: "STSUUAttributeMapper"
+      description: "STSUUAttributeMapper"
+      chain_template: "STSUUtoSTSUU"
+      request_type: "validate"
+      applies_to:
+        address: "http://appliesto/stsuu"
+      issuer:
+        address: "http://issuer/stsuu"
+      properties:
+        attribute_mapping:
+        - name: "displayName"
+          attribute: "DisplayName"
+        - name: "homePhone"
+          attribute: "HomePhone"
+        myself:
+        - name: "map.rule.type"
+          index: 1
+          value: 
+          - "JAVASCRIPT"
+        - name: "map.rule.reference.name"
+          index: 1
+          value:
+          - "stsuutostsuu"
+    - name: "IVCredToSAML20Chain"
+      description: "IVCredToSAML20Chain"
+      chain_template: "IVCredsToSAML20JunctionExample"
+      request_type: "issue(Oasis)"
+      applies_to:
+        address: "http://appliesto/saml20"
+      issuer:
+        address: "amwebrte-sts-client"
+      token_type: "SAML 2.0"
+      properties:
+        myself:
+        - name: "map.rule.type"
+          index: 1
+          value:
+          - "JAVASCRIPT"
+        - name: "map.rule.reference.name"
+          index: 1
+          value: 
+          - 'saml20_ivc_to_saml20'
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.issuer"
+          index: 2
+          value:
+          - "https://www.myidp.ibm.com/isam/sps/saml20idp/saml20"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.pretime.valid"
+          index: 2
+          value:
+          - "3600"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.posttime.valid"
+          index: 2
+          value:
+          - "3600"
+        partner:
+        - name: "ivcred.verify.signatures"
+          index: 0
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.attribute.types"
+          index: 2
+          value:
+          - "*"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.sign"
+          index: 2
+          value:
+          - "true"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.SigningKeyIdentifier.db"
+          index: 2
+          value:
+          - "myidpkeys"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.SigningKeyIdentifier.cert"
+          index: 2
+          value:
+          - "CN=idp,OU=Security,O=IBM,C=AU"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.subject.keyid"
+          index: 2
+          value:
+          - "true"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.public.key"
+          index: 2
+          value:
+          - "true"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.issuer.details"
+          index: 2
+          value:
+          - "true"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.subject.name"
+          index: 2
+          value:
+          - "true"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.signature.include.cert.data"
+          index: 2
+          value:
+          - "true"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.SignatureAlgorithm"
+          index: 2
+          value:
+          - "RSA-SHA512"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.DigestAlgorithm"
+          index: 2
+          value:
+          - "SHA256"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.EncryptionKeyIdentifier.db"
+          index: 2
+          value:
+          - ""
+        - name: "com.tivoli.am.fim.sts.saml.2.0.EncryptionKeyIdentifier.cert"
+          index: 2
+          value:
+          - ""
+        - name: "com.tivoli.am.fim.sts.saml.2.0.EncryptAssertions"
+          index: 2
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.EncryptAllAttributes"
+          index: 2
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.EncryptNameIdentifiers"
+          index: 2
+          value:
+          - "false"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.BlockEncryptionAlgorithm"
+          index: 2
+          value:
+          - "TRIPLEDES"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.EncryptionKeyTransportAlgorithm"
+          index: 2
+          value:
+          - "RSA-OEAP"
+        - name: "com.tivoli.am.fim.sts.saml.2.0.assertion.SubjectConfirmationMethod"
+          index: 2
+          value:
+          - "urn:oasis:names:tc:SAML:2.0:cm:bearer"
