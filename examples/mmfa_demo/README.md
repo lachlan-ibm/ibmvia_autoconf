@@ -1,5 +1,5 @@
-Deploying this example
-######################
+Deploying the Mobile Multi-Factor Authentication Cookbook
+##########################################################
 
 This demonstrations documents the required configuration to use IBM Security Verify Access as a
 Mobile Multi-Factor Authentication provider. This scenario configures a WebSEAL reverse proxy
@@ -22,7 +22,7 @@ Installing the Verify Access Operator
 The Verify Access Operator can be installed into any Kubernetes environment from source code
 
 ```
-kubectl create -f https://github.com/IBM-Security/verify-access-operator/releases/download/v24.4.0/bundle.yaml
+kubectl create -f https://github.com/IBM-Security/verify-access-operator/releases/download/v24.12.0/bundle.yaml
 ```
 
 
