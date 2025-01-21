@@ -1,5 +1,4 @@
-Deploying the Federation Cookbook
-###
+# Deploying the Federation Cookbook
 
 This demonstrations documents the required configuration to use IBM Verify Identity Access as either and 
 Identity Provider (IDP) or a Service Provider in a SAML2.0 federated identity scenario. This demonstration requires
