@@ -29,7 +29,7 @@ To run this configuration you should define the following properties, where the 
    export LDAP_BIND_PASSWORD=betterThanPassw0rd
    export LDAP_SEC_PASSWORD=betterThanPassw0rd
 
-The container deployment used for this demo can be found in the `Verify Identity Access<https://github.com/IBM-Security/verify-access-container-deployment>`_ 
+The container deployment used for this demo can be found in the `Verify Identity Access <https://github.com/IBM-Security/verify-access-container-deployment>`_ 
 sample code.
 
 
@@ -232,7 +232,7 @@ _________________________________________________
 Testing it out
 ______________
 
-``https://www.myidp.ibm.com/mga/sps/mmfa?TO=DO```
+``https://www.myidp.ibm.com/mga/sps/mmfa?TO=DO``
 
 
 Federation Cookbook
@@ -305,31 +305,5 @@ _____________
 * Test the Federated authentication:
 
   * IdP initiated SSO
-  
+
   * SP initiated SSO
-
-
-.. _example_idp_yaml:
-
-IdP Configuration:
-__________________
-
-.. include:: ../examples/federation_demo/federation_idp.yaml
-   :literal:
-
-.. _example_sp_yaml:
-
-SP Configuration:
-_________________
-
-.. include:: ../examples/federation_demo/federation_sp.yaml
-   :literal:
-
-.. _example_idp_partner_yaml:
-
-IdP Partner Configuration:
-__________________________
-
-.. include:: ../examples/federation_demo/federation_idp_partner.yaml
-   :literal:
-
