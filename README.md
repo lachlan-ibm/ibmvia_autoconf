@@ -33,7 +33,7 @@ To get started several example deployments are available in the [Examples](examp
 ## Deployment
 ### Local environment
 IBM Verify Identity Access Configuration Automation is simple to run locally. 
-1. First the required python packages are installed from [PyPi](https://pypi.org/project/ibmvia-autoconf/). 
+1. Install the required python packages from [PyPi](https://pypi.org/project/ibmvia-autoconf/). 
 2. Set the required environment variables
 3. Invoke the python module from the command line.
 ```bash
@@ -48,7 +48,11 @@ The docker container can be built and run with the following command executed fr
 ```
 docker build --no-cache --force-rm -t verify-identity-access-configurator .
 
-docker run --volume /path/to/config/yaml:/config --env "IVIA_CONFIGURATION_BASE_DIR=/config" --env IVIA_MGMT_BASE_URL="https://<mgmt address>:<mgmt port>" --env "IVIA_MGMT_PASSWORD=Passw0rd1!" verify-identity-access-configurator
+docker run --volume /path/to/config/yaml:/config \
+            --env "IVIA_CONFIGURATION_BASE_DIR=/config" \
+            --env IVIA_MGMT_BASE_URL="https://<mgmt address>:<mgmt port>" \
+            --env "IVIA_MGMT_PASSWORD=Passw0rd1!" \
+            verify-identity-access-configurator
 ```
 
 
