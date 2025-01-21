@@ -1,5 +1,5 @@
 Deploying the Mobile Multi-Factor Authentication Cookbook
-##########################################################
+###
 
 This demonstrations documents the required configuration to use IBM Security Verify Access as a
 Mobile Multi-Factor Authentication provider. This scenario configures a WebSEAL reverse proxy
