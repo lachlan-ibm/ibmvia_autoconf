@@ -761,7 +761,7 @@ class IVIA_Configurator(object):
 
     def advanced_tuning_parameters(self, config):
         if config.advanced_tuning_parameters != None:
-            old_atps = optional_list(self.factory.get_system_settings().advanced_tuning.list_params().json)
+            old_atps = optional_list(self.factory.get_system_settings().advanced_tuning.list_parameters().json)
             for atp in config.advanced_tuning_parameters:
                 if atp.operation == "delete":
                     uuid = None
