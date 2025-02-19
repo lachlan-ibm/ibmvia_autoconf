@@ -163,8 +163,14 @@ class IVIA_Configurator(object):
                     access_control: !secret verify-access/isva-secrets:access_control_code
                     federation: !environment ISVA_ACCESS_CONTROL_CODE
 
+
+                  activation:
+                    trial_license: issued/trial.pem
+
         '''
 
+        trial_license: typing.Optional[str]
+        'Trial license file issued from https://isva-trial.verify.ibm.com/'
         webseal: typing.Optional[str]
         'License code for the WebSEAL Reverse Proxy module.'
         access_control: typing.Optional[str]
@@ -408,6 +414,7 @@ class IVIA_Configurator(object):
                             user.name, password=user.password)
                     if rsp.success == True:
                         _logger.info("Successfully update password for {}".format(user.name))
+                        self.needsRestart == True
                     else:
                         _logger.error("Failed to update password for {}:\n{}".format(
                             user.name, rsp.data))
@@ -508,6 +515,9 @@ class IVIA_Configurator(object):
                 self._system_groups(config.account_management.groups)
             if config.account_management.users != None:
                 self._system_users(config.account_management.users)
+        if self.needsRestart == True: #Don't stack passowrd change; cfgsvc may need the account unlock
+            deploy_pending_changes(self.factory, self.config)
+            self.needsRestart == False
 
     def _add_auth_role(self, role):
         if role.operation == "delete":
@@ -761,7 +771,7 @@ class IVIA_Configurator(object):
 
     def advanced_tuning_parameters(self, config):
         if config.advanced_tuning_parameters != None:
-            old_atps = optional_list(self.factory.get_system_settings().advance_tining.list_params().json)
+            old_atps = optional_list(self.factory.get_system_settings().advanced_tuning.list_parameters().json)
             for atp in config.advanced_tuning_parameters:
                 if atp.operation == "delete":
                     uuid = None
