@@ -762,7 +762,7 @@ class WEB_Configurator(object):
     def _pdadmin_pop(self, runtime, pop):
         pdadminCommands = ["pop create {}".format(pop.name)]
         if pop.description:
-            pdadminCommands += ["pop modify {} set description {}".format(pop.name, pop.description)]
+            pdadminCommands += ['pop modify {} set description "{}"'.format(pop.name, pop.description)]
 
         if pop.attributes:
             for attribute in pop.attributes:
@@ -829,7 +829,7 @@ class WEB_Configurator(object):
         pdadminCommands = ["group create {} {} {}".format(group.name, group.dn, group.description)]
         if group.users:
             for user in group.users:
-                pdadminCommands += ["group modify {} add user {}".format(group.name, user)]
+                pdadminCommands += ["group modify {} add {}".format(group.name, user)]
         rsp = self.web.policy_administration.execute(runtime.admin_user, runtime.admin_password, pdadminCommands)
         if rsp.success == True:
             _logger.info("Successfully created group {}".format(group.name))
@@ -1049,14 +1049,14 @@ class WEB_Configurator(object):
         if config.pops != None:
             for pop in config.pops:
                 self._pdadmin_pop(runtime, pop)
+        #Create users before groups, as groups can add users as members
+        if config.users != None:
+            for user in config.users:
+                self._pdadmin_user(runtime, user)
 
         if config.groups != None:
             for group in config.groups:
                 self._pdadmin_group(runtime, group)
-
-        if config.users != None:
-            for user in config.users:
-                self._pdadmin_user(runtime, user)
 
         if config.reverse_proxies != None:
             for proxy in config.reverse_proxies:
