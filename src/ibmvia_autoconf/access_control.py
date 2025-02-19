@@ -675,7 +675,7 @@ class AAC_Configurator(object):
 
     def _ws_server_connection(self, connection):
         props = connection.properties
-        rsp = self.aac.server_connection.screate_web_service(name=connection.name, description=connection.description,
+        rsp = self.aac.server_connections.create_web_service(name=connection.name, description=connection.description,
                 locked=connection.locked, connection_url=props.url, connection_user=props.user,
                 connection_password=props.password, connection_ssl_truststore=props.key_file, 
                 connection_ssl_auth_key=props.key_label, connection_ssl=props.ssl)
@@ -1049,12 +1049,14 @@ class AAC_Configurator(object):
         for mapping_rule in mapping_rules: 
             # name === basename split on '.' and grab the first group
             rule_name = os.path.splitext(mapping_rule['name'])[0]
-            rsp = self.aac.mapping_rules.create_rule(rule_name=rule_name, category=_type, content=mapping_rule['contents'].decode())
+            rsp = self.aac.mapping_rules.create_rule(rule_name=rule_name, category=_type, 
+                                                            content=mapping_rule['contents'].decode())
             if rsp.success == True:
                 self.needsRestart = True
                 _logger.info("Successfully uploaded {} mapping rule".format(rule_name))
             else:
-                _logger.error("Failed to upload {} mapping rule from [{}]".format(mapping_rule['name'], mapping_rule['path']))
+                _logger.error("Failed to upload {} mapping rule from [{}]".format(
+                                    mapping_rule['name'], mapping_rule['path']))
 
 
     def upload_files(self, config):
@@ -1065,7 +1067,6 @@ class AAC_Configurator(object):
                 #include directories if we are a directory
                 incDirs = os.path.isdir(os.path.join(config_base_dir(), entry))
                 parsed_files = FILE_LOADER.read_files(entry, include_directories=incDirs)
-                self._remove_prefix_from_paths(parsed_files, entry)
                 self.upload_template_files(parsed_files)
         if config.mapping_rules != None:
             for entry in config.mapping_rules:
@@ -1162,23 +1163,23 @@ class AAC_Configurator(object):
                      description: "Verify Demo Transfer Amount"
                      uri: "urn:ibm:demo:transferamount"
                      type:
-                       risk: false
+                       risk: true
                        policy: false
                      datatype: "Double"
                      issuer: ""
                      category: "Action"
                      matcher: "1"
                      storage:
-                       session: false
+                       session: true
                        behavior: false
-                       device: false
+                       device: true
 
         '''
 
         class Type(typing.TypedDict):
-            risk: str
+            risk: bool
             'True if the attribute is used in risk profiles.'
-            policy: str
+            policy: bool
             'True if the attribute is used in policies.'
 
         class Storage(typing.TypedDict):
@@ -1214,7 +1215,9 @@ class AAC_Configurator(object):
             for attribute in aac_config.attributes:
                 methodArgs = copy.deepcopy(attribute)
                 attr_id = optional_list(filter_list("uri", attribute.uri, existing))[0].get("id", None)
-                for k in ["storage", "type"]: #remap keys "key": {"di": "ct"} -> "key_di": "ct"
+                for k in ["storage", "type"]: 
+                    #remap keys "storage": {"device": True, "session": True} 
+                    #       -> {"storage_device": True, "storage_session": True}
                     if k in methodArgs.keys():
                         old = methodArgs.pop(k)
                         for oldKey, value in old.items():

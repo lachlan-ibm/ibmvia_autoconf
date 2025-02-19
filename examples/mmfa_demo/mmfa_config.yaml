@@ -82,7 +82,7 @@ container:
   template_files:
   - "template_files.zip"
   mapping_rules:
-    type: "InfoMap"
+  - type: "InfoMap"
     files:
     - "mapping_rules/"
 webseal:
