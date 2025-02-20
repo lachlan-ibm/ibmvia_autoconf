@@ -192,7 +192,7 @@ class AAC_Configurator(object):
                     _logger.info("Successfully {} {} PIP".format(verb, pip.name))
                 else:
                     _logger.error("Failed to {} PIP:\n{}\n{}".format(verb, json.dumps(pip, indent=4), rsp.data))
-                    
+
 
     def _cba_resource(self, resource, policies, policy_sets, definitions):
         methodArgs = {
@@ -207,7 +207,7 @@ class AAC_Configurator(object):
             for policy in resource.policy:
                 policy_id = "-1"
                 if policy.type == "policy":
-                    policy_id = optional_list(filter_list("name", policy.name, policies)).get('id', "-1")
+                    policy_id = optional_list(filter_list("name", policy.name, policies))[0].get('id', "-1")
                 elif policy.type == "policyset":
                     policy_id = optional_list(filter_list('name', policy.name, policy_sets))[0].get('id', "-1")
                 elif policy.type == "definition":
@@ -259,10 +259,10 @@ class AAC_Configurator(object):
                 elif "id" in attribute:
                     attribute["attributeID"] = attribute.pop("id")
 
-    def _risk_profiles(self, config):
+    def _risk_profiles(self, profiles):
         attributes = optional_list(self.aac.attributes.list_attributes().json)
-        old_profiles = optional_list(self.aac.risk_profiles.list().json)
-        for profile in config.risk_profiles:
+        old_profiles = optional_list(self.aac.risk_profiles.list_profiles().json)
+        for profile in profiles:
             methodArgs = copy.deepcopy(profile)
             #Re-map attribute name and id keys to correct property
             if "attributes" in methodArgs.keys():
@@ -271,10 +271,10 @@ class AAC_Configurator(object):
             verb = None
             old_profile = optional_list(filter_list('name', profile.name, old_profiles))[0]
             if old_profile:
-                rsp = self.aac.risk_profiles.update(old_profile['id'], **methodArgs)
+                rsp = self.aac.risk_profiles.update_profile(old_profile['id'], **methodArgs)
                 verb = "updated" if rsp.success == True else "update"
             else:
-                rsp = self.aac.risk_profiles.create(**methodArgs)
+                rsp = self.aac.risk_profiles.create_profile(**methodArgs)
                 verb = "created" if rsp.success == True else "create"
             if rsp.success == True:
                 self.needsRestart = True
@@ -396,9 +396,12 @@ class AAC_Configurator(object):
                 if old_policies == None: old_policies = []
                 for policy in cba.policies:
                     self._cba_policy(old_policies, policy)
+            policies = self.aac.access_control.list_policies().json
+            policy_set = self.aac.access_control.list_policy_sets().json
+            definitions = self.aac.api_protection.list_definitions().json
             if cba.resources != None:
                 for resource in cba.resources:
-                    self._cba_resource(resource)
+                    self._cba_resource(resource, policies, policy_sets, definitions)
 
 
     class Advanced_Configuration(typing.TypedDict):
@@ -1205,7 +1208,7 @@ class AAC_Configurator(object):
         category: str
         'The part of the XACML request that the attribute value comes from ``Subject``, ``Environment``, ``Action`` or ``Resource``.'
         matcher: str
-        'ID of the attribute matcher that is used to compare the value of this attribute in an incoming device fingerprint with an existing device fingerprint of the user.'
+        'ID of the attribute matcher that is used to compare the value of this attribute in an incoming device fingerprint with an existing device fingerprint of the user. '
         storage: Storage
         'Define where the attribute is stored.'
 
@@ -2168,21 +2171,23 @@ class AAC_Configurator(object):
         self.pip_configuration(self.config.access_control)
         self.push_notifications(self.config.access_control)
         #self.server_connections(self.config.access_control)
+        self.mmfa_configuration(self.config.access_control)
+        self.scim_configuration(self.config.access_control)
         self.fido2_configuration(self.config.access_control)
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config)
             self.needsRestart = False
 
         #self.risk_profiles(self.config.access_control)
-        self.access_control(self.config.access_control)
         self.api_protection_configuration(self.config.access_control)
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config)
             self.needsRestart = False
-
         self.authentication_configuration(self.config.access_control)
-        self.scim_configuration(self.config.access_control)
-        self.mmfa_configuration(self.config.access_control)
+        if self.needsRestart == True:
+           deploy_pending_changes(self.factory, self.config)
+           self.needsRestart = False
+        self.access_control(self.config.access_control)
         #self.advanced_config(self.config.access_control)
         if self.needsRestart == True:
            deploy_pending_changes(self.factory, self.config)
