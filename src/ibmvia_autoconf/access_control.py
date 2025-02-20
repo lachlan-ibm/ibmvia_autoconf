@@ -617,7 +617,7 @@ class AAC_Configurator(object):
                     generalConfig[prop] = aac_config.scim.prop
                     needToUpdate = True
             if aac_config.scim.attribute_modes:
-                for attrMode in aac_config.scim.attribute_modesattrModes:
+                for attrMode in aac_config.scim.attribute_modes:
                     self._scim_update_attr_mode(attrMode.schema, attrMode)
             if needToUpdate == True:
                 rsp = self.aac.scim_config.update_config(**generalConfig)
