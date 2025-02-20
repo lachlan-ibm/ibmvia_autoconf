@@ -1768,7 +1768,7 @@ class AAC_Configurator(object):
             endpoints = methodArgs.pop("endpoints", None)
             if endpoints:
                 methodArgs.update({**endpoints})
-            rsp = self.aac.mmfaconfig.update(**methodArgs)
+            rsp = self.aac.mmfa_config.update(**methodArgs)
             if rsp.success == True:
                 _logger.info("Successfully updated MMFA configuration")
                 self.needsRestart = True

@@ -520,6 +520,7 @@ class IVIA_Configurator(object):
             self.needsRestart == False
 
 
+
     def _add_auth_role(self, role):
         if role.operation == "delete":
             rsp = self.factory.get_system_settings().mgmt_authorization.delete_role(role.name)
