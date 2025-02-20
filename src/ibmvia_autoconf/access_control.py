@@ -443,6 +443,17 @@ class AAC_Configurator(object):
                         json.dumps(advConf, indent=4), rsp.data))
 
 
+    def _scim_update_attr_mode(self, schema, attr_modes):
+        for attr_mode in attr_modes:
+            rsp = self.aac.scim_config.update_attribute_mode(schema, attr_mode.attribute,
+                                scim_subattribute=attr_mode.get("subattribute", None), mode=attr_mode.mode)
+            if rsp.success == True:
+                _logger.info("Successfully updated the {} attribute {} (subattr {}) with mode [{}]".format(
+                            schema, attr_mode.attribute, attr_mode.get("subattribute", None), attr_mode.mode))
+            else:
+                _logger.error("Failed to update {} attribute mode with config:\n{}\n{}".format(
+                                schema, json.dumps(attr_mode, indent=4), rsp.data))
+
 
     class System_CrossDomain_Identity_Management(typing.TypedDict):
         '''
@@ -596,19 +607,18 @@ class AAC_Configurator(object):
         max_user_response: typing.Optional[int]
         'The maximum number of entries that can be returned from a single call to the ``/User`` endpoint.'
 
+
     def scim_configuration(self, aac_config):
         if aac_config.scim != None:
-            generalConfig = self.aac.scim_config.get_general_config().json
+            generalConfig = {}
             needToUpdate = False
             for prop in ["admin_group", "enable_header_authentication", "enable_authz_filter", "max_user_response"]:
                 if prop in aac_config.scim:
-                    generalConfig[prop] = aac_config.scim.get(prop)
+                    generalConfig[prop] = aac_config.scim..prop
                     needToUpdate = True
             if aac_config.scim.attribute_modes:
-                attrModes = generalConfig.pop("attribute_modes", {})
-                attrModes.update(aac_config.scim.attribute_modes)
-                generalConfig["attribute_modes"] = attrModes
-                needToUpdate = True
+                for attrMode in aac_config.scim.attribute_modesattrModes:
+                    self._scim_update_attr_mode(attrMode.schema, attrMode)
             if needToUpdate == True:
                 rsp = self.aac.scim_config.update_config(**generalConfig)
                 if rsp.success == True:
