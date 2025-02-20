@@ -174,7 +174,7 @@ def _kube_rollout_restart(namespace, deployment):
             sys.exit(1)
 
 
-def _kube_wait_for_deployment(namespace, deoloyment):
+def _kube_wait_for_deployment(namespace, deployment):
     #Finally wait for the new pod list to be ready
     watcher = kubernetes.watch.Watch()
     for event in watcher.stream(func=KUBE_CLIENT.CoreV1Api().list_namespaced_pod,
