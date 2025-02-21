@@ -632,7 +632,7 @@ class AAC_Configurator(object):
                 if rsp.success == False:
                     _logger.error("Failed to get config for schema [{}]".format(schema.uri))
                     return
-                schemaConfig = rsp.jsonget(schema.uri)
+                schemaConfig = rsp.json.get(schema.uri)
                 schemaConfig.update(schema.properties)
                 _logger.debug("Merged config for {}:\n{}".format(schema.uri, json.dumps(schemaConfig, indent=4)))
                 rsp = self.aac.scim_config.update_schema(schema.uri, schemaConfig)
