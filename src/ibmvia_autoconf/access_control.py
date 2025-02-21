@@ -610,17 +610,17 @@ class AAC_Configurator(object):
 
     def scim_configuration(self, aac_config):
         if aac_config.scim != None:
-            generalConfig = {}
-            needToUpdate = False
-            for prop in ["admin_group", "enable_header_authentication", "enable_authz_filter", "max_user_response"]:
-                if prop in aac_config.scim:
-                    generalConfig[prop] = aac_config.scim.prop
-                    needToUpdate = True
             if aac_config.scim.attribute_modes:
                 for attrMode in aac_config.scim.attribute_modes:
                     self._scim_update_attr_mode(attrMode.schema, attrMode.modes)
-            if needToUpdate == True:
-                rsp = self.aac.scim_config.update_config(**generalConfig)
+            generalConfig = {}
+            for prop in ["admin_group", "enable_header_authentication", "enable_authz_filter", "max_user_response"]:
+                if prop in aac_config.scim:
+                    generalConfig[prop] = aac_config.scim.prop
+            if generalConfig:
+                mergedGeneralConfig = self.aac.scim_config.get_general_config().json
+                mergedGeneralConfig.update(generalConfig)
+                rsp = self.aac.scim_config.update_config(**mergedGeneralConfig)
                 if rsp.success == True:
                     self.needsRestart = True
                     _logger.info("Successfully updated the SCIM general configuration")
@@ -632,9 +632,10 @@ class AAC_Configurator(object):
                 if rsp.success == False:
                     _logger.error("Failed to get config for schema [{}]".format(schema.uri))
                     return
-                config = {**rsp.json, **schema.properties} # I wonder how this resolves conflicts
-                _logger.debug("Merged config for {}:\n{}".format(schema.uri, json.dumps(config, indent=4)))
-                rsp = self.aac.scim_config.update_schema(schema.uri, config)
+                schemaConfig = {**rsp.json}
+                schemaConfig.get(schema.uri).update(schema.properties)
+                _logger.debug("Merged config for {}:\n{}".format(schema.uri, json.dumps(schemaConfig, indent=4)))
+                rsp = self.aac.scim_config.update_schema(schema.uri, schemaConfig)
                 if rsp.success == True:
                     self.needsRestart = True
                     _logger.info("Successfully updated schema [{}]".format(schema.uri))
