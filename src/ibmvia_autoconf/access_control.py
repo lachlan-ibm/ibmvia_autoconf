@@ -618,7 +618,8 @@ class AAC_Configurator(object):
                 if prop in aac_config.scim:
                     generalConfig[prop] = aac_config.scim.prop
             if generalConfig:
-                mergedGeneralConfig = self.aac.scim_config.get_general_config().json.update(generalConfig)
+                mergedGeneralConfig = self.aac.scim_config.get_general_config().json
+                mergedGeneralConfig.update(generalConfig)
                 rsp = self.aac.scim_config.update_config(**mergedGeneralConfig)
                 if rsp.success == True:
                     self.needsRestart = True
