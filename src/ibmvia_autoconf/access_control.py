@@ -1294,8 +1294,8 @@ class AAC_Configurator(object):
                 _logger.error("Can only specify one Pre-Token Mapping Rule")
             else:
                 mapping_rule = mapping_rule[0]
-                rsp = self.aac.mapping_rules.create_rule(name=definition.name + "PreTokenGeneration",
-                        category="OAUTH", file_name=mapping_rule["name"], content=mapping_rule['contents'])
+                rsp = self.aac.mapping_rules.create_rule(rule_name=definition.name + "PreTokenGeneration",
+                        category="OAUTH", content=mapping_rule['contents'])
                 if rsp.success == True:
                     _logger.info("Successfully uploaded {} Pre-Token Mapping Rule".format(definition.name))
                 else:
@@ -1306,8 +1306,8 @@ class AAC_Configurator(object):
                 _logger.error("Can only specify one Post-Token Mapping Rule")
             else:
                 mapping_rule = mapping_rule[0]
-                rsp = self.aac.mapping_rules.create_rule(name=definition.name + "PostTokenGeneration",
-                        category="OAUTH", file_name=mapping_rule['name'], content=mapping_rule['contents'])
+                rsp = self.aac.mapping_rules.create_rule(rule_name=definition.name + "PostTokenGeneration",
+                        category="OAUTH", content=mapping_rule['contents'])
                 if rsp.success == True:
                     _logger.info("Successfully created {} Post-Token Mapping Rule".format(definition.name))
                 else:
