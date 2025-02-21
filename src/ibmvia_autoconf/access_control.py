@@ -232,7 +232,8 @@ class AAC_Configurator(object):
                 "name": policy.name,
                 "description": policy.description,
                 "dialect": policy.dialect if policy.dialect else "urn:oasis:names:tc:xacml:2.0:policy:schema:os",
-                "policy": policy.policy
+                "policy": policy.policy,
+                "attributesrequired": policy.attributes_required
             }
         rsp = None
         verb = None
@@ -356,6 +357,8 @@ class AAC_Configurator(object):
             'The XACML specification used within the policy. Only valid value is XACML Version 2, ``urn:oasis:names:tc:xacml:2.0:policy:schema:os``.'
             policy: str
             'The configured policy in XACML 2.0.'
+            attributes_required: bool
+            'If true all the policy attributes must be present in the request for the policy to be evaluated.'
 
         class Resource(typing.TypedDict):
             class Policy_Attachment(typing.TypedDict):
@@ -1543,8 +1546,8 @@ class AAC_Configurator(object):
             rsp = self.aac.authentication.update_policy(old_policy['id'], name=policy.name, policy=policy.policy, uri=policy.uri,
                     description=policy.description, predefined=old_policy['predefined'], enabled=policy.enabled)
         else:
-            rsp = self.aac.authentication.create_policy(name=policy.name, policy=policy.policy, uri=policy.uri, description=policy.description,
-                    enabled=policy.enabled)
+            rsp = self.aac.authentication.create_policy(name=policy.name, policy=policy.policy, 
+                                uri=policy.uri, description=policy.description, enabled=policy.enabled)
         if rsp.success == True:
             _logger.info("Successfully set configuration for {} policy".format(policy.name))
             self.needsRestart = True
