@@ -632,8 +632,8 @@ class AAC_Configurator(object):
                 if rsp.success == False:
                     _logger.error("Failed to get config for schema [{}]".format(schema.uri))
                     return
-                schemaConfig = {**rsp.json}
-                schemaConfig.get(schema.uri).update(schema.properties)
+                schemaConfig = rsp.json.get(schema.uri)
+                schemaConfig.update(schema.properties)
                 _logger.debug("Merged config for {}:\n{}".format(schema.uri, json.dumps(schemaConfig, indent=4)))
                 rsp = self.aac.scim_config.update_schema(schema.uri, schemaConfig)
                 if rsp.success == True:
@@ -641,7 +641,7 @@ class AAC_Configurator(object):
                     _logger.info("Successfully updated schema [{}]".format(schema.uri))
                 else:
                     _logger.error("Failed to update schema [{}] with configuration:\n{}".format(
-                        schema.uri, config))
+                        schema.uri, schemaConfig))
 
 
     def _ci_server_connection(self, connection):
