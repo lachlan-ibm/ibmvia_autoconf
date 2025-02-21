@@ -232,8 +232,7 @@ class AAC_Configurator(object):
                 "name": policy.name,
                 "description": policy.description,
                 "dialect": policy.dialect if policy.dialect else "urn:oasis:names:tc:xacml:2.0:policy:schema:os",
-                "policy": policy.policy,
-                "attributes_required": policy.attributes_required
+                "policy": policy.policy
             }
         rsp = None
         verb = None
@@ -357,8 +356,6 @@ class AAC_Configurator(object):
             'The XACML specification used within the policy. Only valid value is XACML Version 2, ``urn:oasis:names:tc:xacml:2.0:policy:schema:os``.'
             policy: str
             'The configured policy in XACML 2.0.'
-            attributes_required: typing.Optional[typing.List[str]]
-            'True if the values for any attributes specified in the policy must be present in the incoming request. False if the attribute values may optionally be present.'
 
         class Resource(typing.TypedDict):
             class Policy_Attachment(typing.TypedDict):
@@ -634,7 +631,7 @@ class AAC_Configurator(object):
                     return
                 schemaConfig = rsp.json.get(schema.uri)
                 schemaConfig.update(schema.properties)
-                _logger.debug("Merged config for {}:\n{}".format(schema.uri, json.dumps(schemaConfig, indent=4)))
+                #_logger.debug("Merged config for {}:\n{}".format(schema.uri, json.dumps(schemaConfig, indent=4)))
                 rsp = self.aac.scim_config.update_schema(schema.uri, schemaConfig)
                 if rsp.success == True:
                     self.needsRestart = True
@@ -1668,7 +1665,7 @@ class AAC_Configurator(object):
             uri: str
             'The unique resource identifier of the authentication mechanism.'
             type: str
-            'Type of mechanism to create, eg. ``InfoMapAuthenticationName``, ``Username Password`` or ``Mobile Multi Factor Authenticatior``.'
+            "Type of mechanism to create. Valid types include: 'HOTP One-time Password', 'MAC One-time Password', 'RSA One-time Password', 'TOTP One-time Password', 'Consent to device registration', 'One-time Password', 'HTTP Redirect', 'Username Password', 'End-User License Agreement', 'Knowledge Questions', 'Mobile User Approval', 'reCAPTCHA Verification', 'Info Map Authentication', 'Email Message', 'MMFA Authenticator', 'SCIM Config', 'FIDO Universal 2nd Factor', 'Cloud Identity JavaScript', 'QRCode Authenticator', 'FIDO2 WebAuthn Authenticator', 'Decision JavaScript', 'RSA SecurID', 'FIDO2 WebAuthn Registration' and 'OTP Enrollment'"
             properties: typing.List[dict]
             'List of properties to configure for mechanism. The property names are different for rach of the mechanism types.'
             attributes: typing.Optional[typing.List[Attribute]]
