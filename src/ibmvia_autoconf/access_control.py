@@ -233,7 +233,7 @@ class AAC_Configurator(object):
                 "description": policy.description,
                 "dialect": policy.dialect if policy.dialect else "urn:oasis:names:tc:xacml:2.0:policy:schema:os",
                 "policy": policy.policy,
-                "attributes_required": policy.attributes_required
+                "attributesrequired": policy.attributes_required
             }
         rsp = None
         verb = None
