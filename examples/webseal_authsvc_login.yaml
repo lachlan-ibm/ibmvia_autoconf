@@ -69,19 +69,19 @@ access_control:
       description: "Username password authentication"
       uri: "urn:ibm:security:authentication:asf:mechanism:password"
       properties:
-      - usernamePasswordAuthentication.enableLastLogin: "false"
-      - usernamePasswordAuthentication.loginFailuresPersistent: "false"
-      - usernamePasswordAuthentication.maxServerConnections: "16"
-      - usernamePasswordAuthentication.mgmtDomain: "Default"
-      - usernamePasswordAuthentication.sslServerStartTLS: "false"
-      - usernamePasswordAuthentication.useFederatedDirectoriesConfig: "false"
-      - usernamePasswordAuthentication.userSearchFilter: "(|(objectclass=ePerson)(objectclass=Person))"
-      - usernamePasswordAuthentication.ldapBindDN: !environment LDAP_BIND_DN
-      - usernamePasswordAuthentication.ldapHostName: "openldap"
-      - usernamePasswordAuthentication.ldapBindPwd: !environment LDAP_BIND_PW
-      - usernamePasswordAuthentication.ldapPort: "636"
-      - usernamePasswordAuthentication.sslEnabled: "true"
-      - usernamePasswordAuthentication.sslTrustStore: "lmi_trust_store"
+        usernamePasswordAuthentication.enableLastLogin: "false"
+        usernamePasswordAuthentication.loginFailuresPersistent: "false"
+        usernamePasswordAuthentication.maxServerConnections: "16"
+        usernamePasswordAuthentication.mgmtDomain: "Default"
+        usernamePasswordAuthentication.sslServerStartTLS: "false"
+        usernamePasswordAuthentication.useFederatedDirectoriesConfig: "false"
+        usernamePasswordAuthentication.userSearchFilter: "(|(objectclass=ePerson)(objectclass=Person))"
+        usernamePasswordAuthentication.ldapBindDN: !environment LDAP_BIND_DN
+        usernamePasswordAuthentication.ldapHostName: "openldap"
+        usernamePasswordAuthentication.ldapBindPwd: !environment LDAP_BIND_PW
+        usernamePasswordAuthentication.ldapPort: "636"
+        usernamePasswordAuthentication.sslEnabled: "true"
+        usernamePasswordAuthentication.sslTrustStore: "lmi_trust_store"
       attributes:
       - selector: "mobile"
         name: "mobileNumber"

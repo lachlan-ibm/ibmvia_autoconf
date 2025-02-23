@@ -1311,8 +1311,7 @@ class AAC_Configurator(object):
                     mapping_rule = mapping_rule[0]
                     ruleName = definition.name + token_rule_file[1]
                     ruleId = self._mapping_rule_to_id(ruleName) 
-                    rsp = self.aac.mapping_rules.update_rule(ruleId, rule_name=ruleName,
-                            category="OAUTH", content=mapping_rule['contents'].decode())
+                    rsp = self.aac.mapping_rules.update_rule(ruleId, content=mapping_rule['contents'].decode())
                     if rsp.success == True:
                         _logger.info("Successfully uploaded {}{} ".format(definition.name, rulePrettyName))
                     else:
