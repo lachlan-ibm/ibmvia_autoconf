@@ -1300,30 +1300,23 @@ class AAC_Configurator(object):
         else:
             _logger.error("Failed to create {} API Protection definition with config:\n{}\n{}".format(
                 definition.name, json.dumps(definition, indent=4), rsp.data))
-        if definition.pre_token_mapping_rule:
-            mapping_rule = FILE_LOADER.read_file(definition.pre_token_mapping_rule)
-            if len(mapping_rule) != 1:
-                _logger.error("Can only specify one Pre-Token Mapping Rule")
-            else:
-                mapping_rule = mapping_rule[0]
-                rsp = self.aac.mapping_rules.create_rule(rule_name=definition.name + "PreTokenGeneration",
-                        category="OAUTH", content=mapping_rule['contents'].decode())
-                if rsp.success == True:
-                    _logger.info("Successfully uploaded {} Pre-Token Mapping Rule".format(definition.name))
+        for token_rule_file in [("pre_token_mapping_rule", "PreTokenGeneration"), 
+                                ("post_token_mapping_rule", "PostTokenGeneration")]:
+            if definition.get(token_rule_file[0], None):
+                rulePrettyName = token_rule_file[0].replace('_', ' ')
+                mapping_rule = FILE_LOADER.read_file(definition.get(token_rule_file[0]))
+                if len(mapping_rule) != 1:
+                    _logger.error("Can only specify one {}".format(rulePrettyName))
                 else:
-                    _logger.error("Failed to upload {} Pre-Token Mapping Rule".format(definition.name))
-        if definition.post_token_mapping_rule:
-            mapping_rule = FILE_LOADER.read_file(definition.post_token_mapping_rule)
-            if len(mapping_rule) != 1:
-                _logger.error("Can only specify one Post-Token Mapping Rule")
-            else:
-                mapping_rule = mapping_rule[0]
-                rsp = self.aac.mapping_rules.create_rule(rule_name=definition.name + "PostTokenGeneration",
-                        category="OAUTH", content=mapping_rule['contents'].decode())
-                if rsp.success == True:
-                    _logger.info("Successfully created {} Post-Token Mapping Rule".format(definition.name))
-                else:
-                    _logger.error("Failed to create {} Post-Token Mapping Rule".format(definition.name))
+                    mapping_rule = mapping_rule[0]
+                    ruleName = definition.name + token_rule_file[1]
+                    ruleId = self._mapping_rule_to_id(ruleName) 
+                    rsp = self.aac.mapping_rules.update_rule(ruleId, rule_name=ruleName,
+                            category="OAUTH", content=mapping_rule['contents'].decode())
+                    if rsp.success == True:
+                        _logger.info("Successfully uploaded {}{} ".format(definition.name, rulePrettyName))
+                    else:
+                        _logger.error("Failed to upload {}{}".format(definition.name, rulePrettyName))
 
     def _configure_api_protection_client(self, definitions, client):
         apiDefId = optional_list(filter_list('name', client.definition, definitions))[0].get('id', "NULL")
