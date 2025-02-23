@@ -1015,19 +1015,21 @@ class AAC_Configurator(object):
 
     def upload_template_files(self, template_files):
         for file_pointer in template_files:
-            rsp = None
+            rsp = None; verb = None
             if file_pointer['name'].endswith(".zip"):
                 rsp = self.aac.template_files.import_files(file_pointer['path'])
+                verb = "imported" if rsp.success == True else "import"
             elif file_pointer.get("type") == "file":
                 rsp = self.aac.template_files.create_file(file_pointer['directory'], file_name=file_pointer['name'],
                         contents=file_pointer['contents'])
+                verb = "created" if rsp.success == True else "create"
             else:
                 rsp = self.aac.template_files.create_directory(file_pointer['directory'], dir_name=file_pointer['name'])
             if rsp.success == True:
                 self.needsRestart = True
-                _logger.info("Successfully created template file {}".format(file_pointer['path']))
+                _logger.info("Successfully {} template file {}".format(verb, file_pointer['path']))
             else:
-                _logger.error("Failed to create template file {}".format(file_pointer['path']))
+                _logger.error("Failed to {} template file {}".format(verb, file_pointer['path']))
 
 
     class Mapping_Rules(typing.TypedDict):
@@ -1060,16 +1062,26 @@ class AAC_Configurator(object):
         'List of mapping rule types/files to upload.'
 
     def upload_mapping_rules(self, _type, mapping_rules):
+        old_rules = self.aac.mapping_rules.list_rules().json
         for mapping_rule in mapping_rules: 
             # name === basename split on '.' and grab the first group
             rule_name = os.path.splitext(mapping_rule['name'])[0]
-            rsp = self.aac.mapping_rules.create_rule(rule_name=rule_name, category=_type, 
+            old_rule = optional_list(filter_list('name', rule_name, old_rules))
+            rsp = None; verb = None;
+            if old_rule:
+                rsp = self.aac.mapping_rules.create_rule(rule_name=rule_name, category=_type, 
                                                             content=mapping_rule['contents'].decode())
+                verb = "created" if rsp.success == True else "create"
+            else:
+                rsp = self.aac.mapping_rules.update_rule(old_rule['id'], rule_name=rule_name, 
+                                                            content=mapping_rule['contents'].decode())
+                verb = "replaced" if rsp.success == True else "replace"
+
             if rsp.success == True:
                 self.needsRestart = True
-                _logger.info("Successfully uploaded {} mapping rule".format(rule_name))
+                _logger.info("Successfully {} {} mapping rule".format(verb, rule_name))
             else:
-                _logger.error("Failed to upload {} mapping rule from [{}]".format(
+                _logger.error("Failed to {} {} mapping rule from [{}]".format(verb,
                                     mapping_rule['name'], mapping_rule['path']))
 
 
@@ -1295,7 +1307,7 @@ class AAC_Configurator(object):
             else:
                 mapping_rule = mapping_rule[0]
                 rsp = self.aac.mapping_rules.create_rule(rule_name=definition.name + "PreTokenGeneration",
-                        category="OAUTH", content=mapping_rule['contents'])
+                        category="OAUTH", content=mapping_rule['contents'].decode())
                 if rsp.success == True:
                     _logger.info("Successfully uploaded {} Pre-Token Mapping Rule".format(definition.name))
                 else:
@@ -1307,7 +1319,7 @@ class AAC_Configurator(object):
             else:
                 mapping_rule = mapping_rule[0]
                 rsp = self.aac.mapping_rules.create_rule(rule_name=definition.name + "PostTokenGeneration",
-                        category="OAUTH", content=mapping_rule['contents'])
+                        category="OAUTH", content=mapping_rule['contents'].decode())
                 if rsp.success == True:
                     _logger.info("Successfully created {} Post-Token Mapping Rule".format(definition.name))
                 else:
