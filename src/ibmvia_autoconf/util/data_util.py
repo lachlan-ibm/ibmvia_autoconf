@@ -91,7 +91,10 @@ class Map(dict):
 
 class CustomLoader(yaml.SafeLoader):
 
+    k8s_cache = {}
+
     def __init__(self, path):
+        self.k8s_cache = {}
         self._root = os.path.split(path.name)[0]
         super(CustomLoader, self).__init__(path)
         CustomLoader.add_constructor('!include', CustomLoader.include)
@@ -105,11 +108,14 @@ class CustomLoader(yaml.SafeLoader):
 
     def k8s_secret(self, node):
         secret = self.construct_scalar(node)
-        #Split secret into name and ke
+        #Split secret into name and key
         namespaceName, key = secret.split(':')
-        namespace, name = namespaceName.split('/')
-        #Use k8s API to look up secret
-        k8sSecret = KUBE_CLIENT.CoreV1Api().read_namespaced_secret(name, namespace)
+        k8sSecret = self.k8s_cache.get(namespaceName, None)
+        if k8sSecret == None:
+            namespace, name = namespaceName.split('/')
+            #Use k8s API to look up secret
+            k8sSecret = KUBE_CLIENT.CoreV1Api().read_namespaced_secret(name, namespace)
+            self.k8s_cache[namespaceName] = k8sSecret
         return base64.b64decode(k8sSecret.data[key]).decode()
 
     def env_secret(self, node):
