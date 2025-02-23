@@ -233,7 +233,7 @@ class AAC_Configurator(object):
                 "description": policy.description,
                 "dialect": policy.dialect if policy.dialect else "urn:oasis:names:tc:xacml:2.0:policy:schema:os",
                 "policy": policy.policy,
-                "attributesrequired": policy.attributes_required
+                "attributes_required": policy.attributes_required
             }
         rsp = None
         verb = None
@@ -1313,9 +1313,9 @@ class AAC_Configurator(object):
                     ruleId = self._mapping_rule_to_id(ruleName) 
                     rsp = self.aac.mapping_rules.update_rule(ruleId, content=mapping_rule['contents'].decode())
                     if rsp.success == True:
-                        _logger.info("Successfully uploaded {}{} ".format(definition.name, rulePrettyName))
+                        _logger.info("Successfully uploaded {} {} ".format(definition.name, rulePrettyName))
                     else:
-                        _logger.error("Failed to upload {}{}".format(definition.name, rulePrettyName))
+                        _logger.error("Failed to upload {} {}".format(definition.name, rulePrettyName))
 
     def _configure_api_protection_client(self, definitions, client):
         apiDefId = optional_list(filter_list('name', client.definition, definitions))[0].get('id', "NULL")
