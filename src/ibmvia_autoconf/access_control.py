@@ -1517,6 +1517,10 @@ class AAC_Configurator(object):
                 for client in aac_config.api_protection.clients:
                     self._configure_api_protection_client(definitions, client)
 
+    def _scim_sc_name_to_id(self, sc_name):
+        scim_sc = optional_list(filter_list('name', sc_name, 
+                                            self.aac.server_connections.list_web_service().json))[0]
+        return scim_sc.get('uuid', "-1")
 
     def _configure_mechanism(self, mechTypes, existing_mechanisms, mechanism):
         typeId = optional_list(filter_list('type', mechanism.type, mechTypes))[0].get('id', None)
@@ -1524,10 +1528,12 @@ class AAC_Configurator(object):
             _logger.error("Mechanism [{}] specified an invalid type, skipping.".format(mechanism))
             return
         props = None
-        if mechanism.properties != None and isinstance(mechanism.properties, list):
+        if mechanism.properties != None and isinstance(mechanism.properties, dict):
             props = []
-            for e in mechanism.properties: 
-                props += [{"key": k, "value": v} for k, v in e.items()]
+            for k, v in mechanism.properties.items():
+                if k == 'ScimConfig.serverConnection':
+                    v = self._scim_sc_name_to_id(v)
+                props += [{"key": k, "value": v}]
         old_mech = optional_list(filter_list('uri', mechanism.uri, existing_mechanisms))[0]
         rsp = None
         if old_mech:
@@ -1585,57 +1591,56 @@ class AAC_Configurator(object):
                       description: "Username password authentication"
                       type: "Username Password"
                       properties:
-                      - usernamePasswordAuthentication.ldapHostName: "openldap"
-                      - usernamePasswordAuthentication.loginFailuresPersistent: "false"
-                      - usernamePasswordAuthentication.ldapBindDN: !secret default/isva-secrets:ldap_bind_dn
-                      - usernamePasswordAuthentication.maxServerConnections: "16"
-                      - usernamePasswordAuthentication.mgmtDomain: "Default"
-                      - usernamePasswordAuthentication.sslEnabled: "true"
-                      - usernamePasswordAuthentication.ldapPort: "636"
-                      - usernamePasswordAuthentication.sslTrustStore: "lmi_trust_store"
-                      - usernamePasswordAuthentication.userSearchFilter: "usernamePasswordAuthentication.userSearchFilter"
-                      - usernamePasswordAuthentication.ldapBindPwd: !secret default/isva-secrets:ldap_bind_pwd
-                      - usernamePasswordAuthentication.useFederatedDirectoriesConfig: "false"
+                        usernamePasswordAuthentication.ldapHostName: "openldap"
+                        usernamePasswordAuthentication.loginFailuresPersistent: "false"
+                        usernamePasswordAuthentication.ldapBindDN: !secret default/isva-secrets:ldap_bind_dn
+                        usernamePasswordAuthentication.maxServerConnections: "16"
+                        usernamePasswordAuthentication.mgmtDomain: "Default"
+                        usernamePasswordAuthentication.sslEnabled: "true"
+                        usernamePasswordAuthentication.ldapPort: "636"
+                        usernamePasswordAuthentication.sslTrustStore: "lmi_trust_store"
+                        usernamePasswordAuthentication.userSearchFilter: "usernamePasswordAuthentication.userSearchFilter"
+                        usernamePasswordAuthentication.ldapBindPwd: !secret default/isva-secrets:ldap_bind_pwd
+                        usernamePasswordAuthentication.useFederatedDirectoriesConfig: "false"
                     - name: "TOTP One-time Password"
                       uri: "urn:ibm:security:authentication:asf:mechanism:totp"
                       description: "Time-based one-time password authentication"
                       type: "TOTP One-time Password"
                       properties:
-                      - otp.totp.length: "6"
-                      - otp.totp.macAlgorithm: "HmacSHA1"
-                      - otp.totp.oneTimeUseEnabled: "true"
-                      - otp.totp.secretKeyAttributeName: "otp.hmac.totp.secret.key"
-                      - otp.totp.secretKeyAttributeNamespace: "urn:ibm:security:otp:hmac"
-                      - otp.totp.secretKeyUrl: "otpauth://totp/Example:@USER_NAME@?secret=@SECRET_KEY@&issuer=Example"
-                      - otp.totp.secretKeyLength: "32"
-                      - otp.totp.timeStepSize: "30"
-                      - otp.totp.timeStepSkew: "10"
+                        otp.totp.length: "6"
+                        otp.totp.macAlgorithm: "HmacSHA1"
+                        otp.totp.oneTimeUseEnabled: "true"
+                        otp.totp.secretKeyAttributeName: "otp.hmac.totp.secret.key"
+                        otp.totp.secretKeyAttributeNamespace: "urn:ibm:security:otp:hmac"
+                        otp.totp.secretKeyUrl: "otpauth://totp/Example:@USER_NAME@?secret=@SECRET_KEY@&issuer=Example"
+                        otp.totp.secretKeyLength: "32"
+                        otp.totp.timeStepSize: "30"
+                        otp.totp.timeStepSkew: "10"
                     - name: "reCAPTCHA Verification"
                       uri: "urn:ibm:security:authentication:asf:mechanism:recaptcha"
                       description: "Human user verification using reCAPTCHA Version 2.0."
                       type: "ReCAPTCHAAuthenticationName"
                       properties:
-                      - reCAPTCHA.HTMLPage: "/authsvc/authenticator/recaptcha/standalone.html"
+                        reCAPTCHA.HTMLPage: "/authsvc/authenticator/recaptcha/standalone.html"
                         reCAPTCHA.apiKey: !secret default/isva-secrets:recaptcha_key
                     - name: "End-User License Agreement"
                       uri: "urn:ibm:security:authentication:asf:mechanism:eula"
                       description: "End-user license agreement authentication"
                       type: "End-User License Agreement"
                       properties:
-                      - eulaAuthentication.acceptIfLastAcceptedBefore: "true"
-                      - eulaAuthentication.alwaysShowLicense: "false"
-                      - eulaAuthentication.licenseFile: "/authsvc/authenticator/eula/license.txt"
+                        eulaAuthentication.acceptIfLastAcceptedBefore: "true"
+                        eulaAuthentication.alwaysShowLicense: "false"
+                        eulaAuthentication.licenseFile: "/authsvc/authenticator/eula/license.txt"
                       - eulaAuthentication.licenseRenewalTerm: "0"
                     - name: "FIDO Universal 2nd Factor"
                       uri: "urn:ibm:security:authentication:asf:mechanism:u2f"
                       description: "FIDO Universal 2nd Factor Token Registration and Authentication"
                       type: "U2FName"
                       properties:
-                      - U2F.attestationSource: ""
-                      - U2F.attestationType: "None"
-                      - U2F.appId: "www.myidp.ibm.com"
-                      - U2F.attestationEnforcement: "Optional"
-
+                        U2F.attestationSource: ""
+                        U2F.attestationType: "None"
+                        U2F.appId: "www.myidp.ibm.com"
+                        U2F.attestationEnforcement: "Optional"
                     policies:
                     - name: "Verify Demo - Initiate Generic Message Demo Policy"
                       uri: "urn:ibm:security:authentication:asf:verify_generic_message"
@@ -1674,7 +1679,7 @@ class AAC_Configurator(object):
             'The unique resource identifier of the authentication mechanism.'
             type: str
             "Type of mechanism to create. Valid types include: 'HOTP One-time Password', 'MAC One-time Password', 'RSA One-time Password', 'TOTP One-time Password', 'Consent to device registration', 'One-time Password', 'HTTP Redirect', 'Username Password', 'End-User License Agreement', 'Knowledge Questions', 'Mobile User Approval', 'reCAPTCHA Verification', 'Info Map Authentication', 'Email Message', 'MMFA Authenticator', 'SCIM Config', 'FIDO Universal 2nd Factor', 'Cloud Identity JavaScript', 'QRCode Authenticator', 'FIDO2 WebAuthn Authenticator', 'Decision JavaScript', 'RSA SecurID', 'FIDO2 WebAuthn Registration' and 'OTP Enrollment'"
-            properties: typing.List[dict]
+            properties: dict
             'List of properties to configure for mechanism. The property names are different for rach of the mechanism types.'
             attributes: typing.Optional[typing.List[Attribute]]
             'List of attribute to add from the request context.'
