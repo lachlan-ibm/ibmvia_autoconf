@@ -414,7 +414,6 @@ class IVIA_Configurator(object):
                             user.name, password=user.password)
                     if rsp.success == True:
                         _logger.info("Successfully update password for {}".format(user.name))
-                        self.needsRestart == True
                     else:
                         _logger.error("Failed to update password for {}:\n{}".format(
                             user.name, rsp.data))
@@ -515,11 +514,6 @@ class IVIA_Configurator(object):
                 self._system_groups(config.account_management.groups)
             if config.account_management.users != None:
                 self._system_users(config.account_management.users)
-        if self.needsRestart == True: #Don't stack passowrd change; cfgsvc may need the account unlock
-            deploy_pending_changes(self.factory, self.config)
-            self.needsRestart == False
-
-
 
 
     def _add_auth_role(self, role):

@@ -187,7 +187,7 @@ class WEB_Configurator(object):
                 zip_file, proxy_id))
         else:
             _logger.error("Failed to import {} to {} proxy:\n{}".format(
-                                        zip_file, proxy_id, rsp.data))
+                                        path, proxy_id, rsp.data))
 
     class Reverse_Proxy(typing.TypedDict):
         '''
