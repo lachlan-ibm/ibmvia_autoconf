@@ -404,7 +404,7 @@ class AAC_Configurator(object):
                 adminUser = self.config.get("webseal", {}).get("runtime", {}).get("admin_user", None)
                 adminSecret = self.config.get("webseal", {}).get("runtime", {}).get("admin_password", None)
                 secDomain = self.config.get("webseal", {}).get("runtime", {}).get("domain", None)
-                if not adminUser or not adminPassword:
+                if not adminUser or not adminSecret:
                     _logger.warn("Runtime information missing, RBA policy attachment will likely fail")
                 else:
                     rsp = self.aac.access_control.authenticate_security_access_manager(adminUser, 
