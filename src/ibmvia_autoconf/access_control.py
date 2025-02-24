@@ -397,7 +397,7 @@ class AAC_Configurator(object):
                 for policy in cba.policies:
                     self._cba_policy(old_policies, policy)
             policies = self.aac.access_control.list_policies().json
-            policy_set = self.aac.access_control.list_policy_sets().json
+            policy_sets = self.aac.access_control.list_policy_sets().json
             definitions = self.aac.api_protection.list_definitions().json
             if cba.resources != None:
                 for resource in cba.resources:
