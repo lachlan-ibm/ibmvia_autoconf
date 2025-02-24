@@ -1082,8 +1082,7 @@ class AAC_Configurator(object):
             old_rule = optional_list(filter_list('name', rule_name, old_rules))[0]
             rsp = None; verb = None;
             if old_rule:
-                rsp = self.aac.mapping_rules.update_rule(old_rule['id'], rule_name=rule_name, 
-                                                            content=mapping_rule['contents'].decode())
+                rsp = self.aac.mapping_rules.update_rule(old_rule['id'], content=mapping_rule['contents'].decode())
                 verb = "replaced" if rsp.success == True else "replace"
             else:
                 rsp = self.aac.mapping_rules.create_rule(rule_name=rule_name, category=_type, 
