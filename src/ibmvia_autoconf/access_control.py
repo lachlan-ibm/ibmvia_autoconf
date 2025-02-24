@@ -1079,17 +1079,16 @@ class AAC_Configurator(object):
         for mapping_rule in mapping_rules: 
             # name === basename split on '.' and grab the first group
             rule_name = os.path.splitext(mapping_rule['name'])[0]
-            old_rule = optional_list(filter_list('name', rule_name, old_rules))
+            old_rule = optional_list(filter_list('name', rule_name, old_rules))[0]
             rsp = None; verb = None;
             if old_rule:
-                rsp = self.aac.mapping_rules.create_rule(rule_name=rule_name, category=_type, 
-                                                            content=mapping_rule['contents'].decode())
-                verb = "created" if rsp.success == True else "create"
-            else:
                 rsp = self.aac.mapping_rules.update_rule(old_rule['id'], rule_name=rule_name, 
                                                             content=mapping_rule['contents'].decode())
                 verb = "replaced" if rsp.success == True else "replace"
-
+            else:
+                rsp = self.aac.mapping_rules.create_rule(rule_name=rule_name, category=_type, 
+                                                            content=mapping_rule['contents'].decode())
+                verb = "created" if rsp.success == True else "create"
             if rsp.success == True:
                 self.needsRestart = True
                 _logger.info("Successfully {} {} mapping rule".format(verb, rule_name))
