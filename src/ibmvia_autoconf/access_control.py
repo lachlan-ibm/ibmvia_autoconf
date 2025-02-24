@@ -202,10 +202,10 @@ class AAC_Configurator(object):
             "policy_combining_algorithm": resource.policy_combining_algorithm,
             "cache": resource.cache
         }
-        if resource.policies: #remap policy names to Verify Access uuids
+        if resource.policies:
             policyArg = []
             for policy in resource.policies:
-                policy_id = "-1"
+                policy_id = "-1" #remap policy names to Verify Access uuids
                 if policy.type == "policy":
                     policy_id = optional_list(filter_list("name", policy.name, policies))[0].get('id', "-1")
                 elif policy.type == "policyset":
@@ -400,6 +400,19 @@ class AAC_Configurator(object):
             policy_sets = self.aac.access_control.list_policy_sets().json
             definitions = self.aac.api_protection.list_definitions().json
             if cba.resources != None:
+                #Auth to pdadmin
+                adminUser = self.config.get("webseal", {}).get("runtime", {}).get("admin_user", None)
+                adminSecret = self.config.get("webseal", {}).get("runtime", {}).get("admin_password", None)
+                secDomain = self.config.get("webseal", {}).get("runtime", {}).get("domain", None)
+                if not adminUser or not adminPassword:
+                    _logger.warn("Runtime information missing, RBA policy attachment will likely fail")
+                else:
+                    rsp = self.aac.access_control.authenticate_security_access_manager(adminUser, 
+                                                                                adminSecret, secDomain)
+                    if rsp.success == True:
+                        _logger.info("Successfully authentiated to pdadmin")
+                    else:
+                        _logger.error("Failed to authenticate to pdadmin")
                 for resource in cba.resources:
                     self._cba_resource(resource, policies, policy_sets, definitions)
 
