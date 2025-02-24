@@ -229,7 +229,7 @@ class IVIA_Configurator(object):
                 personal_parsed_file['name'], db_name))
             self.needsRestart = True
         else:
-            _logger.error("Failed to upload {} personal certificate to {}/n{}".format(
+            _logger.error("Failed to upload {} personal certificate to {}\n{}".format(
                personal_parsed_file['path'], db_name, rsp.data))
 
 
