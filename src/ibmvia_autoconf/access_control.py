@@ -204,7 +204,7 @@ class AAC_Configurator(object):
         }
         if resource.policies: #remap policy names to Verify Access uuids
             policyArg = []
-            for policy in resource.policy:
+            for policy in resource.policies:
                 policy_id = "-1"
                 if policy.type == "policy":
                     policy_id = optional_list(filter_list("name", policy.name, policies))[0].get('id', "-1")
