@@ -179,15 +179,16 @@ class WEB_Configurator(object):
             _logger.error("Failed to add junction to {} with config:\n{}\n{}".format(
                 proxy_id, json.dumps(junction, indent=4), rsp.data))
 
-    def _import_management_root(self, proxy_id, zip_file):
-        path = optional_list(FILE_LOADER.read_file(zip_file))[0].get("path", "MISSING_PATH")
-        rsp = self.web.reverse_proxy.import_management_root_files(proxy_id, path)
-        if rsp.success == True:
-            _logger.info("Successfully imported {} to {} proxy management root".format(
-                zip_file, proxy_id))
-        else:
-            _logger.error("Failed to import {} to {} proxy:\n{}".format(
-                                        zip_file, proxy_id, rsp.data))
+    def _import_management_root(self, proxy_id, mgmt_root):
+        for zip_file in mgmt_root.files:
+            path = optional_list(FILE_LOADER.read_file(zip_file))[0].get("path", "MISSING_PATH")
+            rsp = self.web.reverse_proxy.import_management_root_files(proxy_id, mgmt_root.tld, path)
+            if rsp.success == True:
+                _logger.info("Successfully imported {} to {} proxy management root".format(
+                    zip_file, proxy_id))
+            else:
+                _logger.error("Failed to import {} to {} proxy:\n{}".format(
+                                            path, proxy_id, rsp.data))
 
     class Reverse_Proxy(typing.TypedDict):
         '''
@@ -430,6 +431,12 @@ class WEB_Configurator(object):
             remote_http_header: typing.List[str]
             'Controls the insertion of Security Verify Identity Access specific client identity information in HTTP headers across the junction.'
 
+        class ManagementRoot(typing.TypedDict):
+            tld: str
+            'The top-level directory to import files to. The top-level directory must be one of management, errors, pkmspublic, oauth, snippets, or junction-root.'
+            files: typing.List[str]
+            'List of files to import to the given top-level directory. Direcotry structure should be relative to this top-level directory'
+
         class Endpoint(typing.TypedDict):
             enabled: bool
             'Enable traffic on this endpoint.'
@@ -476,8 +483,8 @@ class WEB_Configurator(object):
         'Properties for integrating this reverse proxy with OIDC API Protection Clients.'
         stanza_configuration: typing.Optional[Stanza_Configuration]
         'List of modifications to perform on the ``webseald.conf`` configuration file for this reverse proxy instance.'
-        management_root: typing.Optional[typing.List[str]]
-        'List of zip files to import into the WebSEAL management root HTML pages.'
+        management_root: typing.Optional[typing.List[ManagementRoot]]
+        'List of files to import into a WebSEAL management top-level HTML pages directory.'
 
     def wrp(self, runtime, proxy):
         wrp_instances = optional_list(self.web.reverse_proxy.list_instances().json)
@@ -525,8 +532,8 @@ class WEB_Configurator(object):
             _logger.error("Configuration of {} proxy failed with config:\n{}\n{}".format(
                 proxy.name, json.dumps(proxy, indent=4), rsp.data))
         if proxy.management_root != None:
-            for zip_file in proxy.management_root:
-                self._import_management_root(proxy.name, zip_file)
+            for mgmtRoot in proxy.management_root:
+                self._import_management_root(proxy.name, mgmtRoot)
 
         if proxy.junctions != None:
             for jct in proxy.junctions:
@@ -762,7 +769,7 @@ class WEB_Configurator(object):
     def _pdadmin_pop(self, runtime, pop):
         pdadminCommands = ["pop create {}".format(pop.name)]
         if pop.description:
-            pdadminCommands += ["pop modify {} set description {}".format(pop.name, pop.description)]
+            pdadminCommands += ['pop modify {} set description "{}"'.format(pop.name, pop.description)]
 
         if pop.attributes:
             for attribute in pop.attributes:
@@ -829,7 +836,7 @@ class WEB_Configurator(object):
         pdadminCommands = ["group create {} {} {}".format(group.name, group.dn, group.description)]
         if group.users:
             for user in group.users:
-                pdadminCommands += ["group modify {} add user {}".format(group.name, user)]
+                pdadminCommands += ["group modify {} add {}".format(group.name, user)]
         rsp = self.web.policy_administration.execute(runtime.admin_user, runtime.admin_password, pdadminCommands)
         if rsp.success == True:
             _logger.info("Successfully created group {}".format(group.name))
@@ -1049,14 +1056,14 @@ class WEB_Configurator(object):
         if config.pops != None:
             for pop in config.pops:
                 self._pdadmin_pop(runtime, pop)
+        #Create users before groups, as groups can add users as members
+        if config.users != None:
+            for user in config.users:
+                self._pdadmin_user(runtime, user)
 
         if config.groups != None:
             for group in config.groups:
                 self._pdadmin_group(runtime, group)
-
-        if config.users != None:
-            for user in config.users:
-                self._pdadmin_user(runtime, user)
 
         if config.reverse_proxies != None:
             for proxy in config.reverse_proxies:

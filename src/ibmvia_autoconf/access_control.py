@@ -192,7 +192,7 @@ class AAC_Configurator(object):
                     _logger.info("Successfully {} {} PIP".format(verb, pip.name))
                 else:
                     _logger.error("Failed to {} PIP:\n{}\n{}".format(verb, json.dumps(pip, indent=4), rsp.data))
-                    
+
 
     def _cba_resource(self, resource, policies, policy_sets, definitions):
         methodArgs = {
@@ -202,12 +202,12 @@ class AAC_Configurator(object):
             "policy_combining_algorithm": resource.policy_combining_algorithm,
             "cache": resource.cache
         }
-        if resource.policies: #remap policy names to Verify Access uuids
+        if resource.policies:
             policyArg = []
-            for policy in resource.policy:
-                policy_id = "-1"
+            for policy in resource.policies:
+                policy_id = "-1" #remap policy names to Verify Access uuids
                 if policy.type == "policy":
-                    policy_id = optional_list(filter_list("name", policy.name, policies)).get('id', "-1")
+                    policy_id = optional_list(filter_list("name", policy.name, policies))[0].get('id', "-1")
                 elif policy.type == "policyset":
                     policy_id = optional_list(filter_list('name', policy.name, policy_sets))[0].get('id', "-1")
                 elif policy.type == "definition":
@@ -259,10 +259,10 @@ class AAC_Configurator(object):
                 elif "id" in attribute:
                     attribute["attributeID"] = attribute.pop("id")
 
-    def _risk_profiles(self, config):
+    def _risk_profiles(self, profiles):
         attributes = optional_list(self.aac.attributes.list_attributes().json)
-        old_profiles = optional_list(self.aac.risk_profiles.list().json)
-        for profile in config.risk_profiles:
+        old_profiles = optional_list(self.aac.risk_profiles.list_profiles().json)
+        for profile in profiles:
             methodArgs = copy.deepcopy(profile)
             #Re-map attribute name and id keys to correct property
             if "attributes" in methodArgs.keys():
@@ -271,10 +271,10 @@ class AAC_Configurator(object):
             verb = None
             old_profile = optional_list(filter_list('name', profile.name, old_profiles))[0]
             if old_profile:
-                rsp = self.aac.risk_profiles.update(old_profile['id'], **methodArgs)
+                rsp = self.aac.risk_profiles.update_profile(old_profile['id'], **methodArgs)
                 verb = "updated" if rsp.success == True else "update"
             else:
-                rsp = self.aac.risk_profiles.create(**methodArgs)
+                rsp = self.aac.risk_profiles.create_profile(**methodArgs)
                 verb = "created" if rsp.success == True else "create"
             if rsp.success == True:
                 self.needsRestart = True
@@ -357,8 +357,8 @@ class AAC_Configurator(object):
             'The XACML specification used within the policy. Only valid value is XACML Version 2, ``urn:oasis:names:tc:xacml:2.0:policy:schema:os``.'
             policy: str
             'The configured policy in XACML 2.0.'
-            attributes_required: typing.Optional[typing.List[str]]
-            'True if the values for any attributes specified in the policy must be present in the incoming request. False if the attribute values may optionally be present.'
+            attributes_required: bool
+            'If true all the policy attributes must be present in the request for the policy to be evaluated.'
 
         class Resource(typing.TypedDict):
             class Policy_Attachment(typing.TypedDict):
@@ -396,9 +396,25 @@ class AAC_Configurator(object):
                 if old_policies == None: old_policies = []
                 for policy in cba.policies:
                     self._cba_policy(old_policies, policy)
+            policies = self.aac.access_control.list_policies().json
+            policy_sets = self.aac.access_control.list_policy_sets().json
+            definitions = self.aac.api_protection.list_definitions().json
             if cba.resources != None:
+                #Auth to pdadmin
+                adminUser = self.config.get("webseal", {}).get("runtime", {}).get("admin_user", None)
+                adminSecret = self.config.get("webseal", {}).get("runtime", {}).get("admin_password", None)
+                secDomain = self.config.get("webseal", {}).get("runtime", {}).get("domain", None)
+                if not adminUser or not adminSecret:
+                    _logger.warn("Runtime information missing, RBA policy attachment will likely fail")
+                else:
+                    rsp = self.aac.access_control.authenticate_security_access_manager(adminUser, 
+                                                                                adminSecret, secDomain)
+                    if rsp.success == True:
+                        _logger.info("Successfully authentiated to pdadmin")
+                    else:
+                        _logger.error("Failed to authenticate to pdadmin")
                 for resource in cba.resources:
-                    self._cba_resource(resource)
+                    self._cba_resource(resource, policies, policy_sets, definitions)
 
 
     class Advanced_Configuration(typing.TypedDict):
@@ -439,6 +455,17 @@ class AAC_Configurator(object):
                     _logger.error("Failed to update advanced configuration with:\n{}\n{}".format(
                         json.dumps(advConf, indent=4), rsp.data))
 
+
+    def _scim_update_attr_mode(self, schema, attr_modes):
+        for attr_mode in attr_modes:
+            rsp = self.aac.scim_config.update_attribute_mode(schema, attr_mode.attribute,
+                                scim_subattribute=attr_mode.get("subattribute", None), mode=attr_mode.mode)
+            if rsp.success == True:
+                _logger.info("Successfully updated the {} attribute {} (subattr {}) with mode [{}]".format(
+                            schema, attr_mode.attribute, attr_mode.get("subattribute", None), attr_mode.mode))
+            else:
+                _logger.error("Failed to update {} attribute mode with config:\n{}\n{}".format(
+                                schema, json.dumps(attr_mode, indent=4), rsp.data))
 
 
     class System_CrossDomain_Identity_Management(typing.TypedDict):
@@ -593,21 +620,20 @@ class AAC_Configurator(object):
         max_user_response: typing.Optional[int]
         'The maximum number of entries that can be returned from a single call to the ``/User`` endpoint.'
 
+
     def scim_configuration(self, aac_config):
         if aac_config.scim != None:
-            generalConfig = self.aac.scim_config.get_general_config().json
-            needToUpdate = False
+            if aac_config.scim.attribute_modes:
+                for attrMode in aac_config.scim.attribute_modes:
+                    self._scim_update_attr_mode(attrMode.schema, attrMode.modes)
+            generalConfig = {}
             for prop in ["admin_group", "enable_header_authentication", "enable_authz_filter", "max_user_response"]:
                 if prop in aac_config.scim:
-                    generalConfig[prop] = aac_config.scim.get(prop)
-                    needToUpdate = True
-            if aac_config.scim.attribute_modes:
-                attrModes = generalConfig.pop("attribute_modes", {})
-                attrModes.update(aac_config.scim.attribute_modes)
-                generalConfig["attribute_modes"] = attrModes
-                needToUpdate = True
-            if needToUpdate == True:
-                rsp = self.aac.scim_config.update_config(**generalConfig)
+                    generalConfig[prop] = aac_config.scim.prop
+            if generalConfig:
+                mergedGeneralConfig = self.aac.scim_config.get_general_config().json
+                mergedGeneralConfig.update(generalConfig)
+                rsp = self.aac.scim_config.update_config(**mergedGeneralConfig)
                 if rsp.success == True:
                     self.needsRestart = True
                     _logger.info("Successfully updated the SCIM general configuration")
@@ -619,15 +645,16 @@ class AAC_Configurator(object):
                 if rsp.success == False:
                     _logger.error("Failed to get config for schema [{}]".format(schema.uri))
                     return
-                config = {**rsp.json, **schema.properties} # I wonder how this resolves conflicts
-                _logger.debug("Merged config for {}:\n{}".format(schema.uri, json.dumps(config, indent=4)))
-                rsp = self.aac.scim_config.update_schema(schema.uri, config)
+                schemaConfig = rsp.json.get(schema.uri)
+                schemaConfig.update(schema.properties)
+                #_logger.debug("Merged config for {}:\n{}".format(schema.uri, json.dumps(schemaConfig, indent=4)))
+                rsp = self.aac.scim_config.update_schema(schema.uri, schemaConfig)
                 if rsp.success == True:
                     self.needsRestart = True
                     _logger.info("Successfully updated schema [{}]".format(schema.uri))
                 else:
                     _logger.error("Failed to update schema [{}] with configuration:\n{}".format(
-                        schema.uri, config))
+                        schema.uri, schemaConfig))
 
 
     def _ci_server_connection(self, connection):
@@ -675,7 +702,7 @@ class AAC_Configurator(object):
 
     def _ws_server_connection(self, connection):
         props = connection.properties
-        rsp = self.aac.server_connection.screate_web_service(name=connection.name, description=connection.description,
+        rsp = self.aac.server_connections.create_web_service(name=connection.name, description=connection.description,
                 locked=connection.locked, connection_url=props.url, connection_user=props.user,
                 connection_password=props.password, connection_ssl_truststore=props.key_file, 
                 connection_ssl_auth_key=props.key_label, connection_ssl=props.ssl)
@@ -1001,19 +1028,21 @@ class AAC_Configurator(object):
 
     def upload_template_files(self, template_files):
         for file_pointer in template_files:
-            rsp = None
+            rsp = None; verb = None
             if file_pointer['name'].endswith(".zip"):
                 rsp = self.aac.template_files.import_files(file_pointer['path'])
+                verb = "imported" if rsp.success == True else "import"
             elif file_pointer.get("type") == "file":
                 rsp = self.aac.template_files.create_file(file_pointer['directory'], file_name=file_pointer['name'],
                         contents=file_pointer['contents'])
+                verb = "created" if rsp.success == True else "create"
             else:
                 rsp = self.aac.template_files.create_directory(file_pointer['directory'], dir_name=file_pointer['name'])
             if rsp.success == True:
                 self.needsRestart = True
-                _logger.info("Successfully created template file {}".format(file_pointer['path']))
+                _logger.info("Successfully {} template file {}".format(verb, file_pointer['path']))
             else:
-                _logger.error("Failed to create template file {}".format(file_pointer['path']))
+                _logger.error("Failed to {} template file {}".format(verb, file_pointer['path']))
 
 
     class Mapping_Rules(typing.TypedDict):
@@ -1046,15 +1075,25 @@ class AAC_Configurator(object):
         'List of mapping rule types/files to upload.'
 
     def upload_mapping_rules(self, _type, mapping_rules):
+        old_rules = self.aac.mapping_rules.list_rules().json
         for mapping_rule in mapping_rules: 
             # name === basename split on '.' and grab the first group
             rule_name = os.path.splitext(mapping_rule['name'])[0]
-            rsp = self.aac.mapping_rules.create_rule(rule_name=rule_name, category=_type, content=mapping_rule['contents'].decode())
+            old_rule = optional_list(filter_list('name', rule_name, old_rules))[0]
+            rsp = None; verb = None;
+            if old_rule:
+                rsp = self.aac.mapping_rules.update_rule(old_rule['id'], content=mapping_rule['contents'].decode())
+                verb = "replaced" if rsp.success == True else "replace"
+            else:
+                rsp = self.aac.mapping_rules.create_rule(rule_name=rule_name, category=_type, 
+                                                            content=mapping_rule['contents'].decode())
+                verb = "created" if rsp.success == True else "create"
             if rsp.success == True:
                 self.needsRestart = True
-                _logger.info("Successfully uploaded {} mapping rule".format(rule_name))
+                _logger.info("Successfully {} {} mapping rule".format(verb, rule_name))
             else:
-                _logger.error("Failed to upload {} mapping rule from [{}]".format(mapping_rule['name'], mapping_rule['path']))
+                _logger.error("Failed to {} {} mapping rule from [{}]".format(verb,
+                                    mapping_rule['name'], mapping_rule['path']))
 
 
     def upload_files(self, config):
@@ -1065,7 +1104,6 @@ class AAC_Configurator(object):
                 #include directories if we are a directory
                 incDirs = os.path.isdir(os.path.join(config_base_dir(), entry))
                 parsed_files = FILE_LOADER.read_files(entry, include_directories=incDirs)
-                self._remove_prefix_from_paths(parsed_files, entry)
                 self.upload_template_files(parsed_files)
         if config.mapping_rules != None:
             for entry in config.mapping_rules:
@@ -1162,23 +1200,23 @@ class AAC_Configurator(object):
                      description: "Verify Demo Transfer Amount"
                      uri: "urn:ibm:demo:transferamount"
                      type:
-                       risk: false
+                       risk: true
                        policy: false
                      datatype: "Double"
                      issuer: ""
                      category: "Action"
                      matcher: "1"
                      storage:
-                       session: false
+                       session: true
                        behavior: false
-                       device: false
+                       device: true
 
         '''
 
         class Type(typing.TypedDict):
-            risk: str
+            risk: bool
             'True if the attribute is used in risk profiles.'
-            policy: str
+            policy: bool
             'True if the attribute is used in policies.'
 
         class Storage(typing.TypedDict):
@@ -1204,7 +1242,7 @@ class AAC_Configurator(object):
         category: str
         'The part of the XACML request that the attribute value comes from ``Subject``, ``Environment``, ``Action`` or ``Resource``.'
         matcher: str
-        'ID of the attribute matcher that is used to compare the value of this attribute in an incoming device fingerprint with an existing device fingerprint of the user.'
+        'ID of the attribute matcher that is used to compare the value of this attribute in an incoming device fingerprint with an existing device fingerprint of the user. '
         storage: Storage
         'Define where the attribute is stored.'
 
@@ -1214,7 +1252,9 @@ class AAC_Configurator(object):
             for attribute in aac_config.attributes:
                 methodArgs = copy.deepcopy(attribute)
                 attr_id = optional_list(filter_list("uri", attribute.uri, existing))[0].get("id", None)
-                for k in ["storage", "type"]: #remap keys "key": {"di": "ct"} -> "key_di": "ct"
+                for k in ["storage", "type"]: 
+                    #remap keys "storage": {"device": True, "session": True} 
+                    #       -> {"storage_device": True, "storage_session": True}
                     if k in methodArgs.keys():
                         old = methodArgs.pop(k)
                         for oldKey, value in old.items():
@@ -1271,30 +1311,22 @@ class AAC_Configurator(object):
         else:
             _logger.error("Failed to create {} API Protection definition with config:\n{}\n{}".format(
                 definition.name, json.dumps(definition, indent=4), rsp.data))
-        if definition.pre_token_mapping_rule:
-            mapping_rule = FILE_LOADER.read_file(definition.pre_token_mapping_rule)
-            if len(mapping_rule) != 1:
-                _logger.error("Can only specify one Pre-Token Mapping Rule")
-            else:
-                mapping_rule = mapping_rule[0]
-                rsp = self.aac.api_protection.create_rule(name=definition.name + "PreTokenGeneration",
-                        category="OAUTH", file_name=mapping_rule["name"], content=mapping_rule['contents'])
-                if rsp.success == True:
-                    _logger.info("Successfully uploaded {} Pre-Token Mapping Rule".format(definition.name))
+        for token_rule_file in [("pre_token_mapping_rule", "PreTokenGeneration"), 
+                                ("post_token_mapping_rule", "PostTokenGeneration")]:
+            if definition.get(token_rule_file[0], None):
+                rulePrettyName = token_rule_file[0].replace('_', ' ')
+                mapping_rule = FILE_LOADER.read_file(definition.get(token_rule_file[0]))
+                if len(mapping_rule) != 1:
+                    _logger.error("Can only specify one {}".format(rulePrettyName))
                 else:
-                    _logger.error("Failed to upload {} Pre-Token Mapping Rule".format(definition.name))
-        if definition.post_token_mapping_rule:
-            mapping_rule = FILE_LOADER.read_file(definition.post_token_mapping_rule)
-            if len(mapping_rule) != 1:
-                _logger.error("Can only specify one Post-Token Mapping Rule")
-            else:
-                mapping_rule = mapping_rule[0]
-                rsp = self.aac.api_protection.create_rule(name=definition.name + "PostTokenGeneration",
-                        category="OAUTH", file_name=mapping_rule['name'], content=mapping_rule['contents'])
-                if rsp.success == True:
-                    _logger.info("Successfully created {} Post-Token Mapping Rule".format(definition.name))
-                else:
-                    _logger.error("Failed to create {} Post-Token Mapping Rule".format(definition.name))
+                    mapping_rule = mapping_rule[0]
+                    ruleName = definition.name + token_rule_file[1]
+                    ruleId = self._mapping_rule_to_id(ruleName) 
+                    rsp = self.aac.mapping_rules.update_rule(ruleId, content=mapping_rule['contents'].decode())
+                    if rsp.success == True:
+                        _logger.info("Successfully uploaded {} {} ".format(definition.name, rulePrettyName))
+                    else:
+                        _logger.error("Failed to upload {} {}".format(definition.name, rulePrettyName))
 
     def _configure_api_protection_client(self, definitions, client):
         apiDefId = optional_list(filter_list('name', client.definition, definitions))[0].get('id', "NULL")
@@ -1495,6 +1527,10 @@ class AAC_Configurator(object):
                 for client in aac_config.api_protection.clients:
                     self._configure_api_protection_client(definitions, client)
 
+    def _scim_sc_name_to_id(self, sc_name):
+        scim_sc = optional_list(filter_list('name', sc_name, 
+                                            self.aac.server_connections.list_web_service().json))[0]
+        return scim_sc.get('uuid', "-1")
 
     def _configure_mechanism(self, mechTypes, existing_mechanisms, mechanism):
         typeId = optional_list(filter_list('type', mechanism.type, mechTypes))[0].get('id', None)
@@ -1502,10 +1538,12 @@ class AAC_Configurator(object):
             _logger.error("Mechanism [{}] specified an invalid type, skipping.".format(mechanism))
             return
         props = None
-        if mechanism.properties != None and isinstance(mechanism.properties, list):
+        if mechanism.properties != None and isinstance(mechanism.properties, dict):
             props = []
-            for e in mechanism.properties: 
-                props += [{"key": k, "value": v} for k, v in e.items()]
+            for k, v in mechanism.properties.items():
+                if k == 'ScimConfig.serverConnection':
+                    v = self._scim_sc_name_to_id(v)
+                props += [{"key": k, "value": v}]
         old_mech = optional_list(filter_list('uri', mechanism.uri, existing_mechanisms))[0]
         rsp = None
         if old_mech:
@@ -1529,8 +1567,8 @@ class AAC_Configurator(object):
             rsp = self.aac.authentication.update_policy(old_policy['id'], name=policy.name, policy=policy.policy, uri=policy.uri,
                     description=policy.description, predefined=old_policy['predefined'], enabled=policy.enabled)
         else:
-            rsp = self.aac.authentication.create_policy(name=policy.name, policy=policy.policy, uri=policy.uri, description=policy.description,
-                    enabled=policy.enabled)
+            rsp = self.aac.authentication.create_policy(name=policy.name, policy=policy.policy, 
+                                uri=policy.uri, description=policy.description, enabled=policy.enabled)
         if rsp.success == True:
             _logger.info("Successfully set configuration for {} policy".format(policy.name))
             self.needsRestart = True
@@ -1563,57 +1601,56 @@ class AAC_Configurator(object):
                       description: "Username password authentication"
                       type: "Username Password"
                       properties:
-                      - usernamePasswordAuthentication.ldapHostName: "openldap"
-                      - usernamePasswordAuthentication.loginFailuresPersistent: "false"
-                      - usernamePasswordAuthentication.ldapBindDN: !secret default/isva-secrets:ldap_bind_dn
-                      - usernamePasswordAuthentication.maxServerConnections: "16"
-                      - usernamePasswordAuthentication.mgmtDomain: "Default"
-                      - usernamePasswordAuthentication.sslEnabled: "true"
-                      - usernamePasswordAuthentication.ldapPort: "636"
-                      - usernamePasswordAuthentication.sslTrustStore: "lmi_trust_store"
-                      - usernamePasswordAuthentication.userSearchFilter: "usernamePasswordAuthentication.userSearchFilter"
-                      - usernamePasswordAuthentication.ldapBindPwd: !secret default/isva-secrets:ldap_bind_pwd
-                      - usernamePasswordAuthentication.useFederatedDirectoriesConfig: "false"
+                        usernamePasswordAuthentication.ldapHostName: "openldap"
+                        usernamePasswordAuthentication.loginFailuresPersistent: "false"
+                        usernamePasswordAuthentication.ldapBindDN: !secret default/isva-secrets:ldap_bind_dn
+                        usernamePasswordAuthentication.maxServerConnections: "16"
+                        usernamePasswordAuthentication.mgmtDomain: "Default"
+                        usernamePasswordAuthentication.sslEnabled: "true"
+                        usernamePasswordAuthentication.ldapPort: "636"
+                        usernamePasswordAuthentication.sslTrustStore: "lmi_trust_store"
+                        usernamePasswordAuthentication.userSearchFilter: "usernamePasswordAuthentication.userSearchFilter"
+                        usernamePasswordAuthentication.ldapBindPwd: !secret default/isva-secrets:ldap_bind_pwd
+                        usernamePasswordAuthentication.useFederatedDirectoriesConfig: "false"
                     - name: "TOTP One-time Password"
                       uri: "urn:ibm:security:authentication:asf:mechanism:totp"
                       description: "Time-based one-time password authentication"
                       type: "TOTP One-time Password"
                       properties:
-                      - otp.totp.length: "6"
-                      - otp.totp.macAlgorithm: "HmacSHA1"
-                      - otp.totp.oneTimeUseEnabled: "true"
-                      - otp.totp.secretKeyAttributeName: "otp.hmac.totp.secret.key"
-                      - otp.totp.secretKeyAttributeNamespace: "urn:ibm:security:otp:hmac"
-                      - otp.totp.secretKeyUrl: "otpauth://totp/Example:@USER_NAME@?secret=@SECRET_KEY@&issuer=Example"
-                      - otp.totp.secretKeyLength: "32"
-                      - otp.totp.timeStepSize: "30"
-                      - otp.totp.timeStepSkew: "10"
+                        otp.totp.length: "6"
+                        otp.totp.macAlgorithm: "HmacSHA1"
+                        otp.totp.oneTimeUseEnabled: "true"
+                        otp.totp.secretKeyAttributeName: "otp.hmac.totp.secret.key"
+                        otp.totp.secretKeyAttributeNamespace: "urn:ibm:security:otp:hmac"
+                        otp.totp.secretKeyUrl: "otpauth://totp/Example:@USER_NAME@?secret=@SECRET_KEY@&issuer=Example"
+                        otp.totp.secretKeyLength: "32"
+                        otp.totp.timeStepSize: "30"
+                        otp.totp.timeStepSkew: "10"
                     - name: "reCAPTCHA Verification"
                       uri: "urn:ibm:security:authentication:asf:mechanism:recaptcha"
                       description: "Human user verification using reCAPTCHA Version 2.0."
                       type: "ReCAPTCHAAuthenticationName"
                       properties:
-                      - reCAPTCHA.HTMLPage: "/authsvc/authenticator/recaptcha/standalone.html"
+                        reCAPTCHA.HTMLPage: "/authsvc/authenticator/recaptcha/standalone.html"
                         reCAPTCHA.apiKey: !secret default/isva-secrets:recaptcha_key
                     - name: "End-User License Agreement"
                       uri: "urn:ibm:security:authentication:asf:mechanism:eula"
                       description: "End-user license agreement authentication"
                       type: "End-User License Agreement"
                       properties:
-                      - eulaAuthentication.acceptIfLastAcceptedBefore: "true"
-                      - eulaAuthentication.alwaysShowLicense: "false"
-                      - eulaAuthentication.licenseFile: "/authsvc/authenticator/eula/license.txt"
+                        eulaAuthentication.acceptIfLastAcceptedBefore: "true"
+                        eulaAuthentication.alwaysShowLicense: "false"
+                        eulaAuthentication.licenseFile: "/authsvc/authenticator/eula/license.txt"
                       - eulaAuthentication.licenseRenewalTerm: "0"
                     - name: "FIDO Universal 2nd Factor"
                       uri: "urn:ibm:security:authentication:asf:mechanism:u2f"
                       description: "FIDO Universal 2nd Factor Token Registration and Authentication"
                       type: "U2FName"
                       properties:
-                      - U2F.attestationSource: ""
-                      - U2F.attestationType: "None"
-                      - U2F.appId: "www.myidp.ibm.com"
-                      - U2F.attestationEnforcement: "Optional"
-
+                        U2F.attestationSource: ""
+                        U2F.attestationType: "None"
+                        U2F.appId: "www.myidp.ibm.com"
+                        U2F.attestationEnforcement: "Optional"
                     policies:
                     - name: "Verify Demo - Initiate Generic Message Demo Policy"
                       uri: "urn:ibm:security:authentication:asf:verify_generic_message"
@@ -1651,8 +1688,8 @@ class AAC_Configurator(object):
             uri: str
             'The unique resource identifier of the authentication mechanism.'
             type: str
-            'Type of mechanism to create, eg. ``InfoMapAuthenticationName``, ``Username Password`` or ``Mobile Multi Factor Authenticatior``.'
-            properties: typing.List[dict]
+            "Type of mechanism to create. Valid types include: 'HOTP One-time Password', 'MAC One-time Password', 'RSA One-time Password', 'TOTP One-time Password', 'Consent to device registration', 'One-time Password', 'HTTP Redirect', 'Username Password', 'End-User License Agreement', 'Knowledge Questions', 'Mobile User Approval', 'reCAPTCHA Verification', 'Info Map Authentication', 'Email Message', 'MMFA Authenticator', 'SCIM Config', 'FIDO Universal 2nd Factor', 'Cloud Identity JavaScript', 'QRCode Authenticator', 'FIDO2 WebAuthn Authenticator', 'Decision JavaScript', 'RSA SecurID', 'FIDO2 WebAuthn Registration' and 'OTP Enrollment'"
+            properties: dict
             'List of properties to configure for mechanism. The property names are different for rach of the mechanism types.'
             attributes: typing.Optional[typing.List[Attribute]]
             'List of attribute to add from the request context.'
@@ -1762,7 +1799,7 @@ class AAC_Configurator(object):
             endpoints = methodArgs.pop("endpoints", None)
             if endpoints:
                 methodArgs.update({**endpoints})
-            rsp = self.aac.mmfaconfig.update(**methodArgs)
+            rsp = self.aac.mmfa_config.update(**methodArgs)
             if rsp.success == True:
                 _logger.info("Successfully updated MMFA configuration")
                 self.needsRestart = True
@@ -2165,21 +2202,23 @@ class AAC_Configurator(object):
         self.pip_configuration(self.config.access_control)
         self.push_notifications(self.config.access_control)
         #self.server_connections(self.config.access_control)
+        self.mmfa_configuration(self.config.access_control)
+        self.scim_configuration(self.config.access_control)
         self.fido2_configuration(self.config.access_control)
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config)
             self.needsRestart = False
 
         #self.risk_profiles(self.config.access_control)
-        self.access_control(self.config.access_control)
         self.api_protection_configuration(self.config.access_control)
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config)
             self.needsRestart = False
-
         self.authentication_configuration(self.config.access_control)
-        self.scim_configuration(self.config.access_control)
-        self.mmfa_configuration(self.config.access_control)
+        if self.needsRestart == True:
+           deploy_pending_changes(self.factory, self.config)
+           self.needsRestart = False
+        self.access_control(self.config.access_control)
         #self.advanced_config(self.config.access_control)
         if self.needsRestart == True:
            deploy_pending_changes(self.factory, self.config)
