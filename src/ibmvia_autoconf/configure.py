@@ -163,8 +163,14 @@ class IVIA_Configurator(object):
                     access_control: !secret verify-access/isva-secrets:access_control_code
                     federation: !environment ISVA_ACCESS_CONTROL_CODE
 
+
+                  activation:
+                    trial_license: issued/trial.pem
+
         '''
 
+        trial_license: typing.Optional[str]
+        'Trial license file issued from https://isva-trial.verify.ibm.com/'
         webseal: typing.Optional[str]
         'License code for the WebSEAL Reverse Proxy module.'
         access_control: typing.Optional[str]
@@ -223,7 +229,7 @@ class IVIA_Configurator(object):
                 personal_parsed_file['name'], db_name))
             self.needsRestart = True
         else:
-            _logger.error("Failed to upload {} personal certificate to {}/n{}".format(
+            _logger.error("Failed to upload {} personal certificate to {}\n{}".format(
                personal_parsed_file['path'], db_name, rsp.data))
 
 
@@ -509,6 +515,7 @@ class IVIA_Configurator(object):
             if config.account_management.users != None:
                 self._system_users(config.account_management.users)
 
+
     def _add_auth_role(self, role):
         if role.operation == "delete":
             rsp = self.factory.get_system_settings().mgmt_authorization.delete_role(role.name)
@@ -761,7 +768,7 @@ class IVIA_Configurator(object):
 
     def advanced_tuning_parameters(self, config):
         if config.advanced_tuning_parameters != None:
-            old_atps = optional_list(self.factory.get_system_settings().advance_tining.list_params().json)
+            old_atps = optional_list(self.factory.get_system_settings().advanced_tuning.list_parameters().json)
             for atp in config.advanced_tuning_parameters:
                 if atp.operation == "delete":
                     uuid = None

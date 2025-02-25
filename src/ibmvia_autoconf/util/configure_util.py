@@ -118,12 +118,12 @@ def old_creds(cfg=None):
     return (user, secret)
 
 
-def _kube_reload_container(client, namespace, container):
-    if not client:
+def _kube_reload_container(namespace, container):
+    if not KUBE_CLIENT:
         _logger.error("Unable to restart deployment as kube client is null")
         return
     exec_commands = ['isam_cli', '-c', 'reload', 'all']
-    response = stream(client.CoreV1Api().connect_get_namespaced_pod_exec,
+    response = stream(KUBE_CLIENT.CoreV1Api().connect_get_namespaced_pod_exec,
             container,
             namespace,
             command=exec_commands,
@@ -137,13 +137,13 @@ def _kube_reload_container(client, namespace, container):
         _logger.error(container + " container failed to reload")
 
 
-def _kube_rollout_restart(client, namespace, deployment):
-    if not client:
+def _kube_rollout_restart(namespace, deployment):
+    if not KUBE_CLIENT:
         _logger.error("Unable to restart deployment as kube client is null")
         return
     #Get a list of the current pods
     pods = [ pod.metadata.name for pod in 
-                client.CoreV1Api().list_namespaced_pod(namespace, label_selector="app=" + deployment).items ]
+                KUBE_CLIENT.CoreV1Api().list_namespaced_pod(namespace, label_selector="app=" + deployment).items ]
     _logger.debug("Found {} pods for deployment {}\n{}".format(len(pods), deployment, pods))
 
     #Request a restart from the controller
@@ -153,7 +153,7 @@ def _kube_rollout_restart(client, namespace, deployment):
                 } } }
         } }
     try:
-        client.AppsV1Api().patch_namespaced_deployment(deployment, namespace, body, pretty='true')
+        KUBE_CLIENT.AppsV1Api().patch_namespaced_deployment(deployment, namespace, body, pretty='true')
     except kubernetes.client.rest.ApiException as e:
         _logger.error("Exception when calling AppsV1Api->patch_namespaced_deployment: %s" % e)
         sys.exit(1)
@@ -163,7 +163,7 @@ def _kube_rollout_restart(client, namespace, deployment):
         count = 1
         while count < 10:
             try:
-                client.CoreV1Api().delete_namespaced_pod(name=pod, namespace=namespace)
+                KUBE_CLIENT.CoreV1Api().delete_namespaced_pod(name=pod, namespace=namespace)
             except kubernetes.client.rest.ApiException as e:
                 if json.loads(e.body).get('code', -1) == 404:
                     break
@@ -173,9 +173,11 @@ def _kube_rollout_restart(client, namespace, deployment):
             _logger.error("Failed to delete pod {} for deployment {}".format(pod, deployment))
             sys.exit(1)
 
+
+def _kube_wait_for_deployment(namespace, deployment):
     #Finally wait for the new pod list to be ready
     watcher = kubernetes.watch.Watch()
-    for event in watcher.stream(func=client.CoreV1Api().list_namespaced_pod,
+    for event in watcher.stream(func=KUBE_CLIENT.CoreV1Api().list_namespaced_pod,
                                 namespace=namespace,
                                 label_selector="app=" + deployment,
                                 timeout_seconds=30):
@@ -186,8 +188,8 @@ def _kube_rollout_restart(client, namespace, deployment):
         elif event['type'] == "DELETED":
             watcher.stop()
             _logger.error("{} deployment was deleted while waiting to be restarted".format(deployment))
+    _logger.error("{} deployment did not return to a running state".format(deployment))
     sys.exit(1) #Pod did not get marked as running :(
-
 
 def _compose_restart_service(service, config):
     if shutil.which("docker-compose") == None:
@@ -237,11 +239,13 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
                 #Are we restarting the containers or rolling out a restart to the deployment descriptor
                 if isvaConfig.container.k8s_deployments.deployments is not None:
                     for deployment in isvaConfig.container.k8s_deployments.deployments:
-                        _kube_rollout_restart(KUBE_CLIENT, namespace, deployment)
+                        _kube_rollout_restart(namespace, deployment)
+                    for deployment in isvaConfig.container.k8s_deployments.deployments:
+                        _kube_wait_for_deployment(namespace, deployment)
 
                 elif isvaConfig.container.k8s_deployments.pods is not None:
                     for pod in isvaConfig.container.pods:
-                        _kube_reload_container(KUBE_CLIENT, namespace, pod)
+                        _kube_reload_container(namespace, pod)
 
             elif isvaConfig.container.compose_services:
                 for service in isvaConfig.container.compose_services:
