@@ -477,7 +477,7 @@ class WEB_Configurator(object):
         'Properties for integrating this reverse proxy with OIDC API Protection Clients.'
         stanza_configuration: typing.Optional[Stanza_Configuration]
         'List of modifications to perform on the ``webseald.conf`` configuration file for this reverse proxy instance.'
-        management_root: typing.Optional[typing.List[ManagementRoot]]
+        management_root: typing.List[str]
         'List of files to import into WebSEAL hosted pages. Directory structure should be relative to the predefined top-level directories.'
 
     def wrp(self, runtime, proxy):
