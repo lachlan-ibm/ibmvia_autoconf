@@ -35,7 +35,10 @@ jobs:
       run: |
         python -m build
         twine upload --verbose dist/* -u $PYPI_API_USER -p $PYPI_API_KEY
-      if: github.ref == 'refs/head/stable'
+      env:
+        PYPI_API_USER: ${{ secrets.PYPI_API_USER }}
+        PYPI_API_KEY: ${{ secrets.PYPI_API_KEY }}
+      if: github.ref == 'refs/heads/stable'
 
     # Push the HTML to github-pages
     - name: Deploy
