@@ -1856,7 +1856,7 @@ class AAC_Configurator(object):
         rp_mds = rp.get("metadata_services", [])
         if rp.metadata_services:
             mds_list = optional_list(self.aac.fido2_config.list_metadata_services().json)
-            for pos, mds in enumerate(rp.metadata_services)
+            for pos, mds in enumerate(rp.metadata_services):
                 for mds_props in mds_list:
                     if mds_props['url'] == mds:
                         rp_mds[pos] = mds_props['id']
