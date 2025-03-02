@@ -1862,6 +1862,7 @@ class AAC_Configurator(object):
         methodArgs = {
                 "name": rp.name,
                 "rp_id": rp.rp_id,
+                "timeout": rp.timeout,
                 "origins": rp.origins,
                 "metadata_set": rp_metadata,
                 "metadata_soft_fail": rp.metadata_soft_fail,
@@ -1872,12 +1873,14 @@ class AAC_Configurator(object):
             methodArgs.update({
                 "attestation_statement_types": rp.attestation.statement_types,
                 "attestation_statement_formats": rp.attestation.statement_formats,
-                "attestation_public_key_algorithms": rp.attestation.public_key_algorithms
+                "attestation_public_key_algorithms": rp.attestation.public_key_algorithms,
+                "compound_all_valid": rp.attestation.compound_all_valid
             })
             if rp.android:
                 methodArgs.update({
                         "attestation_android_safetynet_max_age": rp.attestation.android.max_age,
-                        "attestation_android_safetynet_clock_skew": rp.attestation.android.clock_skew
+                        "attestation_android_safetynet_clock_skew": rp.attestation.android.clock_skew,
+                        "attestation_android_safetynet_cts_match": rp.attestation.android.cts_profile_match
                     })
         rsp = self.aac.fido2_config.create_relying_party(**methodArgs)
         if rsp.success == True:
@@ -1930,19 +1933,23 @@ class AAC_Configurator(object):
 
         '''
         class Relying_Party(typing.TypedDict):
-            class Attestation:
+            class Attestation(typing.TypedDict):
                 statement_types: typing.Optional[typing.List[str]]
                 'List of attestation types to permit.'
                 statement_formats: typing.Optional[typing.List[str]]
                 'List of attestation formats to permit.'
                 public_key_algorithms: typing.Optional[typing.List[str]]
                 'List of COSE algorithm identifiers to permit.'
+                compound_all_valid: typing.Optinal[bool]
+                'True if all attestation statements in a compound attestation must be valid to successfuly register an authenticator. Default value is ``true``.'
 
-            class Android:
+            class Android(typing.TypedDict):
                 max_age: int
                 'Maximum age of attestation signature.'
                 clock_skew: int
                 'Maximum allowed clock skew in signed attestation attributes.'
+                cts_profile_match: typing.Optional[bool]
+                'True if the Android SafetyNet CTS Profile Match flag should be enforced. Default is true.'
 
             name: str
             'Name of the relying party.'
@@ -1964,6 +1971,8 @@ class AAC_Configurator(object):
             'Attestation properties permitted for this relying party.'
             android: typing.Optional[Android]
             'Androind attestation specific configuration.'
+            timeout: typing.Optional[int]
+            'Time period a user has to complete a FIDO2/WebAuthn ceremony. Default value is 300 seconds.'
 
         class Metadata(typing.TypedDict):
 
