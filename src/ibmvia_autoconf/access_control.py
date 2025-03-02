@@ -1950,7 +1950,7 @@ class AAC_Configurator(object):
                 'List of attestation formats to permit.'
                 public_key_algorithms: typing.Optional[typing.List[str]]
                 'List of COSE algorithm identifiers to permit.'
-                compound_all_valid: typing.Optinal[bool]
+                compound_all_valid: typing.Optional[bool]
                 'True if all attestation statements in a compound attestation must be valid to successfuly register an authenticator. Default value is ``true``.'
 
             class Android(typing.TypedDict):
@@ -1969,7 +1969,7 @@ class AAC_Configurator(object):
             'List of permitted origins. These should be valid sub-domains of the ``rp_id``.'
             metadata: typing.Optional[typing.List[str]]
             'List of metadata documents to enable for this relying party.'
-            mds: typing.Optional[str]
+            metadata_services: typing.Optional[str]
             'List of metadata services to enable for this relying party.'
             use_all_metadata: typing.Optional[bool]
             'Use all available metadata documents for this relying party.'
