@@ -1853,6 +1853,15 @@ class AAC_Configurator(object):
             for uploaded_metadata in metadata_list:
                 rp_metadata += [uploaded_metadata['id']]
 
+        rp_mds = rp.get("metadata_services", [])
+        if rp.metadata_services:
+            mds_list = optional_list(self.aac.fido2_config.list_metadata_services().json)
+            for pos, mds in enumerate(rp.metadata_services)
+                for mds_props in mds_list:
+                    if mds_props['url'] == mds:
+                        rp_mds[pos] = mds_props['id']
+                        break
+
         if rp.mediator:
             mediator_list = self.aac.fido2_config.list_mediator().json
             for mediator in mediator_list:
@@ -1865,6 +1874,7 @@ class AAC_Configurator(object):
                 "timeout": rp.timeout,
                 "origins": rp.origins,
                 "metadata_set": rp_metadata,
+                "metadata_services": rp_mds,
                 "metadata_soft_fail": rp.metadata_soft_fail,
                 "mediator_mapping_rule_id": rp.mediator,
                 "relying_party_impersonation_group": rp.impersonation_group
