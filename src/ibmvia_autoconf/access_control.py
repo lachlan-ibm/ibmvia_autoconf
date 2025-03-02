@@ -1886,7 +1886,7 @@ class AAC_Configurator(object):
                 "attestation_public_key_algorithms": rp.attestation.public_key_algorithms,
                 "compound_all_valid": rp.attestation.compound_all_valid
             })
-            if rp.android:
+            if rp.attestation.android:
                 methodArgs.update({
                         "attestation_android_safetynet_max_age": rp.attestation.android.max_age,
                         "attestation_android_safetynet_clock_skew": rp.attestation.android.clock_skew,
