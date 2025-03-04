@@ -222,6 +222,18 @@ class AAC_Configurator(object):
             _logger.error("Failed to create resource with configuration:\n{}\n{}".format(
                 json.dumps(resource, indent=4), rsp.data))
 
+    def _cba_publish_resources(self, my_resources):
+        resources = optional_list(self.aac.access_control.list_resources().json)
+        resource_ids = []
+        for resource in my_resources:
+            resource_ids += [filter_list('resourceUri', resource.uri, resources)[0]["id"]]
+        rsp = self.aac.access_control.publish_multiple_policy_attachments(ids=resource_ids)
+        if rsp.success == True:
+            logger.info("Successfully published the RBA resources")
+        else:
+            logger.error("Failed to publish the RBA policy list [{}] :\n{}".format(my_resources,
+                                                                                   rsp.data))
+
     def _cba_policy(self, old_policies, policy):
         policy_id = None
         for p in old_policies:
@@ -415,6 +427,7 @@ class AAC_Configurator(object):
                         _logger.error("Failed to authenticate to pdadmin")
                 for resource in cba.resources:
                     self._cba_resource(resource, policies, policy_sets, definitions)
+                self._cba_publish_resources(cba.resources)
 
 
     class Advanced_Configuration(typing.TypedDict):
