@@ -222,6 +222,18 @@ class AAC_Configurator(object):
             _logger.error("Failed to create resource with configuration:\n{}\n{}".format(
                 json.dumps(resource, indent=4), rsp.data))
 
+    def _cba_publish_policies(self, my_policies):
+        policies = optional_list(self.aac.access_control.list_policies().json)
+        policy_ids = []
+        for policy in my_policies:
+            policy_ids += [filter_list('resourceUri', policy.uri, policies)[0]["id"]]
+        rsp = self.aac.access_control.publish_multiple_policy_attachments(ids=policy_ids)
+        if rsp.success == True:
+            logger.info("Successfully published the RBA policies")
+        else:
+            logger.error("Failed to publish the RBA policy list [{}] :\n{}".format(my_policies,
+                                                                                   rsp.data))
+
     def _cba_policy(self, old_policies, policy):
         policy_id = None
         for p in old_policies:
@@ -396,6 +408,7 @@ class AAC_Configurator(object):
                 if old_policies == None: old_policies = []
                 for policy in cba.policies:
                     self._cba_policy(old_policies, policy)
+                self._cba_publish_policies(cba.policies)
             policies = self.aac.access_control.list_policies().json
             policy_sets = self.aac.access_control.list_policy_sets().json
             definitions = self.aac.api_protection.list_definitions().json
