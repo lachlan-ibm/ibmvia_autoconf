@@ -731,6 +731,24 @@ class WEB_Configurator(object):
         return
 
 
+    def _pdadmin_object(self, runtime, obj):
+        pdadminCommands = []
+        pd_obj = "/WebSEAL/{}-{}{}".format(obj.hostname, obj.instance, obj.junction)
+        if obj.attributes != None:
+            for attr in obj.attributes:
+                pdadminCommands += ["object modify {} set attribute {} {}".format(pd_obj, attr.key, attr.value)]
+        if len(pdadminCommands) == 0:
+            logger.error("did not find and attributes to attach to policy object {}".foramt(pd_obj))
+            return
+
+        rsp = self.web.policy_administration.execute(runtime.admin_user, runtime.admin_password, pdadminCommands)
+        if rsp.success == True:
+            _logger.info("Successfully attached attributes to policy directory objects {}".format(pd_obj))
+        else:
+            _logger.error("Failed to attach attributes to object {} with config:\n{}\n{}".format(
+                    pd_obj, json.dumps(obj, indent=4), rsp.data))
+
+
     def _pdadmin_acl(self, runtime, acl):
         pdadminCommands = ["acl create {}".format(acl.name)]
         if acl.description:
@@ -1019,7 +1037,7 @@ class WEB_Configurator(object):
                 value: str
                 'Value of the attribute to attach to the junction object.'
 
-            host: str
+            hostname: str
             'Hostname use by the reverse proxy in the Policy Server\'s namespace.'
             instance: str
             'WebSEAL instance name if the Policy Server\'s namespace.'
@@ -1042,25 +1060,29 @@ class WEB_Configurator(object):
         'List of ACL\'s and POP\'s to attach to a WebSEAL reverse proxy instance.'
 
 
-    def pdadmin(self, runtime, config):
-        if config.acls != None:
-            for acl in config.acls:
+    def pdadmin(self, runtime, pdadmcfg):
+        if pdadmcfg.objects != None:
+            for obj in pdadmcfg.objects:
+                self._pdadmin_object(runtime, obj)
+
+        if pdadmcfg.acls != None:
+            for acl in pdadmcfg.acls:
                 self._pdadmin_acl(runtime, acl)
 
-        if config.pops != None:
-            for pop in config.pops:
+        if pdadmcfg.pops != None:
+            for pop in pdadmcfg.pops:
                 self._pdadmin_pop(runtime, pop)
         #Create users before groups, as groups can add users as members
-        if config.users != None:
-            for user in config.users:
+        if pdadmcfg.users != None:
+            for user in pdadmcfg.users:
                 self._pdadmin_user(runtime, user)
 
-        if config.groups != None:
-            for group in config.groups:
+        if pdadmcfg.groups != None:
+            for group in pdadmcfg.groups:
                 self._pdadmin_group(runtime, group)
 
-        if config.reverse_proxies != None:
-            for proxy in config.reverse_proxies:
+        if pdadmcfg.reverse_proxies != None:
+            for proxy in pdadmcfg.reverse_proxies:
                 self._pdadmin_proxy(runtime, proxy)
         #deploy_pending_changes(self.factory, self.config)
 
