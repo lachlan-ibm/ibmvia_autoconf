@@ -229,9 +229,9 @@ class AAC_Configurator(object):
             resource_ids += [filter_list('resourceUri', resource.uri, resources)[0]["id"]]
         rsp = self.aac.access_control.publish_multiple_policy_attachments(ids=resource_ids)
         if rsp.success == True:
-            logger.info("Successfully published the RBA resources")
+            _logger.info("Successfully published the RBA resources")
         else:
-            logger.error("Failed to publish the RBA policy list [{}] :\n{}".format(my_resources,
+            _logger.error("Failed to publish the RBA policy list [{}] :\n{}".format(my_resources,
                                                                                    rsp.data))
 
     def _cba_policy(self, old_policies, policy):
