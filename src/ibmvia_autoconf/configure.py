@@ -188,10 +188,7 @@ class IVIA_Configurator(object):
             self._activateAdvancedAccessControl(config)
         if not any(module.get('id', None) == 'federation' and module.get('enabled', "False") == "True" for module in activations):
             self._activateFederation(config)
-        if self.needsRestart == True:
-            deploy_pending_changes(self.factory, self.config)
-            self.needsRestart = False
-        _logger.info("appliance activated")
+        _logger.debug("Appliance activated")
 
 
     def _import_signer_certs(self, database, parsed_file):
@@ -874,6 +871,7 @@ class IVIA_Configurator(object):
                                         ext_file=ext_file, properties=extension.properties, third_party_packages=third_party_files)
                 if rsp.success == True:
                     _logger.info("Successfully installed {} extension".format(extension.extension))
+                    self.needsRestart = True
                 else:
                     _logger.error("Failed to install extension:\n{}\n{}".format(
                                             json.dumps(extension, indent=4), rsp.data))
@@ -966,6 +964,9 @@ class IVIA_Configurator(object):
 
         self.activate_appliance(base_config)
         self.install_extensions(base_config)
+        if self.needsRestart == True:
+            deploy_pending_changes(self.factory, self.config)
+            self.needsRestart = False
 
     def _check_aac_fed_licenses(self):
         activations = self.factory.get_system_settings().licensing.get_activated_modules().json
