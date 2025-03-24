@@ -127,6 +127,14 @@ class IVIA_Configurator(object):
             deploy_pending_changes(self.factory, self.config, restartContainers=False)
             _logger.info("Completed setup")
 
+    def _apply_trial_cert(self, config):
+        trialCert = optional_list(FILE_LOADER.read_file(config.activations.trial_license))[0]
+        rsp = self.factory.get_system_settings().licensing.trial_activation(trialCert['path'])
+        if rsp.success == True:
+            _logger.info("Successfully applied trial license.")
+        else:
+            _logger.error("Failed to activate Verify Access modules with supplied trail license:\n{}\n{}".format(
+                                trialCert['path'], rsp.data))
 
     def _apply_license(self, module, code):
         # Need to activate appliance
@@ -182,12 +190,15 @@ class IVIA_Configurator(object):
         system = self.factory.get_system_settings()
         activations = system.licensing.get_activated_modules().json
         _logger.debug("Existing activations: {}".format(activations))
-        if not any(module.get('id', None) == 'wga' and module.get('enabled', "False") == "True" for module in activations):
-            self._activateBaseAppliance(config)
-        if not any(module.get('id', None) == 'mga' and module.get('enabled', "False") == "True" for module in activations):
-            self._activateAdvancedAccessControl(config)
-        if not any(module.get('id', None) == 'federation' and module.get('enabled', "False") == "True" for module in activations):
-            self._activateFederation(config)
+        if config.activations != None and config.activations.trial_license != None:
+            self._apply_trial_cert(config)
+        else:
+            if not any(module.get('id', None) == 'wga' and module.get('enabled', "False") == "True" for module in activations):
+                self._activateBaseAppliance(config)
+            if not any(module.get('id', None) == 'mga' and module.get('enabled', "False") == "True" for module in activations):
+                self._activateAdvancedAccessControl(config)
+            if not any(module.get('id', None) == 'federation' and module.get('enabled', "False") == "True" for module in activations):
+                self._activateFederation(config)
         _logger.debug("Appliance activated")
 
 
