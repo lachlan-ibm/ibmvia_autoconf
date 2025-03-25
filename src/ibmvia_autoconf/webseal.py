@@ -179,16 +179,15 @@ class WEB_Configurator(object):
             _logger.error("Failed to add junction to {} with config:\n{}\n{}".format(
                 proxy_id, json.dumps(junction, indent=4), rsp.data))
 
-    def _import_management_root(self, proxy_id, mgmt_root):
-        for zip_file in mgmt_root.files:
-            path = optional_list(FILE_LOADER.read_file(zip_file))[0].get("path", "MISSING_PATH")
-            rsp = self.web.reverse_proxy.import_management_root_files(proxy_id, mgmt_root.tld, path)
-            if rsp.success == True:
-                _logger.info("Successfully imported {} to {} proxy management root".format(
-                    zip_file, proxy_id))
-            else:
-                _logger.error("Failed to import {} to {} proxy:\n{}".format(
-                                            path, proxy_id, rsp.data))
+    def _import_management_root(self, proxy_id, zip_file):
+        path = optional_list(FILE_LOADER.read_file(zip_file))[0].get("path", "MISSING_PATH")
+        rsp = self.web.reverse_proxy.import_management_root_files(proxy_id, path)
+        if rsp.success == True:
+            _logger.info("Successfully imported {} to {} proxy management root".format(
+                zip_file, proxy_id))
+        else:
+            _logger.error("Failed to import {} to {} proxy:\n{}".format(
+                                        path, proxy_id, rsp.data))
 
     class Reverse_Proxy(typing.TypedDict):
         '''
@@ -431,11 +430,6 @@ class WEB_Configurator(object):
             remote_http_header: typing.List[str]
             'Controls the insertion of Security Verify Identity Access specific client identity information in HTTP headers across the junction.'
 
-        class ManagementRoot(typing.TypedDict):
-            tld: str
-            'The top-level directory to import files to. The top-level directory must be one of management, errors, pkmspublic, oauth, snippets, or junction-root.'
-            files: typing.List[str]
-            'List of files to import to the given top-level directory. Direcotry structure should be relative to this top-level directory'
 
         class Endpoint(typing.TypedDict):
             enabled: bool
@@ -483,8 +477,8 @@ class WEB_Configurator(object):
         'Properties for integrating this reverse proxy with OIDC API Protection Clients.'
         stanza_configuration: typing.Optional[Stanza_Configuration]
         'List of modifications to perform on the ``webseald.conf`` configuration file for this reverse proxy instance.'
-        management_root: typing.Optional[typing.List[ManagementRoot]]
-        'List of files to import into a WebSEAL management top-level HTML pages directory.'
+        management_root: typing.List[str]
+        'List of files to import into WebSEAL hosted pages. Directory structure should be relative to the predefined top-level directories.'
 
     def wrp(self, runtime, proxy):
         wrp_instances = optional_list(self.web.reverse_proxy.list_instances().json)
@@ -532,8 +526,8 @@ class WEB_Configurator(object):
             _logger.error("Configuration of {} proxy failed with config:\n{}\n{}".format(
                 proxy.name, json.dumps(proxy, indent=4), rsp.data))
         if proxy.management_root != None:
-            for mgmtRoot in proxy.management_root:
-                self._import_management_root(proxy.name, mgmtRoot)
+            for zipPages in proxy.management_root:
+                self._import_management_root(proxy.name, zipPages)
 
         if proxy.junctions != None:
             for jct in proxy.junctions:
@@ -735,6 +729,24 @@ class WEB_Configurator(object):
 
         _logger.debug("EXIT Runtime status: {}".format(self.web.runtime_component.get_status().json))
         return
+
+
+    def _pdadmin_object(self, runtime, obj):
+        pdadminCommands = []
+        pd_obj = "/WebSEAL/{}-{}{}".format(obj.hostname, obj.instance, obj.junction)
+        if obj.attributes != None:
+            for attr in obj.attributes:
+                pdadminCommands += ["object modify {} set attribute {} {}".format(pd_obj, attr.key, attr.value)]
+        if len(pdadminCommands) == 0:
+            logger.error("did not find and attributes to attach to policy object {}".foramt(pd_obj))
+            return
+
+        rsp = self.web.policy_administration.execute(runtime.admin_user, runtime.admin_password, pdadminCommands)
+        if rsp.success == True:
+            _logger.info("Successfully attached attributes to policy directory objects {}".format(pd_obj))
+        else:
+            _logger.error("Failed to attach attributes to object {} with config:\n{}\n{}".format(
+                    pd_obj, json.dumps(obj, indent=4), rsp.data))
 
 
     def _pdadmin_acl(self, runtime, acl):
@@ -1025,7 +1037,7 @@ class WEB_Configurator(object):
                 value: str
                 'Value of the attribute to attach to the junction object.'
 
-            host: str
+            hostname: str
             'Hostname use by the reverse proxy in the Policy Server\'s namespace.'
             instance: str
             'WebSEAL instance name if the Policy Server\'s namespace.'
@@ -1048,25 +1060,29 @@ class WEB_Configurator(object):
         'List of ACL\'s and POP\'s to attach to a WebSEAL reverse proxy instance.'
 
 
-    def pdadmin(self, runtime, config):
-        if config.acls != None:
-            for acl in config.acls:
+    def pdadmin(self, runtime, pdadmcfg):
+        if pdadmcfg.objects != None:
+            for obj in pdadmcfg.objects:
+                self._pdadmin_object(runtime, obj)
+
+        if pdadmcfg.acls != None:
+            for acl in pdadmcfg.acls:
                 self._pdadmin_acl(runtime, acl)
 
-        if config.pops != None:
-            for pop in config.pops:
+        if pdadmcfg.pops != None:
+            for pop in pdadmcfg.pops:
                 self._pdadmin_pop(runtime, pop)
         #Create users before groups, as groups can add users as members
-        if config.users != None:
-            for user in config.users:
+        if pdadmcfg.users != None:
+            for user in pdadmcfg.users:
                 self._pdadmin_user(runtime, user)
 
-        if config.groups != None:
-            for group in config.groups:
+        if pdadmcfg.groups != None:
+            for group in pdadmcfg.groups:
                 self._pdadmin_group(runtime, group)
 
-        if config.reverse_proxies != None:
-            for proxy in config.reverse_proxies:
+        if pdadmcfg.reverse_proxies != None:
+            for proxy in pdadmcfg.reverse_proxies:
                 self._pdadmin_proxy(runtime, proxy)
         #deploy_pending_changes(self.factory, self.config)
 
