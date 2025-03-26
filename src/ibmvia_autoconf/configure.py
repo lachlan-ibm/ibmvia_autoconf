@@ -128,7 +128,7 @@ class IVIA_Configurator(object):
             _logger.info("Completed setup")
 
     def _apply_trial_cert(self, config):
-        trialCert = optional_list(FILE_LOADER.read_file(config.activations.trial_license))[0]
+        trialCert = optional_list(FILE_LOADER.read_file(config.activation.trial_license))[0]
         rsp = self.factory.get_system_settings().licensing.trial_activation(trialCert['path'])
         if rsp.success == True:
             _logger.info("Successfully applied trial license.")
@@ -190,7 +190,7 @@ class IVIA_Configurator(object):
         system = self.factory.get_system_settings()
         activations = system.licensing.get_activated_modules().json
         _logger.debug("Existing activations: {}".format(activations))
-        if config.activations != None and config.activations.trial_license != None:
+        if config.activation != None and config.activation.trial_license != None:
             self._apply_trial_cert(config)
         else:
             if not any(module.get('id', None) == 'wga' and module.get('enabled', "False") == "True" for module in activations):
