@@ -131,7 +131,8 @@ class IVIA_Configurator(object):
         trialCert = optional_list(FILE_LOADER.read_file(config.activation.trial_license))[0]
         rsp = self.factory.get_system_settings().licensing.trial_activation(trialCert['path'])
         if rsp.success == True:
-            _logger.info("Successfully applied trial license.")
+            _logger.info("Successfully applied trial license. . . waiting for activation")
+            self.needsRestart = True
         else:
             _logger.error("Failed to activate Verify Access modules with supplied trail license:\n{}\n{}".format(
                                 trialCert['path'], rsp.data))
