@@ -132,7 +132,12 @@ class IVIA_Configurator(object):
         rsp = self.factory.get_system_settings().licensing.trial_activation(trialCert['path'])
         if rsp.success == True:
             _logger.info("Successfully applied trial license.")
-            self.needsRestart = True
+            time.sleep(15)
+            rsp = self.factory.get_system_settings().restartshutdown.restart_lmi()
+            if rsp.success == True:
+                _logger.info("Successfully restarted LMI after uploading trial certificate")
+            else:
+                _logger.error("Failed to restart LMI after uploading trial certificate")
         else:
             _logger.error("Failed to activate Verify Access modules with supplied trail license:\n{}\n{}".format(
                                 trialCert['path'], rsp.data))
