@@ -131,8 +131,8 @@ class IVIA_Configurator(object):
         trialCert = optional_list(FILE_LOADER.read_file(config.activation.trial_license))[0]
         rsp = self.factory.get_system_settings().licensing.trial_activation(trialCert['path'])
         if rsp.success == True:
-            _logger.info("Successfully applied trial license.")
-            time.sleep(15)
+            _logger.info("Successfully applied trial license, waiting to contact activation server.")
+            time.sleep(60) #Sometimes the remote service needs a bit of time to complete
             rsp = self.factory.get_system_settings().restartshutdown.restart_lmi()
             if rsp.success == True:
                 _logger.info("Successfully restarted LMI after uploading trial certificate")
