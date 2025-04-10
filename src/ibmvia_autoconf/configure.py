@@ -127,17 +127,25 @@ class IVIA_Configurator(object):
             deploy_pending_changes(self.factory, self.config, restartContainers=False)
             _logger.info("Completed setup")
 
-    def _apply_trial_cert(self, config):
-        trialCert = optional_list(FILE_LOADER.read_file(config.activation.trial_license))[0]
-        rsp = self.factory.get_system_settings().licensing.trial_activation(trialCert['path'])
-        if rsp.success == True:
-            _logger.info("Successfully applied trial license, waiting to contact activation server.")
-            time.sleep(60) #Sometimes the remote service needs a bit of time to complete
+    def _wait_for_trial_activation(self):
+            modules = optional_list(self.factory.get_system_settings().licensing.get_activated_modules().json)
+            while len(modules) < 3: #wga, aac, fed (+maybe dc)
+                _logger.debug("Waiting for modules to activate.")
+                time.sleep(10) #Sometimes the remote service needs a bit of time to complete
+                modules = optional_list(self.factory.get_system_settings().licensing.get_activated_modules().json)
+            _logger.debug("Modules have been activated,can restart the LMI now")
             rsp = self.factory.get_system_settings().restartshutdown.restart_lmi()
             if rsp.success == True:
                 _logger.info("Successfully restarted LMI after uploading trial certificate")
             else:
                 _logger.error("Failed to restart LMI after uploading trial certificate")
+
+    def _apply_trial_cert(self, config):
+        trialCert = optional_list(FILE_LOADER.read_file(config.activation.trial_license))[0]
+        rsp = self.factory.get_system_settings().licensing.trial_activation(trialCert['path'])
+        if rsp.success == True:
+            _logger.info("Successfully applied trial license, waiting to contact activation server.")
+            self._wait_for_trial_activation()
         else:
             _logger.error("Failed to activate Verify Access modules with supplied trail license:\n{}\n{}".format(
                                 trialCert['path'], rsp.data))

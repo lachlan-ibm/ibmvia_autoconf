@@ -1,0 +1,313 @@
+### ISVA Config ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ivia-mmfa-config
+  labels:
+    app: ivia-mmfa-config
+spec:
+  selector:
+    matchLabels:
+      app: ivia-mmfa-config
+  replicas: 1
+  revisionHistoryLimit: 1
+  template: 
+    metadata:
+      labels:
+        app: ivia-mmfa-config
+    spec:
+      volumes:
+        - name: ivia-mmfa-configvol
+          emptyDir: {}
+      containers:
+        - name: ivia-mmfa-config
+          image: icr.io/ivia/ivia-config:11.0.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9443
+          volumeMounts:
+            - mountPath: /var/shared
+              name: ivia-mmfa-configvol
+          env:
+            - name: SERVICE
+              value: config
+            - name: CONTAINER_TIMEZONE
+              value: Australia/Brisbane
+---
+# for external service access, see https://console.bluemix.net/docs/containers/cs_apps.html#cs_apps_public_nodeport
+apiVersion: v1
+kind: Service
+metadata:
+  name: ivia-mmfa-config
+  labels:
+    app: ivia-mmfa-config
+spec:
+  ports:
+    - port: 9443
+      name: ivia-mmfa-config
+      protocol: TCP
+# make this one statically allocated and exposed to internet - comment this line out if you don't want to expose the LMI externally.
+  selector:
+    app: ivia-mmfa-config
+  type: ClusterIP
+---
+# This secret is created for the runtime and webseal containers to automatically retrieve the configuration snapshot via web service
+# These are the Base64 encoded versions of username: cfgsvc password: Passw0rd
+apiVersion: v1
+kind: Secret
+metadata:
+  name: configreader
+type: Opaque
+data:
+  username: Y2Znc3Zj
+  password: UGFzc3cwcmQ=
+---
+### ISVA BROWSER WRP ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ivia-mmfa-browserwrp
+  labels:
+    app: ivia-mmfa-browserwrp
+spec:
+  selector:
+    matchLabels:
+      app: ivia-mmfa-browserwrp
+  replicas: 1
+  revisionHistoryLimit: 1
+  template: 
+    metadata:
+      labels:
+        app: ivia-mmfa-browserwrp
+    spec:
+      volumes:
+        - name: ivia-mmfa-configvol
+          emptyDir: {}
+      containers:
+        - name: ivia-mmfa-browserwrp
+          image: icr.io/ivia/ivia-wrp:11.0.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9443
+          volumeMounts:
+            - mountPath: /var/shared
+              name: ivia-mmfa-configvol
+          env:
+            - name: SERVICE
+              value: webseal
+            - name: INSTANCE
+              value: default
+            - name: CONTAINER_TIMEZONE
+              value: Australia/Brisbane
+            - name: CONFIG_SERVICE_URL
+              value: https://ivia-mmfa-config:9443/shared_volume
+            - name: CONFIG_SERVICE_TLS_CACERT
+              value: disabled
+            - name: CONFIG_SERVICE_USER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: configreader
+                  key: username
+            - name: CONFIG_SERVICE_USER_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: configreader
+                  key: password
+---
+# for external service access, see https://console.bluemix.net/docs/containers/cs_apps.html#cs_apps_public_nodeport
+apiVersion: v1
+kind: Service
+metadata:
+  name: ivia-mmfa-browserwrp
+  labels:
+    app: ivia-mmfa-browserwrp
+spec:
+  ports:
+    - port: 9443
+      name: ivia-mmfa-browserwrp
+      protocol: TCP
+      nodePort: 30443
+  selector:
+    app: ivia-mmfa-browserwrp
+  type: NodePort
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ivia-mmfa-browserwrp-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: mmfa.myidp.ibm.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ivia-mmfa-browserwrp
+                port:
+                  number: 9443
+---
+### ISVA MOBILE WRP ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ivia-mmfa-mobilewrp
+  labels:
+    app: ivia-mmfa-mobilewrp
+spec:
+  selector:
+    matchLabels:
+      app: ivia-mmfa-mobilewrp
+  replicas: 1
+  revisionHistoryLimit: 1
+  template: 
+    metadata:
+      labels:
+        app: ivia-mmfa-mobilewrp
+    spec:
+      volumes:
+        - name: ivia-mmfa-configvol
+          emptyDir: {}
+      containers:
+        - name: ivia-mmfa-mobilewrp
+          image: icr.io/ivia/ivia-wrp:11.0.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9443
+          volumeMounts:
+            - mountPath: /var/shared
+              name: ivia-mmfa-configvol
+          env:
+            - name: SERVICE
+              value: webseal
+            - name: INSTANCE
+              value: mobile
+            - name: CONTAINER_TIMEZONE
+              value: Australia/Brisbane
+            - name: CONFIG_SERVICE_URL
+              value: https://ivia-mmfa-config:9443/shared_volume
+            - name: CONFIG_SERVICE_TLS_CACERT
+              value: disabled
+            - name: CONFIG_SERVICE_USER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: configreader
+                  key: username
+            - name: CONFIG_SERVICE_USER_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: configreader
+                  key: password
+---
+# for external service access, see https://console.bluemix.net/docs/containers/cs_apps.html#cs_apps_public_nodeport
+apiVersion: v1
+kind: Service
+metadata:
+  name: ivia-mmfa-mobilewrp
+  labels:
+    app: ivia-mmfa-mobilewrp
+spec:
+  ports:
+    - port: 9443
+      name: ivia-mmfa-mobilewrp
+      protocol: TCP
+      nodePort: 30444
+  selector:
+    app: ivia-mmfa-mobilewrp
+  type: NodePort
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ivia-mmfa-mobilewrp-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: mobile.myidp.ibm.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ivia-mmfa-mobilewrp
+                port:
+                  number: 9443
+---
+### ISVA Runtime ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ivia-mmfa-runtime
+  labels:
+    app: ivia-mmfa-runtime
+spec:
+  selector:
+    matchLabels:
+      app: ivia-mmfa-runtime
+  replicas: 1
+  revisionHistoryLimit: 1
+  template: 
+    metadata:
+      labels:
+        app: ivia-mmfa-runtime
+    spec:
+      volumes:
+        - name: ivia-mmfa-configvol
+          emptyDir: {}
+      containers:
+        - name: ivia-mmfa-runtime
+          image: icr.io/ivia/ivia-runtime:11.0.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9443
+          volumeMounts:
+            - mountPath: /var/shared
+              name: ivia-mmfa-configvol
+          env:
+            - name: SERVICE
+              value: runtime
+            - name: WLP_LOGGING_CONSOLE_FORMAT
+              value: simple
+            - name: CONTAINER_TIMEZONE
+              value: Australia/Brisbane
+            - name: CONFIG_SERVICE_URL
+              value: https://ivia-mmfa-config:9443/shared_volume
+            - name: CONFIG_SERVICE_TLS_CACERT
+              value: disabled
+            - name: CONFIG_SERVICE_USER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: configreader
+                  key: username
+            - name: CONFIG_SERVICE_USER_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: configreader
+                  key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ivia-mmfa-runtime
+  labels:
+    app: ivia-mmfa-runtime
+spec:
+  ports:
+    - port: 9443
+      name: ivia-mmfa-runtime
+      protocol: TCP
+  selector:
+    app: ivia-mmfa-runtime
+  type: ClusterIP
+
