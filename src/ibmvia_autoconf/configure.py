@@ -128,27 +128,42 @@ class IVIA_Configurator(object):
             _logger.info("Completed setup")
 
     def _wait_for_trial_activation(self):
+        count = 0
+        _logger.debug("Waiting for modules to activate.")
         modules = optional_list(self.factory.get_system_settings().licensing.get_activated_modules().json)
         while len(modules) < 3: #wga, aac, fed (+maybe dc)
-            _logger.debug("Waiting for modules to activate.")
+            if count > 10:
+                _logger.error("Trial license has not activated. . .")
+                return False
             time.sleep(10) #Sometimes the remote service needs a bit of time to complete
+            count += 1
             modules = optional_list(self.factory.get_system_settings().licensing.get_activated_modules().json)
-        _logger.debug("Modules have been activated,can restart the LMI now")
-        rsp = self.factory.get_system_settings().restartshutdown.restart_lmi()
-        if rsp.success == True:
-            _logger.info("Successfully restarted LMI after uploading trial certificate")
-        else:
-            _logger.error("Failed to restart LMI after uploading trial certificate")
+        _logger.info("Found activated modules.")
+        return True
 
-    def _apply_trial_cert(self, config):
+    def _upload_trial_cert(self, config):
         trialCert = optional_list(FILE_LOADER.read_file(config.activation.trial_license))[0]
         rsp = self.factory.get_system_settings().licensing.trial_activation(trialCert['path'])
         if rsp.success == True:
-            _logger.info("Successfully applied trial license, waiting to contact activation server.")
-            self._wait_for_trial_activation()
+            _logger.info("Successfully uploaded trial license.")
         else:
             _logger.error("Failed to activate Verify Access modules with supplied trail license:\n{}\n{}".format(
                                 trialCert['path'], rsp.data))
+
+    def _apply_trial_cert(self, config):
+        retry = 0
+        while retry < 3:
+            self._upload_trial_cert(config)
+            time.sleep(30) #Sometimes the remote service needs a bit of time to complete
+            rsp = self.factory.get_system_settings().restartshutdown.restart_lmi()
+            if rsp.success == True:
+                _logger.info("Successfully restarted LMI after uploading trial certificate")
+            else:
+                _logger.error("Failed to restart LMI after uploading trial certificate")
+            if self._wait_for_trial_activation():
+                return
+            else:
+                retry += 1
 
     def _apply_license(self, module, code):
         # Need to activate appliance
