@@ -132,7 +132,7 @@ class IVIA_Configurator(object):
         _logger.debug("Waiting for modules to activate.")
         modules = optional_list(self.factory.get_system_settings().licensing.get_activated_modules().json)
         while len(modules) < 3: #wga, aac, fed (+maybe dc)
-            if count > 10:
+            if count > 5:
                 _logger.error("Trial license has not activated. . .")
                 return False
             time.sleep(10) #Sometimes the remote service needs a bit of time to complete
