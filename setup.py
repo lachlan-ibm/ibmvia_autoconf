@@ -43,7 +43,9 @@ setup(
                       'pyivia',
                       'kubernetes',
                       'docker-compose',
-                      'typing'
+                      'typing',
+                      'pyyaml==5.4.1',
+                      'Cython<3'
     ],
     project_urls={
         'Homepage': 'https://github.com/lachlan-ibm/ibmvia_autoconf',
