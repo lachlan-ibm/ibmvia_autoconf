@@ -10,7 +10,7 @@ import typing
 import copy
 
 from .util.configure_util import deploy_pending_changes, config_base_dir
-from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, to_camel_case, remap_keys
+from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, to_camel_case, remap_keys, KUBE_CLIENT_SLEEP
 
 _logger = logging.getLogger(__name__)
 
@@ -919,6 +919,7 @@ class FED_Configurator(object):
                 fed_id=fed_id, name=partner.name, metadata=metadata_file['path'])
         if rsp.success == True:
             _logger.info("Successfully imported {} Federation Partner".format(partner.name))
+            self.needsRestart = True
         else:
             _logger.error("Failed to import Federation Partner:\n{}\n{}".format(
                                             json.dumps(partner, indent=4), rsp.data))
@@ -1788,6 +1789,8 @@ class FED_Configurator(object):
                     deploy_pending_changes(self.factory, self.config) # Federations must be deployed before the WRP wizard can be run
                     self.needsRestart = False
                 if federation.webseal:
+                    _logger.info("Waiting for the runtime to stabilize, requried if we jsut created this federation")
+                    time.sleep(KUBE_CLIENT_SLEEP)
                     fed_objs = optional_list(self.fed.federations.list_federations().json)
                     fed_obj = optional_list(filter_list("name", federation.name, fed_objs))[0]
                     #Run the WebSEAL config wizard
