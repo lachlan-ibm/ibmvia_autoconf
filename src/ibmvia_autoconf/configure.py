@@ -16,7 +16,7 @@ from .container import Docker_Configurator as CONTAINER
 from .access_control import AAC_Configurator as AAC
 from .webseal import WEB_Configurator as WEB
 from .federation import FED_Configurator as FED
-from .util.data_util import FILE_LOADER, optional_list
+from .util.data_util import FILE_LOADER, optional_list, KUBE_CLIENT_SLEEP
 from .util.configure_util import deploy_pending_changes, creds, old_creds, mgmt_base_url, config_yaml
 from .util.constants import HEADERS, LOG_LEVEL
 
@@ -154,7 +154,7 @@ class IVIA_Configurator(object):
         retry = 0
         while retry < 3:
             self._upload_trial_cert(config)
-            time.sleep(30) #Sometimes the remote service needs a bit of time to complete
+            time.sleep(KUBE_CLIENT_SLEEP) #Sometimes the remote service needs a bit of time to complete
             rsp = self.factory.get_system_settings().restartshutdown.restart_lmi()
             if rsp.success == True:
                 _logger.info("Successfully restarted LMI after uploading trial certificate")
