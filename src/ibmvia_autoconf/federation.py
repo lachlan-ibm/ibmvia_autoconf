@@ -450,13 +450,12 @@ class FED_Configurator(object):
 
 
 
-    def _chain_index_to_prefix(self, template_name, chain_index):
+    def _chain_index_to_prefix(self, template_name, chain_index, chain_templates):
         '''
         Convert the given chain name and index to the Verify Identity Access generated UUID prefix from
         the chain template
         '''
-        templates = optional_list(self.fed.sts.list_templates().json)
-        template = optional_list(filter_list('name', template_name, templates))[0]
+        template = optional_list(filter_list('name', template_name, chain_templates))[0]
         if template:
             items = template.get("chainItems", [])
             if len(items) <= chain_index:
@@ -467,15 +466,13 @@ class FED_Configurator(object):
             _logger.error("Could not find chain template with name {}".format(template_name))
         return "NULL"
 
-    def _remap_sts_chain_template_keys(self, template):
-        moduleTypes = optional_list(self.fed.sts.list_modules().json)
+    def _remap_sts_chain_template_keys(self, template, module_types):
         for module in template.get("modules", []):
-            moduleType = optional_list(filter_list("name", module.get("id", "NULL"), moduleTypes))[0]
+            moduleType = optional_list(filter_list("name", module.get("id", "NULL"), module_types))[0]
             module['id'] = moduleType.get("id", module.get("id", "MODULE_ID_MISSING"))
 
-    def _chain_template_name_to_id(self, template_name):
-        templates = optional_list(self.fed.sts.list_templates().json)
-        return optional_list(filter_list('name', template_name, templates))[0].get('id', template_name)
+    def _chain_template_name_to_id(self, template_name, chain_templates):
+        return optional_list(filter_list('name', template_name, chain_templates))[0].get('id', template_name)
 
     def _remap_sts_chain_keys(self, chain):
         remap = {"issuer": "issuer_",
@@ -483,6 +480,7 @@ class FED_Configurator(object):
                     "signature": "sign_",
                     "applies_to": "applies_to_"
         }
+        chain_templates = optional_list(self.fed.sts.list_templates().json)
         if "properties" in chain.keys():
             chain["self_properties"] = chain['properties'].get("myself", [])
             chain["partner_properties"] = chain['properties'].get("partner", [])
@@ -499,7 +497,7 @@ class FED_Configurator(object):
                         if needToUpdate == True:
                             entry["name"] = "map.rule.reference.ids"
                             entry['value'] = [self._mapping_rule_to_id(ruleName)] #Convert to id
-                        entry["name"] = self._chain_index_to_prefix(chain.chain_template, entry.get("index", -1)) + "." + entry["name"]
+                        entry["name"] = self._chain_index_to_prefix(chain.chain_template, entry.get("index", -1), chain_templates) + "." + entry["name"]
                         del entry["index"] #Convert index to chain template prefix and remove index from properties
         temp = {}
         for key, new_key_prefix in remap.items():
@@ -518,7 +516,7 @@ class FED_Configurator(object):
                     "validation_include_issuer_details": "validation_include_issuer",
                     "validation_include_subject_name": "validation_include_subject",
             }
-        chain["template_id"] = self._chain_template_name_to_id(chain.get("chain_template", "NULL"))
+        chain["template_id"] = self._chain_template_name_to_id(chain.get("chain_template", "NULL"), chain_templates)
         del chain["chain_template"]
         return remap_keys(chain, remap)
 
@@ -687,11 +685,12 @@ class FED_Configurator(object):
         if federation_config.sts != None:
             sts = federation_config.sts
             if sts.chain_templates:
+                module_types = optional_list(self.fed.sts.list_modules().json)
                 old_templates = optional_list(self.fed.sts.list_templates().json)
                 for template in sts.chain_templates:
                     existing = optional_list(filter_list('name', template.name, old_templates))[0]
                     methodArgs = copy.deepcopy(template)
-                    self._remap_sts_chain_template_keys(methodArgs)
+                    self._remap_sts_chain_template_keys(methodArgs, module_types)
                     _logger.debug("Remapped STS Chain Template Properties:\n{}".format(json.dumps(methodArgs, indent=4)))
                     rsp = None; verb = None
                     if existing:
@@ -1078,6 +1077,7 @@ class FED_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully created {} {} SAML Partner".format(
                 partner.name, partner.role))
+            self.needsRestart = True
         else:
             _logger.error("Failed to create {} SAML Partner with config:\n{}\n{}".format(
                                         partner.name, json.dumps(partner, indent=4), rsp.data))
@@ -1143,6 +1143,7 @@ class FED_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully created {} OIDC RP Partner for Federation {}".format(
                 partner.name, fedId))
+            self.needsRestart = True
         else:
             _logger.error("Failed to create {} OIDC RP Partner with config:\n{}/n{}".format(
                 partner.name, json.dumps(partner, indent=4), rsp.data))
@@ -1348,6 +1349,7 @@ class FED_Configurator(object):
             rsp = self.fed.federations.create_oidc_federation(**methodArgs)
             if rsp.success == True:
                 _logger.info("Successfully created {} OIDC RP Federation".format(federation.name))
+                self.needsRestart = True
             else:
                 _logger.error("Failed to create {} OIDC RP Federation with config:\n{}\n{}".format(
                         federation.name, json.dumps(federation, indent=4), rsp.data))
@@ -1790,8 +1792,6 @@ class FED_Configurator(object):
                     deploy_pending_changes(self.factory, self.config) # Federations must be deployed before the WRP wizard can be run
                     self.needsRestart = False
                 if federation.webseal:
-                    _logger.info("Waiting for the runtime to stabilize, requried if we just created this federation")
-                    time.sleep(KUBE_CLIENT_SLEEP)
                     fed_objs = optional_list(self.fed.federations.list_federations().json)
                     fed_obj = optional_list(filter_list("name", federation.name, fed_objs))[0]
                     #Run the WebSEAL config wizard
