@@ -231,9 +231,9 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
         factory = pyivia.Factory(mgmt_base_url(isvaConfig), *creds(isvaConfig))
 
     factory.get_system_settings().configuration.deploy_pending_changes()
-    if factory.is_docker() == True and isvaConfig.container is not None:
+    if factory.is_docker() == True:
         factory.get_system_settings().docker.publish()
-        if restartContainers == True:
+        if isvaConfig.container is not None and restartContainers == True:
             if isvaConfig.container.k8s_deployments is not None:
                 namespace = isvaConfig.container.k8s_deployments.namespace
                 #Are we restarting the containers or rolling out a restart to the deployment descriptor
