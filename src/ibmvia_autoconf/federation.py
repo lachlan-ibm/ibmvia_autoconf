@@ -1825,6 +1825,9 @@ class FED_Configurator(object):
     def final_restarts(self):
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config)
+        if self.factory.is_docker() == True:
+            logger.debug("Cannot restart reverse proxies from the LMI in container deployments")
+            return
         if self.restartWRPs != None and len(self.restartWRPs) > 0:
             for wrp in self.restartWRPs:
                 rsp = self.factory.get_web_settings().reverse_proxy.restart_instance(wrp)
