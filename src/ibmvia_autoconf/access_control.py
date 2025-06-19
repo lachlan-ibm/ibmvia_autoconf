@@ -46,7 +46,7 @@ class AAC_Configurator(object):
         rules = optional_list(self.factory.get_federation().access_policy.list_policies().json)
         mapping_rule = optional_list(filter_list('name', rule_name, rules))[0]
         if mapping_rule:
-            return mapping_rule['id']
+            return int(mapping_rule['id'])
         else:
             return None
 
