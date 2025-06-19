@@ -576,6 +576,8 @@ class Appliance_Configurator(object):
             'Secret to authenticate to the container registry as ``user``'
             proxy: typing.Optional[Proxy]
             'Proxy configuration for pulling images.'
+            ca: str
+            'Path to a X509 Certificate bundle to use as the Certificate Authority when pulling images from this registry.'
             
 
         class Deployment(typing.TypedDict):

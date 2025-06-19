@@ -32,7 +32,18 @@ class AAC_Configurator(object):
         '''
         Helper method to convert rule name to Verify Identity Access ID
         '''
-        rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
+        rules = optional_list(self.factory.get_federation_setting().access_policy.list_rules().json)
+        mapping_rule = optional_list(filter_list('name', rule_name, rules))[0]
+        if mapping_rule:
+            return mapping_rule['id']
+        else:
+            return None
+
+    def _access_policy_to_id(self, rule_name):
+        '''
+        Helper method to convert rule name to Verify Identity Access ID
+        '''
+        rules = optional_list(self.factory.get_federation().access_policy.list_policies().json)
         mapping_rule = optional_list(filter_list('name', rule_name, rules))[0]
         if mapping_rule:
             return mapping_rule['id']
@@ -1316,7 +1327,7 @@ class AAC_Configurator(object):
                 attrs += [{"attributeName": attrSrc.name, "attributeSourceId": attrSrcId}]
             methodArgs.update({"attribute_sources": attrs})
         if definition.access_policy:
-            methodArgs["access_policy_id"] = self._mapping_rule_to_id(definition.access_policy)
+            methodArgs["access_policy_id"] = self._access_policy_to_id(definition.access_policy)
         rsp = self.aac.api_protection.create_definition(**methodArgs)
         if rsp.success == True:
             self.needsRestart = True
