@@ -1085,9 +1085,9 @@ class IVIA_Configurator(object):
         appliance, container, web, aac, fed = self.get_modules()
         self.configure_base(appliance, container)
         self.global_config(aac, fed)
-        web.configure()
         aac.configure()
         fed.configure()
+        web.configure()
         #Configure the remote syslog after everything else as it might rely on config we create
         if self.config.appliance is not None:
             self.remote_syslog(self.config.appliance)
