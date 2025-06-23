@@ -1369,15 +1369,6 @@ class FED_Configurator(object):
                     protocol: "SAML2_0"
                     role: "ip"
                     export_metadata: "idpmetadata.xml"
-                    webseal:
-                      name: default
-                      runtime:
-                          username: easuser
-                          password: secret
-                          hostname: isva-idp-runtime
-                          port: 9443
-                      reuse_acls: true
-                      reuse_certs: true
                     configuration:
                       company_name: "IdP Company"
                       point_of_contact_url: "https://www.myidp.ibm.com/isam"
@@ -1426,14 +1417,6 @@ class FED_Configurator(object):
         '''
         class Federation(typing.TypedDict):
 
-            class Webseal(typing.TypedDict):
-
-                reuse_acls: bool
-                'A flag to indicate that any existing ACLs with the same name should be reused. If they are not reused, they will be replaced.'
-                reuse_certs: bool
-                'If the SSL certificate has already been saved, this flag indicates that the certificate should be reused instead of overwritten.'
-                runtime: Federation_Common.Runtime
-                'Runtime server properties.'
 
             class Partner(typing.TypedDict):
                 name: str
@@ -1751,8 +1734,6 @@ class FED_Configurator(object):
             'List of XML metadata documents which define partners for a configured Federation.'
             export_metadata: typing.Optional[str]
             "Optional path to file to write Federation's XML metadata file to. eg: 'idpmetadata.xml'"
-            webseal: typing.Optional[Webseal]
-            'Optional properties for the webseal configuration wizard '
 
         federations: typing.List[Federation]
         'List of federations and associated partner properties.'
@@ -1791,36 +1772,7 @@ class FED_Configurator(object):
                 if self.needsRestart == True:
                     deploy_pending_changes(self.factory, self.config) # Federations must be deployed before the WRP wizard can be run
                     self.needsRestart = False
-                if federation.webseal:
-                    fed_objs = optional_list(self.fed.federations.list_federations().json)
-                    fed_obj = optional_list(filter_list("name", federation.name, fed_objs))[0]
-                    #Run the WebSEAL config wizard
-                    methodArgs = {
-                            "federation_id": fed_obj.get("id", "MISSING_ID"),
-                            "reuse_acls": federation.webseal.reuse_acls,
-                            "reuse_certs": federation.webseal.reuse_certs
-                        }
-                    if federation.webseal.runtime:
-                        methodArgs.update({
-                                            "runtime_hostname": federation.webseal.runtime.hostname,
-                                            "runtime_port": federation.webseal.runtime.port,
-                                            "runtime_username": federation.webseal.runtime.username,
-                                            "runtime_password": federation.webseal.runtime.password
-                                        })
-                    rsp = self.factory.get_web_settings().reverse_proxy.configure_fed(
-                                                                                federation.webseal.name, **methodArgs)
-                    if rsp.success == True:
-                        self.needsRestart = True
-                        if self.restartWRPs == None:
-                            self.restartWRPs = [federation.webseal.name]
-                        else:
-                            self.restartWRPs += [federation.webseal.name]
-                        _logger.info("Successfully ran WebSEAL configuration for {} Federation on the {} reverse"
-                                     "proxy instance".format(federation.name, federation.webseal.name))
-                    else:
-                        _logger.error("Failed to run WebSEAL fed config  wizard for {} on reverse proxy instance {} "
-                                    "with config:\n{}\n{}".format(federation.name, federation.webseal.name, 
-                                                                  json.dumps(federation, indent=4), rsp.data))
+
 
     def final_restarts(self):
         if self.needsRestart == True:
@@ -1828,14 +1780,6 @@ class FED_Configurator(object):
         if self.factory.is_docker() == True:
             _logger.debug("Cannot restart reverse proxies from the LMI in container deployments")
             return
-        if self.restartWRPs != None and len(self.restartWRPs) > 0:
-            for wrp in self.restartWRPs:
-                rsp = self.factory.get_web_settings().reverse_proxy.restart_instance(wrp)
-                if rsp.success == True:
-                    _logger.info("Successfully restarted {} reverse proxy instance".format(wrp))
-                else:
-                    _logger.error("Failed to restart {} reverse proxy:\n{}".format(wrp, rsp.data))
-
 
     def configure(self):
         if self.config.federation == None:

@@ -92,7 +92,7 @@ def creds(cfg=None):
         if cfg == None:
             cfg = config_yaml()
         if user == None:
-            user = cfg.get('mgmt_user', "admin")
+            user = cfg.get('mgmt_user', None) # SSO requires username is null
         if secret == None:
             secret = cfg.get('mgmt_pwd', "admin")
     return (user, secret)

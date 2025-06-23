@@ -130,12 +130,25 @@ class WEB_Configurator(object):
 
 
     def _configure_federations(self, proxy_id, fed_config):
-        rsp = self.web.reverse_proxy.configure_fed(proxy_id, **fed_config )
-        if rsp.success == True:
-            _logger.info("Successfully ran federation configuration utility with")
-        else:
-            _logger.error("Federation configuration wizard did not run successfully with config:\n{}\n{}".format(
-                json.dumps(fed_config, indent=4), rsp.data))
+        federations = optional_list(
+                self.factory.get_federation().federations.list_federations().json)
+        for fc in fed_config:
+            #Convert federation name to uuid
+            fed_cfg = copy.deepcopy(fc)
+            fed_cfg['id'] = optional_list(filter_list('name', fc.name, federations))[0].get("id", "-1")
+            del fed_cfg['name']
+            if 'runtime' in fed_cfg: #Flatten properties to match method signature
+                rt = fed_cfg.pop('runtime')
+                new_keys = {k: "runtime_" + k for k, v in rt}
+                for k, v in new_keys:
+                    fed_cfg[v] = rt[k]
+            #Run the wizard
+            rsp = self.web.reverse_proxy.configure_fed(proxy_id, **fed_cfg )
+            if rsp.success == True:
+                _logger.info("Successfully ran federation configuration utility with")
+            else:
+                _logger.error("Federation configuration wizard did not run successfully with config:\n{}\n{}".format(
+                    json.dumps(fed_config, indent=4), rsp.data))
 
 
     def _configure_api_protection(self, proxy_id, api_config):
@@ -286,6 +299,12 @@ class WEB_Configurator(object):
                 'Username to use for basic authentication.'
                 password: str
                 'Password to use for basic authentication.'
+                type: typing.Optional[str]
+                'Type of runtime. Valid values are "local" for local runtimes (appliance) and "remote" for external runtime (container). Default is "local"'
+                load_certificate: typing.Optional[str]
+                'Read the X.509 Certificate from the runtime server\'s https endpoint. Default is "on" (read the cert)'
+                enable_mtls: typing.Optional[bool]
+                'Boolean option indicates if mutual TLS (client certificate) authentication should be performed with the runtime server. Default is `false`.'
 
             name: str
             'Name of the Federation.'
@@ -471,7 +490,7 @@ class WEB_Configurator(object):
         'Properties for configuring this reverse proxy instance for use with advanced access control authentication and context based access service.'
         mmfa_configuration: typing.Optional[MMFA_Configuration]
         'Properties for configuring this reverse proxy instance to deliver MMFA capabilities.'
-        federation_configuration: typing.Optional[Federation_Configuration]
+        federation_configuration: typing.Optional[typing.List[Federation_Configuration]]
         'Properties for integrating with a running Federation runtime.'
         api_protection_configuration: typing.Optional[ApiProtectionConfiguration]
         'Properties for integrating this reverse proxy with OIDC API Protection Clients.'
