@@ -9,7 +9,7 @@ import typing
 import copy
 
 from .util.configure_util import deploy_pending_changes, config_base_dir
-from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, KUBE_CLIENT_SLEEP
+from .util.data_util import prefix_keys, Map, FILE_LOADER, optional_list, filter_list, KUBE_CLIENT_SLEEP
 
 
 _logger = logging.getLogger(__name__)
@@ -138,11 +138,7 @@ class WEB_Configurator(object):
             fed_cfg = copy.deepcopy(fc)
             fed_cfg['id'] = optional_list(filter_list('name', fc.name, federations))[0].get("id", "-1")
             del fed_cfg['name']
-            if 'runtime' in fed_cfg: #Flatten properties to match method signature
-                rt = fed_cfg.pop('runtime')
-                new_keys = {k: "runtime_" + k for k, v in rt.items()}
-                for k, v in new_keys:
-                    fed_cfg[v] = rt[k]
+            prefix_keys(fed_cfg, "runtime", "runtime_")
             #Run the wizard
             rsp = self.web.reverse_proxy.configure_fed(proxy_id, **fed_cfg )
             if rsp.success == True:
