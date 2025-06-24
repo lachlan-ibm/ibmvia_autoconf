@@ -1181,7 +1181,8 @@ class FED_Configurator(object):
                         "consent_to_federate": config.need_consent_to_federate,
                         "exclude_session_index_logout_request": config.exclude_session_index_in_single_logout_request,
                         "poc_url": config.point_of_contact_url,
-                        "provider_id": config.provider_id,
+                        "provider_id": config.provider_id if config.provider_id else \
+                                                        config.point_of_contact_url + 'sps/{}/login'.format(config.name),
                         "session_timeout": config.session_timeout,
                         "sso_svc_data": config.single_sign_on_service,
                         "slo_svc_data": config.single_logout_service,
@@ -1203,8 +1204,10 @@ class FED_Configurator(object):
                             "encrypt_name_id": config.encryption_settings.encrypt_name_id,
                             "encrypt_assertions": config.encryption_settings.encrypt_assertions,
                             "encrypt_assertion_attrs": config.encryption_settings.encrypt_assertion_attributes,
-                            "decrypt_key_alias": config.encryption_settings.decryption_key_identifier.label if config.encryption_settings.decryption_key_identifier else None,
-                            "decrypt_key_store": config.encryption_settings.decryption_key_identifier.store if config.encryption_settings.decryption_key_identifier else None
+                            "decrypt_key_alias": config.encryption_settings.decryption_key_identifier.label if \
+                                                        config.encryption_settings.decryption_key_identifier else None,
+                            "decrypt_key_store": config.encryption_settings.decryption_key_identifier.store if \
+                                                        config.encryption_settings.decryption_key_identifier else None
                         })
 
                 if config.assert_settings != None:
@@ -1219,7 +1222,8 @@ class FED_Configurator(object):
                     methodArgs.update({
                             "identity_delegate_id": config.identity_mapping.active_delegate_id,
                             "identity_rule_id": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule),
-                            "identity_rule_type": config.identity_mapping.properties.rule_type if config.identity_mapping.properties.rule_type else 'JAVASCRIPT',
+                            "identity_rule_type": config.identity_mapping.properties.rule_type if \
+                                                        config.identity_mapping.properties.rule_type else 'JAVASCRIPT',
                             "identity_applies_to": config.identity_mapping.properties.applies_to,
                             "identity_auth_type": config.identity_mapping.properties.auth_type,
                             "identity_ba_user": config.identity_mapping.properties.basic_auth_username,
@@ -1296,7 +1300,7 @@ class FED_Configurator(object):
                             "authn_req_delegate_id": config.authn_req_mapping.active_delegate_id,
                             "authn_req_mr": self._mapping_rule_to_id(config.authn_req_mapping.mapping_rule)
                         })
-                
+            logger.debug("Federation create request {}".format(json.dumps(methodArgs, indent=4)))
             rsp = self.fed.federations.create_saml_federation(**methodArgs)
             if rsp.success == True:
                 _logger.info("Successfully created {} SAML2.0 Federation".format(federation.name))

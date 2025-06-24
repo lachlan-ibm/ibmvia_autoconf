@@ -140,9 +140,10 @@ class WEB_Configurator(object):
                         'name', fed_cfg.pop('name', "MISSING"), federations))[0].get("id", "-1")
             prefix_keys(fed_cfg, "runtime", "runtime_")
             #Run the wizard
+            logger.debug("Federation wizard request {}".format(json.dumps(fed_cfg, indent=4)))
             rsp = self.web.reverse_proxy.configure_fed(proxy_id, **fed_cfg)
             if rsp.success == True:
-                _logger.info("Successfully ran federation configuration utility with")
+                _logger.info("Successfully ran federation configuration utility for {} federation.".format(fc.name))
             else:
                 _logger.error("Federation configuration wizard did not run successfully with config:\n{}\n{}".format(
                     json.dumps(fc, indent=4), rsp.data))
@@ -1100,7 +1101,8 @@ class WEB_Configurator(object):
         if pdadmcfg.reverse_proxies != None:
             for proxy in pdadmcfg.reverse_proxies:
                 self._pdadmin_proxy(runtime, proxy)
-        #deploy_pending_changes(self.factory, self.config)
+        if self.factory.is_docker() == True:
+            deploy_pending_changes(self.factory, self.config)
 
 
     class Client_Certificate_Mapping(typing.TypedDict):
