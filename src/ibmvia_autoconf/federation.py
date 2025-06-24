@@ -1262,13 +1262,13 @@ class FED_Configurator(object):
                             })
                     if sigSetting.signing_key_identifier != None:
                         methodArgs.update({
-                                "sign_keystore": sigSetting.signing_key_identifier.keystore,
-                                "sign_key_alias": sigSetting.signing_key_identifier.certificate
+                                "sign_keystore": sigSetting.signing_key_identifier.store,
+                                "sign_key_alias": sigSetting.signing_key_identifier.label
                             })
                     if sigSetting.validation_key_identifier != None:
                         methodArgs.update({
-                                "sign_valid_key_store": sigSetting.validation_key_identifier.keystore,
-                                "sign_valid_key_alias": sigSetting.validation_key_identifier.certificate
+                                "sign_valid_key_store": sigSetting.validation_key_identifier.store,
+                                "sign_valid_key_alias": sigSetting.validation_key_identifier.label
                             })
                     if sigSetting.signing_options != None:
                         methodArgs.update({
@@ -1304,7 +1304,7 @@ class FED_Configurator(object):
                             "authn_req_delegate_id": config.authn_req_mapping.active_delegate_id,
                             "authn_req_mr": self._mapping_rule_to_id(config.authn_req_mapping.mapping_rule)
                         })
-            _logger.debug("Federation create request {}".format(json.dumps(methodArgs, indent=4)))
+            #_logger.debug("Federation create request {}".format(json.dumps(methodArgs, indent=4)))
             rsp = self.fed.federations.create_saml_federation(**methodArgs)
             if rsp.success == True:
                 _logger.info("Successfully created {} SAML2.0 Federation".format(federation.name))
