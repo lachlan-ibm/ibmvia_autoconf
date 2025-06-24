@@ -136,7 +136,7 @@ class WEB_Configurator(object):
         for fc in fed_config:
             #Convert federation name to uuid
             fed_cfg = copy.deepcopy(fc)
-            fed_cfg['id'] = optional_list(filter_list('name', fc.name, federations))[0].get("id", "-1")
+            fed_cfg['federation_id'] = optional_list(filter_list('name', fc.name, federations))[0].get("id", "-1")
             del fed_cfg['name']
             prefix_keys(fed_cfg, "runtime", "runtime_")
             #Run the wizard
