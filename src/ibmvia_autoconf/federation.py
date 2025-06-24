@@ -1305,7 +1305,7 @@ class FED_Configurator(object):
                             "authn_req_delegate_id": config.authn_req_mapping.active_delegate_id,
                             "authn_req_mr": self._mapping_rule_to_id(config.authn_req_mapping.mapping_rule)
                         })
-            logger.debug("Federation create request {}".format(json.dumps(methodArgs, indent=4)))
+            _logger.debug("Federation create request {}".format(json.dumps(methodArgs, indent=4)))
             rsp = self.fed.federations.create_saml_federation(**methodArgs)
             if rsp.success == True:
                 _logger.info("Successfully created {} SAML2.0 Federation".format(federation.name))
