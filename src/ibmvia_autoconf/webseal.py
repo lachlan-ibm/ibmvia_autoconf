@@ -136,7 +136,8 @@ class WEB_Configurator(object):
         for fc in fed_config:
             #Convert federation name to uuid
             fed_cfg = copy.deepcopy(fc)
-            fed_cfg['federation_id'] = optional_list(filter_list('name', fed_cfg.pop('name'), federations))[0].get("id", "-1")
+            fed_cfg['federation_id'] = optional_list(filter_list(
+                        'name', fed_cfg.pop('name', "MISSING"), federations))[0].get("id", "-1")
             prefix_keys(fed_cfg, "runtime", "runtime_")
             #Run the wizard
             rsp = self.web.reverse_proxy.configure_fed(proxy_id, **fed_cfg)
