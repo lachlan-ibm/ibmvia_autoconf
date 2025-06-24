@@ -38,7 +38,7 @@ def prefix_keys(data_dict, source_key, prefix):
     function modifies the data_dict to add the prefix string the to beginning
     of all the keys in the source_key dictionary
     '''
-    if source_key in d and isinstance(data_dict[source_key], dict):
+    if source_key in data_dict and isinstance(data_dict[source_key], dict):
         data_dict.update({prefix + k: v for k, v in data_dict.pop(source_key).items()})
 
 #Method guaranteed to return a list with at least dictionary in it (if its not empty)
