@@ -6,6 +6,7 @@
 import logging
 import json
 import typing
+import copy
 
 from .util.configure_util import deploy_pending_changes, config_base_dir
 from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, KUBE_CLIENT_SLEEP
@@ -301,7 +302,7 @@ class WEB_Configurator(object):
                 'Password to use for basic authentication.'
                 type: typing.Optional[str]
                 'Type of runtime. Valid values are "local" for local runtimes (appliance) and "remote" for external runtime (container). Default is "local"'
-                load_certificate: typing.Optional[str]
+                load_cert: typing.Optional[str]
                 'Read the X.509 Certificate from the runtime server\'s https endpoint. Default is "on" (read the cert)'
                 enable_mtls: typing.Optional[bool]
                 'Boolean option indicates if mutual TLS (client certificate) authentication should be performed with the runtime server. Default is `false`.'
