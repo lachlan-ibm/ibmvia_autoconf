@@ -29,6 +29,17 @@ def remap_keys(data_dict, remap_dict):
         raise TypeError("give me dictionaries")
     return {remap_dict.get(k, k): v for k, v in data_dict.items()}
 
+def prefix_keys(d, source_key, prefix):
+    '''
+    data_dict: output
+    source_dict: input
+
+    function modifies the data_dict to add the prefix string the to beginning
+    of all the keys in the source_key dictionary
+    '''
+    if source_key in d and isinstance(d[source_key], dict):
+        d.update({prefix + k: v for k, v in d.pop(source_key)})
+
 #Method guaranteed to return a list with at least dictionary in it (if its not empty)
 def optional_list(x):
     if isinstance(x, list) and len(x) > 0:
