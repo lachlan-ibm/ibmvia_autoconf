@@ -1186,8 +1186,7 @@ class FED_Configurator(object):
                         "consent_to_federate": config.need_consent_to_federate,
                         "exclude_session_index_logout_request": config.exclude_session_index_in_single_logout_request,
                         "poc_url": config.point_of_contact_url,
-                        "provider_id": config.provider_id if config.provider_id else \
-                                                        '{}/sps/'.format(config.point_of_contact_url, config.name),
+                        "provider_id": config.provider_id,
                         "session_timeout": config.session_timeout,
                         "sso_svc_data": config.single_sign_on_service,
                         "slo_svc_data": config.single_logout_service,
