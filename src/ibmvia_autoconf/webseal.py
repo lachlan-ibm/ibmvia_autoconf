@@ -140,7 +140,7 @@ class WEB_Configurator(object):
             del fed_cfg['name']
             if 'runtime' in fed_cfg: #Flatten properties to match method signature
                 rt = fed_cfg.pop('runtime')
-                new_keys = {k: "runtime_" + k for k, v in rt}
+                new_keys = {k: "runtime_" + k for k, v in rt.items()}
                 for k, v in new_keys:
                     fed_cfg[v] = rt[k]
             #Run the wizard
