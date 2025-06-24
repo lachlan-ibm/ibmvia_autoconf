@@ -140,7 +140,7 @@ class WEB_Configurator(object):
                         'name', fed_cfg.pop('name', "MISSING"), federations))[0].get("id", "-1")
             prefix_keys(fed_cfg, "runtime", "runtime_")
             #Run the wizard
-            logger.debug("Federation wizard request {}".format(json.dumps(fed_cfg, indent=4)))
+            _logger.debug("Federation wizard request {}".format(json.dumps(fed_cfg, indent=4)))
             rsp = self.web.reverse_proxy.configure_fed(proxy_id, **fed_cfg)
             if rsp.success == True:
                 _logger.info("Successfully ran federation configuration utility for {} federation.".format(fc.name))
