@@ -969,8 +969,10 @@ class FED_Configurator(object):
             if partnerConfig and partnerConfig.encryption_settings != None:
                 encryption = partnerConfig.encryption_settings
                 methodArgs.update({
-                        "decrypt_key_store": encryption.decryption_key_identifier.store if encryption.decryption_key_identifier else None,
-                        "decrypt_key_alias": encryption.decryption_key_identifier.label if encryption.decryption_key_identifier else None,
+                        "decrypt_key_store": encryption.decryption_key_identifier.store if \
+                                                                        encryption.decryption_key_identifier else None,
+                        "decrypt_key_alias": encryption.decryption_key_identifier.label if \
+                                                                        encryption.decryption_key_identifier else None,
                         "encrypt_block_alg": encryption.block_algorithm,
                         "encrypt_key_transport_alg": encryption.key_transport_algorithm,
                         "encrypt_key_store": encryption.key_store,
@@ -1059,13 +1061,15 @@ class FED_Configurator(object):
                             "validate_name_id_req": sigSetting.validation_options.validate_name_id_management_request,
                             "validate_name_id_rsp": sigSetting.validation_options.validate_name_id_management_response
                         })
-                if partnerConfig and partnerConfig.soap_settings != None and isinstance(partnerConfig.soap_settings.server_cert_validation, dict):
+                if partnerConfig and partnerConfig.soap_settings != None and \
+                                                    isinstance(partnerConfig.soap_settings.server_cert_validation, dict):
                     methodArgs.update({
                             "soap_key_store": partnerConfig.soap_settings.server_cert_validation.store,
                             "soap_key_alias":  partnerConfig.soap_settings.server_cert_validation.label,
                             
                         })
-                if partnerConfig and partnerConfig.soap_settings != None and isinstance(partnerConfig.soap_settings.client_auth_data, dict):
+                if partnerConfig and partnerConfig.soap_settings != None and \
+                                                        isinstance(partnerConfig.soap_settings.client_auth_data, dict):
                     methodArgs.update({
                             "soap_client_auth_method": partnerConfig.soap_settings.client_auth_data.method,
                             "soap_client_auth_ba_user": partnerConfig.soap_settings.client_auth_data.basic_auth_username,
@@ -1136,7 +1140,8 @@ class FED_Configurator(object):
                 methodArgs.update({
                         "adv_config_delegate_id": config.advance_configuration.active_delegate_id,
                         "adv_config_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule),
-                        "adv_config_rule_type": config.advance_configuration.rule_type if config.advance_configuration.rule_type else "JAVASCRIPT"
+                        "adv_config_rule_type": config.advance_configuration.rule_type if \
+                                                                config.advance_configuration.rule_type else "JAVASCRIPT"
                     })
 
         rsp = self.fed.federations.create_oidc_rp_partner(fedId, **methodArgs)
@@ -1181,7 +1186,8 @@ class FED_Configurator(object):
                         "consent_to_federate": config.need_consent_to_federate,
                         "exclude_session_index_logout_request": config.exclude_session_index_in_single_logout_request,
                         "poc_url": config.point_of_contact_url,
-                        "provider_id": config.provider_id,
+                        "provider_id": config.provider_id if config.provider_id else \
+                                                        '{}/sps/'.format(config.point_of_contact_url, config.name),
                         "session_timeout": config.session_timeout,
                         "sso_svc_data": config.single_sign_on_service,
                         "slo_svc_data": config.single_logout_service,
@@ -1203,8 +1209,10 @@ class FED_Configurator(object):
                             "encrypt_name_id": config.encryption_settings.encrypt_name_id,
                             "encrypt_assertions": config.encryption_settings.encrypt_assertions,
                             "encrypt_assertion_attrs": config.encryption_settings.encrypt_assertion_attributes,
-                            "decrypt_key_alias": config.encryption_settings.decryption_key_identifier.label if config.encryption_settings.decryption_key_identifier else None,
-                            "decrypt_key_store": config.encryption_settings.decryption_key_identifier.store if config.encryption_settings.decryption_key_identifier else None
+                            "decrypt_key_alias": config.encryption_settings.decryption_key_identifier.label if \
+                                                        config.encryption_settings.decryption_key_identifier else None,
+                            "decrypt_key_store": config.encryption_settings.decryption_key_identifier.store if \
+                                                        config.encryption_settings.decryption_key_identifier else None
                         })
 
                 if config.assert_settings != None:
@@ -1219,7 +1227,8 @@ class FED_Configurator(object):
                     methodArgs.update({
                             "identity_delegate_id": config.identity_mapping.active_delegate_id,
                             "identity_rule_id": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule),
-                            "identity_rule_type": config.identity_mapping.properties.rule_type if config.identity_mapping.properties.rule_type else 'JAVASCRIPT',
+                            "identity_rule_type": config.identity_mapping.properties.rule_type if \
+                                                        config.identity_mapping.properties.rule_type else 'JAVASCRIPT',
                             "identity_applies_to": config.identity_mapping.properties.applies_to,
                             "identity_auth_type": config.identity_mapping.properties.auth_type,
                             "identity_ba_user": config.identity_mapping.properties.basic_auth_username,
@@ -1296,7 +1305,7 @@ class FED_Configurator(object):
                             "authn_req_delegate_id": config.authn_req_mapping.active_delegate_id,
                             "authn_req_mr": self._mapping_rule_to_id(config.authn_req_mapping.mapping_rule)
                         })
-                
+            logger.debug("Federation create request {}".format(json.dumps(methodArgs, indent=4)))
             rsp = self.fed.federations.create_saml_federation(**methodArgs)
             if rsp.success == True:
                 _logger.info("Successfully created {} SAML2.0 Federation".format(federation.name))
@@ -1344,7 +1353,8 @@ class FED_Configurator(object):
                     methodArgs.update({
                             "adv_delegate_id": config.advance_configuration.active_delegate_id,
                             "adv_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule),
-                            "adv_rule_type": config.advance_configuration.rule_type if config.advance_configuration.rule_type != None else "JAVASCRIPT"
+                            "adv_rule_type": config.advance_configuration.rule_type if \
+                                                        config.advance_configuration.rule_type != None else "JAVASCRIPT"
                         })
             rsp = self.fed.federations.create_oidc_federation(**methodArgs)
             if rsp.success == True:
