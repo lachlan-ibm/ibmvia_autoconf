@@ -140,12 +140,12 @@ class WEB_Configurator(object):
             del fed_cfg['name']
             prefix_keys(fed_cfg, "runtime", "runtime_")
             #Run the wizard
-            rsp = self.web.reverse_proxy.configure_fed(proxy_id, **fed_cfg )
+            rsp = self.web.reverse_proxy.configure_fed(proxy_id, **fed_cfg)
             if rsp.success == True:
                 _logger.info("Successfully ran federation configuration utility with")
             else:
                 _logger.error("Federation configuration wizard did not run successfully with config:\n{}\n{}".format(
-                    json.dumps(fed_config, indent=4), rsp.data))
+                    json.dumps(fc, indent=4), rsp.data))
 
 
     def _configure_api_protection(self, proxy_id, api_config):

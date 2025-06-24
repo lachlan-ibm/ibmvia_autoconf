@@ -38,7 +38,7 @@ def prefix_keys(d, source_key, prefix):
     of all the keys in the source_key dictionary
     '''
     if source_key in d and isinstance(d[source_key], dict):
-        d.update({prefix + k: v for k, v in d.pop(source_key)})
+        d.update({prefix + k: v for k, v in d.pop(source_key).items()})
 
 #Method guaranteed to return a list with at least dictionary in it (if its not empty)
 def optional_list(x):
