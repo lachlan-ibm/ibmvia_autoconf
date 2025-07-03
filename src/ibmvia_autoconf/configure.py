@@ -17,7 +17,7 @@ from .access_control import AAC_Configurator as AAC
 from .webseal import WEB_Configurator as WEB
 from .federation import FED_Configurator as FED
 from .util.data_util import FILE_LOADER, optional_list, KUBE_CLIENT_SLEEP
-from .util.configure_util import deploy_pending_changes, creds, old_creds, mgmt_base_url, config_yaml
+from .util.configure_util import deploy_pending_changes, creds, old_creds, ext_user_creds, mgmt_base_url, config_yaml
 from .util.constants import HEADERS, LOG_LEVEL
 
 logging.basicConfig(stream=sys.stdout, level=os.environ.get(LOG_LEVEL, logging.DEBUG))
@@ -49,6 +49,12 @@ class IVIA_Configurator(object):
             time.sleep(15)
         return False
 
+    def _deploy_if_needed(self):
+        r = None if self.needsRestart == True else \
+                self.factory.get_system_settings().configuration.get_pending_changes()
+        if self.needsRestart == True or (r.success == True and isinstance(r.json, list) and len(r.json) > 0):
+            deploy_pending_changes(self.factory, self.config)
+            self.needsRestart = False
 
     class Admin_Password(typing.TypedDict):
         '''
@@ -355,9 +361,7 @@ class IVIA_Configurator(object):
                 if database.load_certificates:
                     for item in database.load_certificates:
                         self._load_signer_certificates(database.name, item.server, item.port, item.label)
-        if self.needsRestart == True:
-            deploy_pending_changes(self.factory, self.config)
-            self.needsRestart == False
+        self._deploy_if_needed()
 
 
     class Admin_Config(typing.TypedDict):
@@ -650,7 +654,6 @@ class IVIA_Configurator(object):
                     _logger.info("Successfully enabled role based authorization")
                 else:
                     _logger.error("Failed to enable role based authorization:\n{}".format(rsp.data))
-
 
     class Management_Authentication(typing.TypedDict):
         '''
@@ -980,16 +983,15 @@ class IVIA_Configurator(object):
                     _logger.error("Failed to update the remote syslog configuration with:\n{}\n{}".format(
                         json.dumps(server, indent=4) , rsp.data))
 
-
-    def configure_base(self, appliance, container):
+    def configure_base(self):
         base_config = None
-        model = None
+        deployment = None
         if self.config.appliance is not None:
             base_config = self.config.appliance
-            model = appliance
+            deployment = APPLIANCE
         elif self.config.container is not None:
             base_config = self.config.container
-            model = container
+            deployment = CONTAINER
         else:
             _logger.error("Deployment model cannot be found in config.yaml, skipping container/appliance configuration.")
             return
@@ -997,16 +999,17 @@ class IVIA_Configurator(object):
         self.admin_config(base_config)
         self.import_ssl_certificates(base_config)
         self.account_management(base_config)
-        self.management_authentication(base_config) # This may cause an appliance to become un-contactable; eg. if auth changes from basic to bearer
+        self.management_authentication(base_config)
         self.management_authorization(base_config)
-        self.advanced_tuning_parameters(base_config)
-        model.configure()
-
+        self._deploy_if_needed() # This deploys any pending changes, which may include management_authentication and can 
+        # cause an appliance to become un-contactable; maybe update the factory to fix this
+        if ext_user_creds(self.config) != creds(self.config):
+            _logger.debug("Swapping to given external user credentials . . . ")
+            self.factory = pyivia.Factory(mgmt_base_url(self.config), *ext_user_creds(self.config))
+        deployment(self.config, self.factory).configure()
         self.activate_appliance(base_config)
         self.install_extensions(base_config)
-        if self.needsRestart == True:
-            deploy_pending_changes(self.factory, self.config)
-            self.needsRestart = False
+        self._deploy_if_needed()
 
     def _check_aac_fed_licenses(self):
         activations = self.factory.get_system_settings().licensing.get_activated_modules().json
@@ -1049,27 +1052,9 @@ class IVIA_Configurator(object):
         aac.advanced_config(config)
         fed.configure_access_policies(config)
         fed.configure_attribute_sources(config)
+        self._deploy_if_needed()
 
-        deploy_pending_changes(self.factory, self.config)
-
-
-    def get_modules(self):
-        appliance = APPLIANCE(self.config, self.factory)
-        container = CONTAINER(self.config, self.factory)
-        web = WEB(self.config, self.factory)
-        aac = AAC(self.config, self.factory)
-        fed = FED(self.config, self.factory)
-        return appliance, container, web, aac, fed
-
-
-    def configure(self, config_file=None):
-        _logger.info("Reading configuration file")
-        self.config = config_yaml(config_file)
-        _logger.info("Testing LMI connectivity")
-        if self.lmi_responding(self.config) == False:
-            _logger.error("Unable to contact LMI, exiting")
-            sys.exit(1)
-        _logger.info("LMI responding, begin configuration")
+    def first_setps(self):
         if self.old_password(self.config):
             self.factory = pyivia.Factory(mgmt_base_url(self.config), *old_creds(self.config))
             self.accept_eula()
@@ -1082,20 +1067,31 @@ class IVIA_Configurator(object):
             self.accept_eula()
             self.fips(self.config)
             self.complete_setup()
-        appliance, container, web, aac, fed = self.get_modules()
-        self.configure_base(appliance, container)
+
+    def get_modules(self):
+        web = WEB(self.config, self.factory)
+        aac = AAC(self.config, self.factory)
+        fed = FED(self.config, self.factory)
+        return web, aac, fed
+
+    def configure(self, config_file=None):
+        _logger.info("Reading configuration file")
+        self.config = config_yaml(config_file)
+        _logger.info("Testing LMI connectivity")
+        if self.lmi_responding(self.config) == False:
+            _logger.error("Unable to contact LMI, exiting")
+            sys.exit(1)
+        _logger.info("LMI responding, begin configuration")
+        self.first_setps()
+        self.configure_base()
+        web, aac, fed = self.get_modules()
         self.global_config(aac, fed)
         aac.configure()
         fed.configure()
         web.configure()
         #Configure the remote syslog after everything else as it might rely on config we create
-        if self.config.appliance is not None:
-            self.remote_syslog(self.config.appliance)
-        elif self.config.container is not None:
-            self.remote_syslog(self.config.container)
-        if self.needsRestart == True:
-            deploy_pending_changes(self.factory, self.config)
-            self.needsRestart = False
+        self.remote_syslog(self.config.appliance if self.config.appliance else self.config.container)
+        self._deploy_if_needed()
 
 if __name__ == "__main__":
     IVIA_Configurator().configure()

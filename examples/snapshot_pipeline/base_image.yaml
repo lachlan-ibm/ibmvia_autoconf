@@ -1,23 +1,36 @@
+mgmt_user: admin
+mgmt_pwd: admin
+mgmt_ext_pwd: !environment OIDC_API_TOKEN
 container:
-  deployments:
-    - "isvawrp"
-    - "isvaruntime"
-  account_management:
-    users:
-    - name: "cfgsvc"
-      operation: "update"
-      password: "Passw0rd"
   management_authorization:
     authorization_enforcement: True
     roles:
     - operation: "update"
       name: "Configuration Service"
-      users:
+      groups:
       - name: "cfgsvc"
         type: "local"
       features:
       - name: "shared_volume"
         access: "w"
+    - operation: "update"
+      name: "HVDB Admin"
+      groups:
+      - name: "dbadmin"
+        type: "local"
+      features:
+      - name: "manage_database"
+        access: "w"
+    - operation: "update"
+      name: "Full Write"
+      groups:
+      - name: "adminWrite"
+        type: "local"
+    - operation: "update"
+      name: "Full Read"
+      groups:
+      - name: "adminGroup"
+        type: "local"
   management_authentication:
     auth_type: "federation"
     oidc:
@@ -28,12 +41,11 @@ container:
   ssl_certificates:
   - name: "lmi_trust_store"
     signer_certificates:
-    - "pki/base/postgresql/postgres.crt"
-    - "pki/base/openldap/ca.crt"
-    - "pki/base/verify.crt"
+    - !environment LDAP_PKI_DIR
+    - !environment HVDB_PKI_DIR
   - name: "rt_profile_keys"
     signer_certificates:
-    - "pki/base/postgresql/postgres.crt"
+    - !environment HVDB_PKI_DIR
   cluster:
     runtime_database:
       host: "postgresql"

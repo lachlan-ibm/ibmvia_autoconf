@@ -1,17 +1,11 @@
-FROM python:3.9-slim
+FROM registry.access.redhat.com/ubi8/ubi-micro:latest
 
-#RUN apk add --update py3-pip python3
+RUN microdnf install python3 python3-pip && pip3 install ibmvia_autoconf
 
-COPY dist/ibmvia_autoconf-*.whl pyivia-*.whl /
+LABEL version="1.0"
 
-#RUN apt update && apt install -y unzip \
-#        && pip3 install /pyivia-*.whl \
-#        && pip3 install /ibmvia_autoconf-*.whl \
-#        && pip3 cache remove "*" \
-#        && apt clean
+Label description="Python runtime set up to perform automated configuration of IBM Verify Identity Access deployments."
 
-RUN apt update && apt install -y unzip python3-pip \
-    && pip3 install ibmvia_autoconf
+Label ibm.security.image.author="Lachlan Gleeson"
 
-
-CMD ["/usr/local/bin/python", "-m", "ibmvia_autoconf"]
+CMD ["/usr/local/bin/python3", "-m", "ibmvia_autoconf"]

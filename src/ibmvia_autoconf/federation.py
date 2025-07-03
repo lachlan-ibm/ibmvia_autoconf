@@ -315,11 +315,12 @@ class FED_Configurator(object):
 
 
 
-    def _mapping_rule_to_id(self, rule_name):
+    def _mapping_rule_to_id(self, rule_name, rules=None):
         '''
         Helper method to convert rule name to Verify Identity Access ID
         '''
-        rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
+        if rules == None:
+            rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
         mapping_rule = optional_list(filter_list('name', rule_name, rules))[0]
         if mapping_rule:
             return mapping_rule['id']
@@ -448,8 +449,6 @@ class FED_Configurator(object):
                     _logger.error("Could not list hte point of contact profiles")
 
 
-
-
     def _chain_index_to_prefix(self, template_name, chain_index, chain_templates):
         '''
         Convert the given chain name and index to the Verify Identity Access generated UUID prefix from
@@ -474,13 +473,12 @@ class FED_Configurator(object):
     def _chain_template_name_to_id(self, template_name, chain_templates):
         return optional_list(filter_list('name', template_name, chain_templates))[0].get('id', template_name)
 
-    def _remap_sts_chain_keys(self, chain):
+    def _remap_sts_chain_keys(self, chain, chain_templates, mapping_rules):
         remap = {"issuer": "issuer_",
                     "validation_key": "validation_",
                     "signature": "sign_",
                     "applies_to": "applies_to_"
         }
-        chain_templates = optional_list(self.fed.sts.list_templates().json)
         if "properties" in chain.keys():
             chain["self_properties"] = chain['properties'].get("myself", [])
             chain["partner_properties"] = chain['properties'].get("partner", [])
@@ -488,15 +486,15 @@ class FED_Configurator(object):
             for config_key in ["self_properties", "partner_properties"]:
                 for i, entry in enumerate(chain.get(config_key, [])):
                     if isinstance(entry, dict):
-                        needToUpdate = False
+                        ruleUpdate = False
                         ruleName = "NULL"
                         for k, v in entry.items():
                             if v == "map.rule.reference.name":
-                                needToUpdate = True
+                                ruleUpdate = True
                                 ruleName = entry.get("value", ["NULL"])[0]
-                        if needToUpdate == True:
+                        if ruleUpdate == True:
                             entry["name"] = "map.rule.reference.ids"
-                            entry['value'] = [self._mapping_rule_to_id(ruleName)] #Convert to id
+                            entry['value'] = [self._mapping_rule_to_id(ruleName, rules=mapping_rules)] #Convert to id
                         entry["name"] = self._chain_index_to_prefix(chain.chain_template, entry.get("index", -1), chain_templates) + "." + entry["name"]
                         del entry["index"] #Convert index to chain template prefix and remove index from properties
         temp = {}
@@ -707,12 +705,14 @@ class FED_Configurator(object):
 
             if sts.chains:
                 old_chains = optional_list(self.fed.sts.list_chains().json)
+                chain_templates = optional_list(self.fed.sts.list_templates().json)
+                mapping_rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
                 for chain in sts.chains:
                     existing = optional_list(filter_list('name', chain.name, old_chains))[0]
                     rsp = None
                     verb = None
                     methodArgs = copy.deepcopy(chain)
-                    methodArgs = self._remap_sts_chain_keys(methodArgs)
+                    methodArgs = self._remap_sts_chain_keys(methodArgs, chain_templates, mapping_rules)
                     _logger.debug("Remapped STS Chain Properties:\n{}".format(json.dumps(methodArgs, indent=4)))
                     if existing:
                         rsp = self.fed.sts.update_chain(existing['id'], **methodArgs)

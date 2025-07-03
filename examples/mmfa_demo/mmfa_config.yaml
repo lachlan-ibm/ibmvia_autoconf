@@ -106,7 +106,7 @@ container:
     files:
     - "mapping_rules/"
 webseal:
-  runtime:    
+  runtime:
     policy_server: "ldap"
     user_registry: "ldap"
     ldap:
