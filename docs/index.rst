@@ -118,6 +118,16 @@ these variables are set, they take priority over values set in configuration fil
                         If a password change is required then this variable defines the password for ``IVIA_MGMT_USER``
                         before the configuration is applied.
 
+- ``IVIA_EXT_USER``
+                        If external (federated) authentication to the management interface is configured, 
+                        this property can be used to define the external user to perform configuration as
+                        once the ``management_authorization`` feature has been configured.
+
+- ``IVIA_EXT_PWD``
+                        If external (federated) authentication to the management interface is configured, 
+                        this property can be used to define the external password to authenticate with
+                        once the ``management_authorization`` feature has been configured.
+
 - ``IVIA_KUBERNETES_YAML_CONFIG``
                         This variable defines the Kubernetes cluster configuration file required to run ``kubectl``
                         commands. This configuration file should have sufficient permission in your cluster to restart 

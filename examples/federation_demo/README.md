@@ -9,11 +9,16 @@ configuration step.
 Kubernetes environment
 ----------------------
 
-To deploy the required containers we will be using a kubernetes distribution called microk8s. However any Kubernetes or OpenShift environment will work.
+To deploy the required containers we will be using a kubernetes distribution called microk8s. However any Kubernetes or 
+OpenShift environment will work.
 
 The configuration containers required elevated permissions in order to run.
 
-We will be using the Verify Identity Operator to manage the promotion of configurations to the runtime Reverse Proxy and Authorization containers.
+We will be using the Verify Identity Operator to manage the promotion of configurations to the runtime Reverse Proxy 
+and Authorization containers.
+
+You will also need to create or modify the DNS configuration for the cluster so that requests to `www.myidp.ibm.com` are
+routed to the IDP reverse proxy container, and `www.mysp.ibm.com` are routed to the SP reverse proxy.
 
 
 
@@ -22,7 +27,7 @@ Installing the Verify Access Operator
 The Verify Access Operator can be installed into any Kubernetes environment from source code
 
 ```
-kubectl create -f https://github.com/IBM-Security/verify-access-operator/releases/download/v23.12.0/bundle.yaml
+kubectl create -f https://github.com/IBM-Security/verify-access-operator/releases/latest/download/bundle.yaml
 ```
 
 
@@ -31,7 +36,8 @@ Environment properties
 ----------------------
 This demonstration will also require you to define some properties which are likely to change based on the demo
 
-Update the hostname for the Reverse Proxy for the Identity Provider (default is `www.myidp.ibm.com`) and the Service Provider (default `www.mysp.ibm.com`)
+Update the hostname for the Reverse Proxy for the Identity Provider (default is `www.myidp.ibm.com`) and the Service 
+Provider (default `www.mysp.ibm.com`)
 
 
 ```
@@ -61,8 +67,8 @@ IVIA_CONFIG_BASE=/verify_access_config
 IVIA_MGMT_PASSWORD=admin
 IVIA_CONFIGURATOR_LOG_LEVEL=ALL
 IVIA_KUBERNETES_RESTART_SLEEP=60
-IDP_LIVE_DEMO_CONFIG="lmiHostAndPort=https://isva-idp-config:9443,lmiAdminId=admin,lmiAdminPwd=admin,acHostAndPort=https://isva-idp-runtime:9443,websealHostNameAndPort=https://www.myidp.ibm.com,acUuidCookieName=ac.uuid"
-SP_LIVE_DEMO_CONFIG="lmiHostAndPort=https://isva-sp-config:9443,lmiAdminId=admin,lmiAdminPwd=admin,acHostAndPort=https://isva-sp-runtime:9443,websealHostNameAndPort=https://www.mysp.ibm.com,acUuidCookieName=ac.uuid"
+IDP_LIVE_DEMO_CONFIG="lmiHostAndPort=https://isam.myidp.ibm.com,lmiAdminId=admin,lmiAdminPwd=Passw0rd,acHostAndPort=https://isva-idp-runtime:9443,websealHostNameAndPort=https://www.myidp.ibm.com,acUuidCookieName=ac.uuid"
+SP_LIVE_DEMO_CONFIG="lmiHostAndPort=https://isam.mysp.ibm.com,lmiAdminId=admin,lmiAdminPwd=Passw0rd,acHostAndPort=https://isva-sp-runtime:9443,websealHostNameAndPort=https://www.mysp.ibm.com,acUuidCookieName=ac.uuid"
 EOF
 
 kubectl delete secret fed-env
@@ -71,9 +77,13 @@ kubectl create secret generic fed-env --from-env-file=fed.env
 
 
 
-Create Config Map
------------------
-Create a Kubernetes ConfigMap object with the idp and sp YAMl configuration files + the additional certificates, mapping rules and PKCS12 files. The names of these files should be the same as the PKI created in the previous section.
+Create Persistent Volume Claim
+------------------------------
+Create a Kubernetes PersistentVolumeClaim object with the idp and sp YAMl configuration files + the additional certificates, 
+mapping rules and PKCS12 files. The names of these files should be the same as the PKI created in the previous section.
+
+We will copy the files to the container once it has started, unpack the archive files, then start running the configuration
+tool.
 
 ```
 kubectl delete configmap fed-config

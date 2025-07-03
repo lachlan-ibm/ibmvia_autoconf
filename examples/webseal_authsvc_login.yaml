@@ -1,8 +1,7 @@
 container:
-  docker_compose_yaml: "iamlab/docker-compose.yaml"
   compose_services:
-  - "isvaruntime"
-  - "isvawrp-rp1"
+    - "isvawrprp1"
+    - "isvaruntime"
 webseal:
   runtime:
     policy_server: "ldap"
@@ -47,7 +46,7 @@ webseal:
       operation: "update"
     - stanza: "local-response-redirect"
       entry_id: "local-response-redirect-uri"
-      value: "/mga/sps/authsvc?PolicyId=urn:ibm:security:authentication:asf:password"
+      value: "/mga/sps/authsvc/policy/password"
       operation: "update"
   pdadmin:
     users:
@@ -61,7 +60,7 @@ access_control:
       description: "Username and password authentication policy."
       enabled: true
       uri: "urn:ibm:security:authentication:asf:password"
-      policy: "<Policy xmlns=\"urn:ibm:security:authentication:policy:1.0:schema\" PolicyId=\"urn:ibm:security:authentication:asf:password\"><Description>Username and password authentication policy.</Description><Step type=\"Authenticator\"><Authenticator AuthenticatorId=\"urn:ibm:security:authentication:asf:mechanism:password\"/></Step><Actions><Action On=\"null\" type=\"null\"><AttributeAssignments/></Action></Actions></Policy>"
+      policy: '<Policy xmlns="urn:ibm:security:authentication:policy:1.0:schema" PolicyId="urn:ibm:security:authentication:asf:password"><Description>Username and password authentication policy.</Description><Step type="Authenticator"><Authenticator AuthenticatorId="urn:ibm:security:authentication:asf:mechanism:password"/></Step><Actions><Action On="null" type="null"><AttributeAssignments/></Action></Actions></Policy>'
     mechanisms:
     - id: "7"
       name: "Username Password"

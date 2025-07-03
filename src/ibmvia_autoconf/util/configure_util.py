@@ -73,6 +73,26 @@ def mgmt_base_url(cfg=None):
     else:
         return os.environ.get(const.MGMT_URL_ENV_VAR, cfg.mgmt_base_url)
 
+
+def ext_user_creds(cfg=None):
+    user = None; secret = None
+    if const.MGMT_EXT_USER_ENV_VAR in os.environ.keys():
+        user = os.environ.get(const.MGMT_EXT_USER_ENV_VAR)
+    if const.MGMT_EXT_PWD_ENV_VAR in os.environ.keys():
+        secret = os.environ.get(const.MGMT_EXT_PWD_ENV_VAR)
+    if cfg and not user:
+        user = cfg.get('mgmt_ext_user', None)
+    if cfg and not secret:
+        secret = cfg.get('mgmt_ext_pwd', None)
+    if not secret: # Only require secret for API key
+        old_user, old_pwd = creds(cfg) # Fall back to existing creds
+        if not user:
+            user = old_user
+        if not secret:
+            secret = old_pwd
+    return (user, secret)
+
+
 def creds(cfg=None):
     user = None
     secret = None
