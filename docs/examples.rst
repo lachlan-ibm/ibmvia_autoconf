@@ -399,7 +399,7 @@ Mobile Multi-Factor Authentication scenario configuration:
 
     |br|
 
-    The mmfa scenario deployed by the abolye job creates two reverse proxy instances, which seperates tcp traffic 
+    The mmfa scenario deployed by the above job creates two reverse proxy instances, which seperates tcp traffic 
     between browser and mmfa device runtime flows. Administrators should update integrations with external services (eg.
     push notification providers) with real values.
 
