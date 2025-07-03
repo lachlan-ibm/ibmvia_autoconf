@@ -1356,7 +1356,7 @@ class AAC_Configurator(object):
         methodArgs = copy.deepcopy(client)
         apiDefId = optional_list(filter_list('name', client.definition, definitions))[0].get('id', "NULL")
         methodArgs['definition'] = apiDefId
-        rsp = self.aac.api_protection.create_client(**method_args)
+        rsp = self.aac.api_protection.create_client(**methodArgs)
         if rsp.success == True:
             self.needsRestart = True
             _logger.info("Successfully created {} API Protection client.".format(client.name))

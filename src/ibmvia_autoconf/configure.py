@@ -1021,7 +1021,10 @@ class IVIA_Configurator(object):
             result = True
         return result
 
-    def global_config(self, aac, fed):
+    def global_config(self, aac, fed, web):
+        if self.config.webseal != None and self.config.webseal.runtime != None:
+            web.runtime(self.config.webseal.runtime)
+
         config = None
         if self.config.appliance is not None:
             config = self.config.appliance
@@ -1044,7 +1047,6 @@ class IVIA_Configurator(object):
         elif configRequired == False:
             _logger.info("Skipping global configuration")
             return
-
         aac.upload_files(config)
         aac.server_connections(config)
         aac.runtime_configuration(config)
@@ -1085,7 +1087,7 @@ class IVIA_Configurator(object):
         self.first_setps()
         self.configure_base()
         web, aac, fed = self.get_modules()
-        self.global_config(aac, fed)
+        self.global_config(aac, fed, web)
         aac.configure()
         fed.configure()
         web.configure()

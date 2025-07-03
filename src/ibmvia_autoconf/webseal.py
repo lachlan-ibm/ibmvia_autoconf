@@ -1958,21 +1958,17 @@ class WEB_Configurator(object):
         if websealConfig.rsa_config != None:
             self.rsa(websealConfig.rsa_config)
 
-        if websealConfig.runtime != None:
-            self.runtime(websealConfig.runtime)
-            if websealConfig.reverse_proxy != None:
-                for proxy in websealConfig.reverse_proxy:
-                    self.wrp(websealConfig.runtime, proxy)
+        #if websealConfig.runtime != None: done in configure.py global config
+        #    self.runtime(websealConfig.runtime)
+        if websealConfig.reverse_proxy != None:
+            for proxy in websealConfig.reverse_proxy:
+                self.wrp(websealConfig.runtime, proxy)
 
-            if websealConfig.pdadmin != None:
-                self.pdadmin(websealConfig.runtime, websealConfig.pdadmin)
-            
-            if websealConfig.api_access_control != None:
-                self.api_access_control(websealConfig.runtime, websealConfig.api_access_control)
-
-        else:
-            _logger.info("No runtime configuration detected, unable to set up any reverse proxy config or run pdadmin commands")
-
+        if websealConfig.pdadmin != None:
+            self.pdadmin(websealConfig.runtime, websealConfig.pdadmin)
+        
+        if websealConfig.api_access_control != None:
+            self.api_access_control(websealConfig.runtime, websealConfig.api_access_control)
 
 if __name__ == "__main__":
         w = WEB_Configurator()
