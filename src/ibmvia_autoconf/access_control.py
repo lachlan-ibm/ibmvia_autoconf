@@ -1356,6 +1356,8 @@ class AAC_Configurator(object):
         methodArgs = copy.deepcopy(client)
         apiDefId = optional_list(filter_list('name', client.definition, definitions))[0].get('id', "NULL")
         methodArgs['definition'] = apiDefId
+        if 'require_pkce' in methodArgs.keys():
+            methodArgs['require_pkce_verification'] = methodArgs.pop('require_pkce')
         rsp = self.aac.api_protection.create_client(**methodArgs)
         if rsp.success == True:
             self.needsRestart = True

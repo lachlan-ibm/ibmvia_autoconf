@@ -52,7 +52,8 @@ class IVIA_Configurator(object):
     def _deploy_if_needed(self):
         r = None if self.needsRestart == True else \
                 self.factory.get_system_settings().configuration.get_pending_changes()
-        if self.needsRestart == True or (r.success == True and isinstance(r.json, list) and len(r.json) > 0):
+        if self.needsRestart == True or \
+                        (r.success == True and 'changes' in r.json and len(r.json['changes']) > 0):
             deploy_pending_changes(self.factory, self.config)
             self.needsRestart = False
 
@@ -570,10 +571,10 @@ class IVIA_Configurator(object):
             exists = False
             for r in configured_roles:
                 if r['name'] == role.name:
-                    exits = True
+                    exists = True
                     break
             rsp = None
-            if exits == True:
+            if exists == True:
                 rsp = self.factory.get_system_settings().mgmt_authorization.update_role(
                         name=role.name, users=role.users, groups=role.groups, features=role.features)
             else:

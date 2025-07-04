@@ -955,7 +955,8 @@ class FED_Configurator(object):
             if partnerConfig and partnerConfig.authn_req_mapping != None:
                 methodArgs.update({
                         "authn_req_delegate_id": partner.authn_req_mapping.active_delegate_id,
-                        "authn_req_mr": self._mapping_rule_to_id(partner.authn_req_mapping.mapping_rule)
+                        "authn_req_mr": self._mapping_rule_to_id(partner.authn_req_mapping.mapping_rule, 
+                                                                                                rules=self.mapping_rules)
                     })
             if partnerConfig and partnerConfig.assertion_settings != None:
                 assert_settings = partnerConfig.assertion_settings
@@ -988,7 +989,8 @@ class FED_Configurator(object):
                 if idMap.properties.mapping_rule:
                     methodArgs.update({
                             "identity_rule_type": idMap.properties.rule_type if idMap.properties.rule_type else 'JAVASCRIPT',
-                            "identity_mr": self._mapping_rule_to_id(idMap.properties.mapping_rule)
+                            "identity_mr": self._mapping_rule_to_id(idMap.properties.mapping_rule, 
+                                                                                                rules=self.mapping_rules)
                         })
                 else:
                     methodArgs.update({
@@ -1006,7 +1008,8 @@ class FED_Configurator(object):
             if partnerConfig and partnerConfig.extension_mapping != None:
                 methodArgs.update({
                         "ext_delegate_id": partnerConfig.extension_mapping.active_delegate_id,
-                        "ext_mr": self._mapping_rule_to_id(partnerConfig.extension_mapping.mapping_rule)
+                        "ext_mr": self._mapping_rule_to_id(partnerConfig.extension_mapping.mapping_rule, 
+                                                                                                rules=self.mapping_rules)
                     })
 
             if partnerConfig and partnerConfig.name_id_format != None:
@@ -1124,7 +1127,8 @@ class FED_Configurator(object):
                 methodArgs["identity_delegate_id"] = config.identity_mapping.active_delegate_id,
                 if config.identity_mapping.properties:
                     methodArgs.update({
-                            "identity_mapping_rule": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule),
+                            "identity_mapping_rule": self._mapping_rule_to_id(
+                                        config.identity_mapping.properties.mapping_rule, rules=self.mapping_rules),
                             "identity_auth_type": config.identity_mapping.properties.auth_type,
                             "identity_ba_user": config.identity_mapping.properties.basic_auth_username,
                             "identity_ba_password": config.identity_mapping.properties.basic_auth_password,
@@ -1139,7 +1143,8 @@ class FED_Configurator(object):
             if config.advance_configuration != None:
                 methodArgs.update({
                         "adv_config_delegate_id": config.advance_configuration.active_delegate_id,
-                        "adv_config_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule),
+                        "adv_config_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule, 
+                                                                                                rules=self.mapping_rules),
                         "adv_config_rule_type": config.advance_configuration.rule_type if \
                                                                 config.advance_configuration.rule_type else "JAVASCRIPT"
                     })
@@ -1225,7 +1230,8 @@ class FED_Configurator(object):
                 if config.identity_mapping != None and config.identity_mapping.properties != None:
                     methodArgs.update({
                             "identity_delegate_id": config.identity_mapping.active_delegate_id,
-                            "identity_rule_id": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule),
+                            "identity_rule_id": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule, 
+                                                                                                rules=self.mapping_rules),
                             "identity_rule_type": config.identity_mapping.properties.rule_type if \
                                                         config.identity_mapping.properties.rule_type else 'JAVASCRIPT',
                             "identity_applies_to": config.identity_mapping.properties.applies_to,
@@ -1242,7 +1248,8 @@ class FED_Configurator(object):
                 if config.extension_mapping != None:
                     methodArgs.update({
                             "ext_delegate_id": config.extension_mapping.active_delegate_id,
-                            "ext_mapping_rule": self._mapping_rule_to_id(config.extension_mapping.mapping_rule)
+                            "ext_mapping_rule": self._mapping_rule_to_id(config.extension_mapping.mapping_rule, 
+                                                                                                rules=self.mapping_rules)
                         })
                 if config.signature_settings != None:
                     sigSetting = config.signature_settings
@@ -1302,7 +1309,8 @@ class FED_Configurator(object):
                 if config.authn_req_mapping != None:
                     methodArgs.update({
                             "authn_req_delegate_id": config.authn_req_mapping.active_delegate_id,
-                            "authn_req_mr": self._mapping_rule_to_id(config.authn_req_mapping.mapping_rule)
+                            "authn_req_mr": self._mapping_rule_to_id(config.authn_req_mapping.mapping_rule, 
+                                                                                                rules=self.mapping_rules)
                         })
             #_logger.debug("Federation create request {}".format(json.dumps(methodArgs, indent=4)))
             rsp = self.fed.federations.create_saml_federation(**methodArgs)
@@ -1337,7 +1345,8 @@ class FED_Configurator(object):
                 if config.identity_mapping != None and config.identity_mapping.properties != None:
                     methodArgs.update({
                             "identity_delegate_id": config.identity_mapping.active_delegate_id,
-                            "identity_mapping_rule": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule),
+                            "identity_mapping_rule": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule, 
+                                                                                                rules=self.mapping_rules),
                             "identity_auth_type": config.identity_mapping.properties.auth_type,
                             "identity_ba_user": config.identity_mapping.properties.basic_auth_username,
                             "identity_ba_password": config.identity_mapping.properties.basic_auth_password,
@@ -1351,7 +1360,8 @@ class FED_Configurator(object):
                 if config.advance_configuration != None:
                     methodArgs.update({
                             "adv_delegate_id": config.advance_configuration.active_delegate_id,
-                            "adv_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule),
+                            "adv_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule, 
+                                                                                                rules=self.mapping_rules),
                             "adv_rule_type": config.advance_configuration.rule_type if \
                                                         config.advance_configuration.rule_type != None else "JAVASCRIPT"
                         })
@@ -1749,6 +1759,8 @@ class FED_Configurator(object):
 
     def configure_federations(self, federation_config):
         if federation_config.federations != None:
+            #cache the list of rules we have configured
+            self.mapping_rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
             for federation in federation_config.federations:
                 method = {"SAML2_0": self._configure_saml_federation,
                           "OIDC10": self._configure_oidc_federation
