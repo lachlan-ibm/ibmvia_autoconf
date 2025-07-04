@@ -240,7 +240,7 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
             if i + 1 == retryAttempts:
                 _logger.error("Failed to publish after {} attempts".format(retryAttempts))
                 return
-            else
+            else:
                 _logger.warn("Failed to publish, retrying in {} seconds (attempt {}/{})".format(KUBE_CLIENT_SLEEP, i+1, retryAttempts))          
                 time.sleep(KUBE_CLIENT_SLEEP)
         if restartContainers == True:
