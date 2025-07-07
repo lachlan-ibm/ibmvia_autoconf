@@ -348,6 +348,7 @@ To successfully run this demo there are some prerequisites which your environmen
 * Create the Kubernetes ConfigMaps and Secrets required for this demo.
 * Update your local environment to resolve the domain ``mmfa.myidp.ibm.com`` to the web reverse proxy interface and port
 * Download the Glowroot agent and extension files from `IBM AppXchange <https://apps.xforce.ibmcloud.com>`_
+* Obtain a trial license for Verify Identity Access.
 
   .. note:: This is often as simple as updating your hosts file to map this domain to your wrp container or ingress route.
 
@@ -459,6 +460,11 @@ More detailed steps to create the required keys, certificates and kubernetes obj
 the `Federation demo readme <https://github.com/lachlan-ibm/ibmvia_autoconf/tree/stable/examples/federation_demo/README.md>`_.
 
 
+You can use the previous mmfa exmple for Kubernetes Job deployments to run the configuration tool for pods running in 
+a given namespace. Alternatively you can use the 
+`Readme.md <https://github.com/lachlan-ibm/ibmvia_autoconf/tree/stable/examples/federation_demo>`_ for a sample configurator
+deployment.
+
 .. _example_idp_yaml:
 
 IdP Configuration
@@ -498,13 +504,20 @@ IdP Partner Configuration
 Trying it out
 -------------
 
-* Create a test user using the demo User Self Care enrollment policy on the IdP deployment
+Test the Federated authentication scenario's (assumes you have above default host/domain records):
 
-* Test the Federated authentication:
+* `IdP initiated Saml 2.0 Login <https://www.myidp.ibm.com/isam/sps/saml20idp/saml20/logininitial?RequestBinding=HTTPPost&PartnerId=https%3A%2F%2Fwww.mysp.ibm.com%2Fisam%2Fsps%2Fsaml20sp%2Fsaml20&NameIdFormat=Email&Target=https://www.mysp.ibm.com/isam/mobile-demo/diag/>`_
 
-  * IdP initiated SSO
+* `IdP Single Logout <https://www.myidp.ibm.com/isam/sps/saml20idp/saml20/sloinitial?RequestBinding=HTTPRedirect>`_
 
-  * SP initiated SSO
+* `SP initiated Saml 2.0 Login <https://www.mysp.ibm.com/isam/sps/saml20sp/saml20/logininitial?RequestBinding=HTTPPost&PartnerId=https://www.myidp.ibm.com/isam/sps/saml20idp/saml20&NameIdFormat=Email&Target=https://www.mysp.ibm.com/isam/mobile-demo/diag/>`_
+
+* `SP Single Logout <https://www.mysp.ibm.com/isam/sps/saml20sp/saml20/sloinitial?RequestBinding=HTTPPost>`_
+
+* `IdP initiated OIDC Login <https://www.myidp.ibm.com/mga/sps/oauth/oauth20/authorize?redirect_uri=https%3A%2F%2Fwww.mysp.ibm.com%2Fisam%2Fsps%2Foidc%2Frp%2Fisvarp_code%2Fredirect%2Fpartner&response_type=code&state=nonceHere&scope=openid&client_id=clientID>`_ 
+   (note: this link also contains the client id, which may vary in your environment)
+
+* `SP initiated OIDC Login <https://www.mysp.ibm.com/isam/sps/oidc/rp/isvarp/kickoff/isva_op_partner?Target=/isam/mobile-demo/diag>`_
 
 .. |br| raw:: html
 

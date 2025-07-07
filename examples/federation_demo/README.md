@@ -197,10 +197,21 @@ IVIA_CONFIG_YAML=federation_idp_partner.yaml IVIA_MGMT_BASE_URL=https://isva-idp
 
 
 
-Kubernetes job to run all configuration
-_______________________________________
+Kubernetes job to run all configuration with PVC for MicroK8s
+_____________________________________________________________
 
 ```
+kind: PersistentVolumeClaim
+metadata:
+  name: ivia-autoconf-pvc
+spec:
+  storageClassName: microk8s-hostpath
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -210,7 +221,7 @@ spec:
     spec:
       containers:
       - name: verify-identity-access-configurator
-        image: autoconf:latest
+        image: registry.access.redhat.com/ubi9/python-312
         imagePullPolicy: Never
         volumeMounts:
         - name: fedconfigvol
@@ -219,12 +230,13 @@ spec:
         - "bash"
         - "-c"
         - |
-          echo "Starting SP Config"
-          IVIA_CONFIG_YAML=federation_idp.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
-          echo "Starting SP Config" && sleep 10;
-          IVIA_CONFIG_YAML=federation_sp.yaml IVIA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m ibmvia_autoconf;
-          echo "Starting IDP partner Config" && sleep 10;
-          IVIA_CONFIG_YAML=federation_idp_partner.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
+          pip install ibmvia_autoconf
+          echo "Starting IDP Config"
+          IVIA_CONFIG_YAML=federation_idp.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf | tee /verify_access_config/idp_config.log
+          echo "Starting SP Config" && sleep 10
+          IVIA_CONFIG_YAML=federation_sp.yaml IVIA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m ibmvia_autoconf | tee /verify_access_config/sp_config.log
+          echo "Starting IDP partner Config" && sleep 10
+          IVIA_CONFIG_YAML=federation_idp_partner.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf | tee /verify_access_config/idp_partner.log
         envFrom:
         - secretRef:
             name: fed-env
@@ -234,10 +246,11 @@ spec:
         configMap:
           name: fed-config
       - name: fedconfigvol
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: ivia-mmfa-autoconf-pvc
       initContainers:
       - name: config-volume-builder
-        image: autoconf:latest
+        image: registry.access.redhat.com/ubi9/python-312
         imagePullPolicy: Never
         volumeMounts:
         - mountPath: /verify_access_config
