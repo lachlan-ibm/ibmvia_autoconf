@@ -1088,11 +1088,7 @@ class IVIA_Configurator(object):
         self.first_setps()
         self.configure_base()
         web, aac, fed = self.get_modules()
-<<<<<<< HEAD
         self.global_config(aac, fed, web)
-=======
-        self.global_config(aac, fed)
->>>>>>> 6b594d3 (Development (#207))
         aac.configure()
         fed.configure()
         web.configure()
