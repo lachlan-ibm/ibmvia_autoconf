@@ -232,7 +232,17 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
 
     factory.get_system_settings().configuration.deploy_pending_changes()
     if factory.is_docker() == True and isvaConfig.container is not None:
-        factory.get_system_settings().docker.publish()
+        retryAttempts = 10
+        for i in range(retryAttempts):
+            response = factory.get_system_settings().docker.publish()
+            if response.success:
+                break
+            if i + 1 == retryAttempts:
+                _logger.error("Failed to publish after {} attempts".format(retryAttempts))
+                return
+            else:
+                _logger.warn("Failed to publish, retrying in {} seconds (attempt {}/{})".format(KUBE_CLIENT_SLEEP, i+1, retryAttempts))          
+                time.sleep(KUBE_CLIENT_SLEEP)
         if restartContainers == True:
             if isvaConfig.container.k8s_deployments is not None:
                 namespace = isvaConfig.container.k8s_deployments.namespace
