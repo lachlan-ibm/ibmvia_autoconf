@@ -1,0 +1,61 @@
+kind: PersistentVolumeClaim
+metadata:
+  name: ivia-mmfa-autoconf-pvc
+spec:
+  storageClassName: microk8s-hostpath
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mmfa-config
+spec:
+  template:
+    spec:
+      containers:
+      - name: verify-identity-access-configurator
+        image: registry.access.redhat.com/ubi9/python-312
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: mmfaconfigvol
+          mountPath: /config
+        command:
+        - "bash"
+        - "-c"
+        - |
+          pip install ibmvia_autoconf
+          cd /config
+          echo "Starting MMFA Config"
+          IVIA_CONFIG_YAML=mmfa_config.yaml IVIA_MGMT_BASE_URL=https://ivia-mmfa-config:9443 \
+              python3 -m ibmvia_autoconf | tee /verify_access_config/autoconf.log
+
+        envFrom:
+        - secretRef:
+            name: mmfa-env
+      restartPolicy: Never
+      volumes:
+      - name: ivia-mmfa-autoconf-pvc
+        persistentVolumeClaim:
+          claimName: ivia-mmfa-autoconf-pvc
+      initContainers:
+      - name: config-volume-builder
+        image: registry.access.redhat.com/ubi9/python-312
+        imagePullPolicy: Never
+        volumeMounts:
+        - mountPath: /verify_access_config
+          name: mmfaconfigvol
+        - mountPath: /tmp/mmfa_config
+          name: mmfa-config
+        command:
+        - "bash"
+        - "-c"
+        - |
+          cp /tmp/mmfa_config/*.{p12,pem,yaml} /verify_access_config/
+          unzip /tmp/mmfa_config/mapping_rules.zip -d /verify_access_config/
+          unzip /tmp/mmfa_config/template_files.zip -d /verify_access_config/
+          unzip /tmp/mmfa_config/ssl_certificates.zip -d /verify_access_config/
+  backoffLimit: 1
