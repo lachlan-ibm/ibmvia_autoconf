@@ -1,6 +1,6 @@
-FROM registry.access.redhat.com/ubi8/ubi-micro:latest
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
-RUN microdnf install python3 python3-pip && pip3 install ibmvia_autoconf
+RUN microdnf install python3 python3-pip && pip3 install ibmvia_autoconf && microndnf clean && pip cache purge
 
 LABEL version="1.0"
 

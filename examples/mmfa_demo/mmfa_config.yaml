@@ -457,7 +457,6 @@ access_control:
       access_token_lifetime: 3600
     clients:
     - name: "AuthenticatorClient"
-      description: "Authenticator Client"
       client_id: "AuthenticatorClient"
       company_name: "IBM"
       contact_type: "TECHNICAL"

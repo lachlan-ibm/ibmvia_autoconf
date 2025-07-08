@@ -1,8 +1,8 @@
 Example Verify Identity Access Configurations (Getting Started)
 ###############################################################
 
-First Steps
-===========
+First Steps (container deployment)
+==================================
 
 Container deployment
 --------------------
@@ -71,7 +71,6 @@ These steps include:
 
 
 .. collapse:: Expand to see code examples of configuration.
-
 
     Set the following properties as environment variables for the process running the configuration tool:
 

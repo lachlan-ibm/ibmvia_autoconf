@@ -1327,7 +1327,11 @@ class AAC_Configurator(object):
                 attrs += [{"attributeName": attrSrc.name, "attributeSourceId": attrSrcId}]
             methodArgs.update({"attribute_sources": attrs})
         if definition.access_policy:
+<<<<<<< HEAD
             methodArgs["access_policy_id"] = self._access_policy_to_id(definition.access_policy)
+=======
+            methodArgs["access_policy_id"] = self._mapping_rule_to_id(definition.access_policy)
+>>>>>>> ee84c9c7df3e234974cfaf6c9984c5b13e61384c
         rsp = self.aac.api_protection.create_definition(**methodArgs)
         if rsp.success == True:
             self.needsRestart = True
@@ -1353,12 +1357,20 @@ class AAC_Configurator(object):
                         _logger.error("Failed to upload {} {}".format(definition.name, rulePrettyName))
 
     def _configure_api_protection_client(self, definitions, client):
+<<<<<<< HEAD
         methodArgs = copy.deepcopy(client)
         apiDefId = optional_list(filter_list('name', client.definition, definitions))[0].get('id', "NULL")
         methodArgs['definition'] = apiDefId
         if 'require_pkce' in methodArgs.keys():
             methodArgs['require_pkce_verification'] = methodArgs.pop('require_pkce')
         rsp = self.aac.api_protection.create_client(**methodArgs)
+=======
+        apiDefId = optional_list(filter_list('name', client.definition, definitions))[0].get('id', "NULL")
+        rsp = self.aac.api_protection.create_client(name=client.name, redirect_uri=client.redirect_uri,
+                company_name=client.company_name, company_url=client.company_url, contact_person=client.contact_person,
+                contact_type=client.contact_type, email=client.email, phone=client.phone, other_info=client.other_info,
+                definition=apiDefId, client_id=client.client_id, client_secret=client.client_secret)
+>>>>>>> ee84c9c7df3e234974cfaf6c9984c5b13e61384c
         if rsp.success == True:
             self.needsRestart = True
             _logger.info("Successfully created {} API Protection client.".format(client.name))

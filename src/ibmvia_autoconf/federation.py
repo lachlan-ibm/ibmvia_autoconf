@@ -1798,9 +1798,6 @@ class FED_Configurator(object):
     def final_restarts(self):
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config)
-        if self.factory.is_docker() == True:
-            _logger.debug("Cannot restart reverse proxies from the LMI in container deployments")
-            return
 
     def configure(self):
         if self.config.federation == None:

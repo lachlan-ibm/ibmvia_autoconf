@@ -252,8 +252,18 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
 
     factory.get_system_settings().configuration.deploy_pending_changes()
     if factory.is_docker() == True:
-        factory.get_system_settings().docker.publish()
-        if isvaConfig.container is not None and restartContainers == True:
+        published = False
+        for _ in range(5): # 15s idle max
+            try:
+                response = factory.get_system_settings().docker.publish()
+                if response.success == True:
+                    published = True
+                    break
+            except Exception as e:
+                _logger.exception(e)
+            _logger.warn("Failed to publish, retrying in 3 seconds (attempt {}/{})".format(i+1, retryAttempts))
+            time.sleep(3) # TODO config option?
+        if published and restartContainers == True:
             if isvaConfig.container.k8s_deployments is not None:
                 namespace = isvaConfig.container.k8s_deployments.namespace
                 #Are we restarting the containers or rolling out a restart to the deployment descriptor

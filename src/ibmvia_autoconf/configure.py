@@ -939,7 +939,8 @@ class IVIA_Configurator(object):
                     facility: "syslog"
                     severity: "info"
 
-        .. note: This is an array of elements.
+        .. note:: This is an array of elements.
+
         '''
 
         class Forwarder(typing.TypedDict):

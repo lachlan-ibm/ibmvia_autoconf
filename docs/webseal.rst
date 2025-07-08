@@ -37,7 +37,7 @@ Example
                       enabled: "yes"
                     domain: "Default"
                     ldap:
-                      ssl_yn: "yes"
+                      ssl: "yes"
                       port: 636
                       key_file: "lmi_trust_store"
                     aac_configuration:
