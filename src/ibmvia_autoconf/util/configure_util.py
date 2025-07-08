@@ -253,7 +253,7 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
     factory.get_system_settings().configuration.deploy_pending_changes()
     if factory.is_docker() == True:
         published = False
-        for _ in range(5): # 15s idle max
+        for i in range(5):
             try:
                 response = factory.get_system_settings().docker.publish()
                 if response.success == True:
@@ -261,7 +261,7 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
                     break
             except Exception as e:
                 _logger.exception(e)
-            _logger.warn("Failed to publish, retrying in 3 seconds (attempt {}/{})".format(i+1, retryAttempts))
+            _logger.warn(f"Failed to publish, retrying in 3 seconds (attempt {i + 1}/5)")
             time.sleep(3) # TODO config option?
         if published and restartContainers == True:
             if isvaConfig.container.k8s_deployments is not None:
