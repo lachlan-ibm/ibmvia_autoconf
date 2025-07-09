@@ -188,14 +188,15 @@ successfully. The required files include:
 - mapping_rules.zip
 - idpkeys.p12
 - spkeys.p12
-- psotgresql.pem
+- postgresql.pem
 - ldap.pem
 - idp.pem
 - sp.pem
 - fed.env
 
 The mapping rule files can be downloaded from the [federation demo] (https://www.github.com/lachlan-ibm) 
-directory. The X.509 certificates (and corresponding keys) and `fed.env` should be generated with the above commands.
+directory. The X.509 certificates (and corresponding keys) and `fed.env` should be generated and deployed to
+the appropriate Kubernetes objects with the above commands.
 
 Configuration Steps
 -------------------
@@ -212,7 +213,10 @@ _____________
 
 ```bash
 source fed.env
-IVIA_CONFIG_BASE="$(pwd)" IVIA_CONFIG_YAML=federation_idp.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf
+export IVIA_CONFIG_BASE="$(pwd)" 
+export IVIA_CONFIG_YAML=federation_idp.yaml
+export IVIA_MGMT_BASE_URL=https://isva-idp-config:9443
+python3 -m ibmvia_autoconf | tee idp_config.log
 ```
 
 
@@ -221,7 +225,10 @@ ____________
 
 ```bash
 source fed.env
-IVIA_CONFIG_BASE="$(pwd)" IVIA_CONFIG_YAML=federation_sp.yaml IVIA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m ibmvia_autoconf
+export IVIA_CONFIG_BASE="$(pwd)"
+export IVIA_CONFIG_YAML=federation_sp.yaml
+export IVIA_MGMT_BASE_URL=https://isva-sp-config:9443
+python3 -m ibmvia_autoconf | tee sp_config.log
 ```
 
 Configure IDP partner
@@ -229,13 +236,15 @@ _____________________
 
 ```bash
 source fed.env
-IVIA_CONFIG_BASE="$(pwd)" IVIA_CONFIG_YAML=federation_idp_partner.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf
+export IVIA_CONFIG_BASE="$(pwd)"
+export IVIA_CONFIG_YAML=federation_idp_partner.yaml
+export IVIA_MGMT_BASE_URL=https://isva-idp-config:9443
+python3 -m ibmvia_autoconf | tee idp_partner.log
 ```
 
 
 
-Kubernetes job to run all configuration with PVC for MicroK8s
-_____________________________________________________________
+### Kubernetes job to run all configuration with PVC for MicroK8s
 
 ```
 kind: PersistentVolumeClaim
