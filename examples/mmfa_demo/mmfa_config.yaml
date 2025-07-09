@@ -616,7 +616,6 @@ access_control:
       - selector: "mail"
         name: "emailAddress"
         namespace: "urn:ibm:security:authentication:asf:mechanism:password"
-
   attributes:
   - name: "transferAmount"
     description: "The transaction-amount POST parameter sent to result.jsp"

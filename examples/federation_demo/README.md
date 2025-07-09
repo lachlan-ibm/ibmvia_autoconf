@@ -5,12 +5,13 @@ Identity Provider (IDP) or a Service Provider in a SAML2.0 federated identity sc
 each provider to generate a metadata document for the SAML2.0 endpoints, which is then used in a subsequent 
 configuration step.
 
+## Setup and prerequisites
 
 Kubernetes environment
 ----------------------
 
-To deploy the required containers we will be using a kubernetes distribution called microk8s. However any Kubernetes or 
-OpenShift environment will work.
+To deploy the required containers we will be using a kubernetes distribution called microk8s. However any 
+Kubernetes or OpenShift environment will work.
 
 The configuration containers required elevated permissions in order to run.
 
@@ -146,7 +147,7 @@ openssl pkcs12 -export -out spkeys.p12 -inkey sp.key -in sp.pem -passout pass:Pa
 
 
 Create Verify Identity Access Containers
--------------------------------
+----------------------------------------
 
 Sample Kubernetes deployments have been provided in the `federation_demo_services.yaml` and `federation_demo_deployment.yaml` files.
 Each file creates the required configuration, reverse proxy, runtime and supporting database/ldap containers for the IDP and 
@@ -198,7 +199,8 @@ kubectl create secret generic fed-env --from-env-file=fed.env
 
 Create Config Map
 -----------------
-Create a Kubernetes ConfigMap object with the idp and sp YAMl configuration files + the additional certificates, mapping rules and PKCS12 files. The names of these files should be the same as the PKI created in the previous section.
+Create a Kubernetes ConfigMap object with the idp and sp YAMl configuration files + the additional certificates, 
+mapping rules and PKCS12 files. The names of these files should be the same as the PKI created in the previous section.
 
 ```
 kubectl delete configmap fed-config
@@ -273,7 +275,24 @@ kubectl create -f federation_demo_services.yaml
 kubectl create -f federation_demo_deployment.yaml
 ```
 
+## Running the configuration tool
 
+Required files
+--------------
+This deployment example relied on a number of additional configuration files in order to be deployed
+successfully. The required files include:
+
+- mapping_rules.zip
+- idpkeys.p12
+- spkeys.p12
+- psotgresql.pem
+- ldap.pem
+- idp.pem
+- sp.pem
+- fed.env
+
+The mapping rule files can be downloaded from the [federation demo] (https://www.github.com/lachlan-ibm) 
+directory. The X.509 certificates (and corresponding keys) and `fed.env` should be generated with the above commands.
 
 Configuration Steps
 -------------------
@@ -288,26 +307,26 @@ This can all be done using a Kubernetes Job, which can run the required configur
 Configure IDP
 _____________
 
-```
+```bash
 source fed.env
-IVIA_CONFIG_YAML=federation_idp.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
+IVIA_CONFIG_BASE="$(pwd)" IVIA_CONFIG_YAML=federation_idp.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf
 ```
 
 
 Configure SP
 ____________
 
-```
+```bash
 source fed.env
-IVIA_CONFIG_YAML=federation_sp.yaml IVIA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m ibmvia_autoconf;
+IVIA_CONFIG_BASE="$(pwd)" IVIA_CONFIG_YAML=federation_sp.yaml IVIA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m ibmvia_autoconf
 ```
 
 Configure IDP partner
 _____________________
 
-```
+```bash
 source fed.env
-IVIA_CONFIG_YAML=federation_idp_partner.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
+IVIA_CONFIG_BASE="$(pwd)" IVIA_CONFIG_YAML=federation_idp_partner.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf
 ```
 
 
