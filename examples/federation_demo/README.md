@@ -7,8 +7,7 @@ configuration step.
 
 ## Setup and prerequisites
 
-Kubernetes environment
-----------------------
+### Kubernetes environment
 
 To deploy the required containers we will be using a kubernetes distribution called microk8s. However any 
 Kubernetes or OpenShift environment will work.
@@ -23,8 +22,7 @@ routed to the IDP reverse proxy container, and `www.mysp.ibm.com` are routed to 
 
 
 
-Installing the Verify Access Operator
--------------------------------------
+### Installing the Verify Access Operator
 The Verify Access Operator can be installed into any Kubernetes environment from source code
 
 ```
@@ -33,8 +31,7 @@ kubectl create -f https://github.com/IBM-Security/verify-access-operator/release
 
 
 
-Environment properties
-----------------------
+### Environment properties
 This demonstration will also require you to define some properties which are likely to change based on the demo
 
 Update the hostname for the Reverse Proxy for the Identity Provider (default is `www.myidp.ibm.com`) and the Service 
@@ -78,8 +75,7 @@ kubectl create secret generic fed-env --from-env-file=fed.env
 
 
 
-Create Persistent Volume Claim
-------------------------------
+### Create Persistent Volume Claim
 Create a Kubernetes PersistentVolumeClaim object with the idp and sp YAMl configuration files + the additional certificates, 
 mapping rules and PKCS12 files. The names of these files should be the same as the PKI created in the previous section.
 
@@ -101,8 +97,7 @@ kubectl create configmap fed-config --from-file=federation_idp.yaml \
 
 
 
-Generate PKI
-------------
+### Generate PKI
 Use OpenSSL to generate the IDP and SP Public/Private RSA key pairs as well as X509 certificates.
 
 ```
@@ -146,8 +141,7 @@ openssl pkcs12 -export -out spkeys.p12 -inkey sp.key -in sp.pem -passout pass:Pa
 ```
 
 
-Deploy Config Map
------------------
+### Deploy Config Map
 Create a Kubernetes ConfigMap object with the idp and sp YAMl configuration files + the additional certificates, 
 mapping rules and PKCS12 files. The names of these files should be the same as the PKI created in the previous section.
 
@@ -164,9 +158,7 @@ kubectl create configmap fed-config --from-file=federation_idp.yaml \
                                     --from-file=mapping_rules.zip
 ```
 
-Deploy Verify Identity Access containers
-----------------------------------------
-
+### Deploy Verify Identity Access containers
 Sample Kubernetes deployments have been provided in the `federation_demo_services.yaml` and `federation_demo_deployment.yaml` files.
 Each file creates the required configuration, reverse proxy, runtime and supporting database/ldap containers for the IDP and 
 SP deployments. The runtime containers are created (and managed) by the Verify Access Operator. The operator must already be
@@ -180,8 +172,7 @@ kubectl create -f federation_demo_deployment.yaml
 
 ## Running the configuration tool
 
-Required files
---------------
+### Required files
 This deployment example relied on a number of additional configuration files in order to be deployed
 successfully. The required files include:
 
@@ -198,8 +189,7 @@ The mapping rule files can be downloaded from the [federation demo] (https://www
 directory. The X.509 certificates (and corresponding keys) and `fed.env` should be generated and deployed to
 the appropriate Kubernetes objects with the above commands.
 
-Configuration Steps
--------------------
+### Configuration Steps
 This demo must be run in four stages. 
 
 The first two stages configure the Identity Provider and Service Provider.
@@ -208,8 +198,7 @@ The final two stages configures the IDP and SP partner relationships between the
 
 This can all be done using a Kubernetes Job, which can run the required configuration sequentially.
 
-Configure IDP
-_____________
+#### Configure IDP
 
 ```bash
 source fed.env
@@ -220,8 +209,7 @@ python3 -m ibmvia_autoconf | tee idp_config.log
 ```
 
 
-Configure SP
-____________
+#### Configure SP
 
 ```bash
 source fed.env
@@ -231,8 +219,7 @@ export IVIA_MGMT_BASE_URL=https://isva-sp-config:9443
 python3 -m ibmvia_autoconf | tee sp_config.log
 ```
 
-Configure IDP partner
-_____________________
+#### Configure IDP partner
 
 ```bash
 source fed.env
