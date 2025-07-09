@@ -8,9 +8,10 @@ import os
 import logging
 import typing
 import copy
+import time
 
 from .util.configure_util import deploy_pending_changes, config_base_dir
-from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, to_camel_case, remap_keys
+from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, to_camel_case, remap_keys, KUBE_CLIENT_SLEEP
 
 _logger = logging.getLogger(__name__)
 
@@ -314,11 +315,12 @@ class FED_Configurator(object):
 
 
 
-    def _mapping_rule_to_id(self, rule_name):
+    def _mapping_rule_to_id(self, rule_name, rules=None):
         '''
         Helper method to convert rule name to Verify Identity Access ID
         '''
-        rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
+        if rules == None:
+            rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
         mapping_rule = optional_list(filter_list('name', rule_name, rules))[0]
         if mapping_rule:
             return mapping_rule['id']
@@ -447,15 +449,12 @@ class FED_Configurator(object):
                     _logger.error("Could not list hte point of contact profiles")
 
 
-
-
-    def _chain_index_to_prefix(self, template_name, chain_index):
+    def _chain_index_to_prefix(self, template_name, chain_index, chain_templates):
         '''
         Convert the given chain name and index to the Verify Identity Access generated UUID prefix from
         the chain template
         '''
-        templates = optional_list(self.fed.sts.list_templates().json)
-        template = optional_list(filter_list('name', template_name, templates))[0]
+        template = optional_list(filter_list('name', template_name, chain_templates))[0]
         if template:
             items = template.get("chainItems", [])
             if len(items) <= chain_index:
@@ -466,17 +465,15 @@ class FED_Configurator(object):
             _logger.error("Could not find chain template with name {}".format(template_name))
         return "NULL"
 
-    def _remap_sts_chain_template_keys(self, template):
-        moduleTypes = optional_list(self.fed.sts.list_modules().json)
+    def _remap_sts_chain_template_keys(self, template, module_types):
         for module in template.get("modules", []):
-            moduleType = optional_list(filter_list("name", module.get("id", "NULL"), moduleTypes))[0]
+            moduleType = optional_list(filter_list("name", module.get("id", "NULL"), module_types))[0]
             module['id'] = moduleType.get("id", module.get("id", "MODULE_ID_MISSING"))
 
-    def _chain_template_name_to_id(self, template_name):
-        templates = optional_list(self.fed.sts.list_templates().json)
-        return optional_list(filter_list('name', template_name, templates))[0].get('id', template_name)
+    def _chain_template_name_to_id(self, template_name, chain_templates):
+        return optional_list(filter_list('name', template_name, chain_templates))[0].get('id', template_name)
 
-    def _remap_sts_chain_keys(self, chain):
+    def _remap_sts_chain_keys(self, chain, chain_templates, mapping_rules):
         remap = {"issuer": "issuer_",
                     "validation_key": "validation_",
                     "signature": "sign_",
@@ -489,16 +486,16 @@ class FED_Configurator(object):
             for config_key in ["self_properties", "partner_properties"]:
                 for i, entry in enumerate(chain.get(config_key, [])):
                     if isinstance(entry, dict):
-                        needToUpdate = False
+                        ruleUpdate = False
                         ruleName = "NULL"
                         for k, v in entry.items():
                             if v == "map.rule.reference.name":
-                                needToUpdate = True
+                                ruleUpdate = True
                                 ruleName = entry.get("value", ["NULL"])[0]
-                        if needToUpdate == True:
+                        if ruleUpdate == True:
                             entry["name"] = "map.rule.reference.ids"
-                            entry['value'] = [self._mapping_rule_to_id(ruleName)] #Convert to id
-                        entry["name"] = self._chain_index_to_prefix(chain.chain_template, entry.get("index", -1)) + "." + entry["name"]
+                            entry['value'] = [self._mapping_rule_to_id(ruleName, rules=mapping_rules)] #Convert to id
+                        entry["name"] = self._chain_index_to_prefix(chain.chain_template, entry.get("index", -1), chain_templates) + "." + entry["name"]
                         del entry["index"] #Convert index to chain template prefix and remove index from properties
         temp = {}
         for key, new_key_prefix in remap.items():
@@ -517,7 +514,7 @@ class FED_Configurator(object):
                     "validation_include_issuer_details": "validation_include_issuer",
                     "validation_include_subject_name": "validation_include_subject",
             }
-        chain["template_id"] = self._chain_template_name_to_id(chain.get("chain_template", "NULL"))
+        chain["template_id"] = self._chain_template_name_to_id(chain.get("chain_template", "NULL"), chain_templates)
         del chain["chain_template"]
         return remap_keys(chain, remap)
 
@@ -686,11 +683,12 @@ class FED_Configurator(object):
         if federation_config.sts != None:
             sts = federation_config.sts
             if sts.chain_templates:
+                module_types = optional_list(self.fed.sts.list_modules().json)
                 old_templates = optional_list(self.fed.sts.list_templates().json)
                 for template in sts.chain_templates:
                     existing = optional_list(filter_list('name', template.name, old_templates))[0]
                     methodArgs = copy.deepcopy(template)
-                    self._remap_sts_chain_template_keys(methodArgs)
+                    self._remap_sts_chain_template_keys(methodArgs, module_types)
                     _logger.debug("Remapped STS Chain Template Properties:\n{}".format(json.dumps(methodArgs, indent=4)))
                     rsp = None; verb = None
                     if existing:
@@ -707,12 +705,14 @@ class FED_Configurator(object):
 
             if sts.chains:
                 old_chains = optional_list(self.fed.sts.list_chains().json)
+                chain_templates = optional_list(self.fed.sts.list_templates().json)
+                mapping_rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
                 for chain in sts.chains:
                     existing = optional_list(filter_list('name', chain.name, old_chains))[0]
                     rsp = None
                     verb = None
                     methodArgs = copy.deepcopy(chain)
-                    methodArgs = self._remap_sts_chain_keys(methodArgs)
+                    methodArgs = self._remap_sts_chain_keys(methodArgs, chain_templates, mapping_rules)
                     _logger.debug("Remapped STS Chain Properties:\n{}".format(json.dumps(methodArgs, indent=4)))
                     if existing:
                         rsp = self.fed.sts.update_chain(existing['id'], **methodArgs)
@@ -919,6 +919,7 @@ class FED_Configurator(object):
                 fed_id=fed_id, name=partner.name, metadata=metadata_file['path'])
         if rsp.success == True:
             _logger.info("Successfully imported {} Federation Partner".format(partner.name))
+            self.needsRestart = True
         else:
             _logger.error("Failed to import Federation Partner:\n{}\n{}".format(
                                             json.dumps(partner, indent=4), rsp.data))
@@ -954,7 +955,8 @@ class FED_Configurator(object):
             if partnerConfig and partnerConfig.authn_req_mapping != None:
                 methodArgs.update({
                         "authn_req_delegate_id": partner.authn_req_mapping.active_delegate_id,
-                        "authn_req_mr": self._mapping_rule_to_id(partner.authn_req_mapping.mapping_rule)
+                        "authn_req_mr": self._mapping_rule_to_id(partner.authn_req_mapping.mapping_rule, 
+                                                                                                rules=self.mapping_rules)
                     })
             if partnerConfig and partnerConfig.assertion_settings != None:
                 assert_settings = partnerConfig.assertion_settings
@@ -968,8 +970,10 @@ class FED_Configurator(object):
             if partnerConfig and partnerConfig.encryption_settings != None:
                 encryption = partnerConfig.encryption_settings
                 methodArgs.update({
-                        "decrypt_key_store": encryption.decryption_key_identifier.store if encryption.decryption_key_identifier else None,
-                        "decrypt_key_alias": encryption.decryption_key_identifier.label if encryption.decryption_key_identifier else None,
+                        "decrypt_key_store": encryption.decryption_key_identifier.store if \
+                                                                        encryption.decryption_key_identifier else None,
+                        "decrypt_key_alias": encryption.decryption_key_identifier.label if \
+                                                                        encryption.decryption_key_identifier else None,
                         "encrypt_block_alg": encryption.block_algorithm,
                         "encrypt_key_transport_alg": encryption.key_transport_algorithm,
                         "encrypt_key_store": encryption.key_store,
@@ -985,7 +989,8 @@ class FED_Configurator(object):
                 if idMap.properties.mapping_rule:
                     methodArgs.update({
                             "identity_rule_type": idMap.properties.rule_type if idMap.properties.rule_type else 'JAVASCRIPT',
-                            "identity_mr": self._mapping_rule_to_id(idMap.properties.mapping_rule)
+                            "identity_mr": self._mapping_rule_to_id(idMap.properties.mapping_rule, 
+                                                                                                rules=self.mapping_rules)
                         })
                 else:
                     methodArgs.update({
@@ -1003,7 +1008,8 @@ class FED_Configurator(object):
             if partnerConfig and partnerConfig.extension_mapping != None:
                 methodArgs.update({
                         "ext_delegate_id": partnerConfig.extension_mapping.active_delegate_id,
-                        "ext_mr": self._mapping_rule_to_id(partnerConfig.extension_mapping.mapping_rule)
+                        "ext_mr": self._mapping_rule_to_id(partnerConfig.extension_mapping.mapping_rule, 
+                                                                                                rules=self.mapping_rules)
                     })
 
             if partnerConfig and partnerConfig.name_id_format != None:
@@ -1058,13 +1064,15 @@ class FED_Configurator(object):
                             "validate_name_id_req": sigSetting.validation_options.validate_name_id_management_request,
                             "validate_name_id_rsp": sigSetting.validation_options.validate_name_id_management_response
                         })
-                if partnerConfig and partnerConfig.soap_settings != None and isinstance(partnerConfig.soap_settings.server_cert_validation, dict):
+                if partnerConfig and partnerConfig.soap_settings != None and \
+                                                    isinstance(partnerConfig.soap_settings.server_cert_validation, dict):
                     methodArgs.update({
                             "soap_key_store": partnerConfig.soap_settings.server_cert_validation.store,
                             "soap_key_alias":  partnerConfig.soap_settings.server_cert_validation.label,
                             
                         })
-                if partnerConfig and partnerConfig.soap_settings != None and isinstance(partnerConfig.soap_settings.client_auth_data, dict):
+                if partnerConfig and partnerConfig.soap_settings != None and \
+                                                        isinstance(partnerConfig.soap_settings.client_auth_data, dict):
                     methodArgs.update({
                             "soap_client_auth_method": partnerConfig.soap_settings.client_auth_data.method,
                             "soap_client_auth_ba_user": partnerConfig.soap_settings.client_auth_data.basic_auth_username,
@@ -1076,6 +1084,7 @@ class FED_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully created {} {} SAML Partner".format(
                 partner.name, partner.role))
+            self.needsRestart = True
         else:
             _logger.error("Failed to create {} SAML Partner with config:\n{}\n{}".format(
                                         partner.name, json.dumps(partner, indent=4), rsp.data))
@@ -1118,7 +1127,8 @@ class FED_Configurator(object):
                 methodArgs["identity_delegate_id"] = config.identity_mapping.active_delegate_id,
                 if config.identity_mapping.properties:
                     methodArgs.update({
-                            "identity_mapping_rule": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule),
+                            "identity_mapping_rule": self._mapping_rule_to_id(
+                                        config.identity_mapping.properties.mapping_rule, rules=self.mapping_rules),
                             "identity_auth_type": config.identity_mapping.properties.auth_type,
                             "identity_ba_user": config.identity_mapping.properties.basic_auth_username,
                             "identity_ba_password": config.identity_mapping.properties.basic_auth_password,
@@ -1133,14 +1143,17 @@ class FED_Configurator(object):
             if config.advance_configuration != None:
                 methodArgs.update({
                         "adv_config_delegate_id": config.advance_configuration.active_delegate_id,
-                        "adv_config_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule),
-                        "adv_config_rule_type": config.advance_configuration.rule_type if config.advance_configuration.rule_type else "JAVASCRIPT"
+                        "adv_config_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule, 
+                                                                                                rules=self.mapping_rules),
+                        "adv_config_rule_type": config.advance_configuration.rule_type if \
+                                                                config.advance_configuration.rule_type else "JAVASCRIPT"
                     })
 
         rsp = self.fed.federations.create_oidc_rp_partner(fedId, **methodArgs)
         if rsp.success == True:
             _logger.info("Successfully created {} OIDC RP Partner for Federation {}".format(
                 partner.name, fedId))
+            self.needsRestart = True
         else:
             _logger.error("Failed to create {} OIDC RP Partner with config:\n{}/n{}".format(
                 partner.name, json.dumps(partner, indent=4), rsp.data))
@@ -1200,8 +1213,10 @@ class FED_Configurator(object):
                             "encrypt_name_id": config.encryption_settings.encrypt_name_id,
                             "encrypt_assertions": config.encryption_settings.encrypt_assertions,
                             "encrypt_assertion_attrs": config.encryption_settings.encrypt_assertion_attributes,
-                            "decrypt_key_alias": config.encryption_settings.decryption_key_identifier.label if config.encryption_settings.decryption_key_identifier else None,
-                            "decrypt_key_store": config.encryption_settings.decryption_key_identifier.store if config.encryption_settings.decryption_key_identifier else None
+                            "decrypt_key_alias": config.encryption_settings.decryption_key_identifier.label if \
+                                                        config.encryption_settings.decryption_key_identifier else None,
+                            "decrypt_key_store": config.encryption_settings.decryption_key_identifier.store if \
+                                                        config.encryption_settings.decryption_key_identifier else None
                         })
 
                 if config.assert_settings != None:
@@ -1215,8 +1230,10 @@ class FED_Configurator(object):
                 if config.identity_mapping != None and config.identity_mapping.properties != None:
                     methodArgs.update({
                             "identity_delegate_id": config.identity_mapping.active_delegate_id,
-                            "identity_rule_id": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule),
-                            "identity_rule_type": config.identity_mapping.properties.rule_type if config.identity_mapping.properties.rule_type else 'JAVASCRIPT',
+                            "identity_rule_id": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule, 
+                                                                                                rules=self.mapping_rules),
+                            "identity_rule_type": config.identity_mapping.properties.rule_type if \
+                                                        config.identity_mapping.properties.rule_type else 'JAVASCRIPT',
                             "identity_applies_to": config.identity_mapping.properties.applies_to,
                             "identity_auth_type": config.identity_mapping.properties.auth_type,
                             "identity_ba_user": config.identity_mapping.properties.basic_auth_username,
@@ -1231,7 +1248,8 @@ class FED_Configurator(object):
                 if config.extension_mapping != None:
                     methodArgs.update({
                             "ext_delegate_id": config.extension_mapping.active_delegate_id,
-                            "ext_mapping_rule": self._mapping_rule_to_id(config.extension_mapping.mapping_rule)
+                            "ext_mapping_rule": self._mapping_rule_to_id(config.extension_mapping.mapping_rule, 
+                                                                                                rules=self.mapping_rules)
                         })
                 if config.signature_settings != None:
                     sigSetting = config.signature_settings
@@ -1251,13 +1269,13 @@ class FED_Configurator(object):
                             })
                     if sigSetting.signing_key_identifier != None:
                         methodArgs.update({
-                                "sign_keystore": sigSetting.signing_key_identifier.keystore,
-                                "sign_key_alias": sigSetting.signing_key_identifier.certificate
+                                "sign_keystore": sigSetting.signing_key_identifier.store,
+                                "sign_key_alias": sigSetting.signing_key_identifier.label
                             })
                     if sigSetting.validation_key_identifier != None:
                         methodArgs.update({
-                                "sign_valid_key_store": sigSetting.validation_key_identifier.keystore,
-                                "sign_valid_key_alias": sigSetting.validation_key_identifier.certificate
+                                "sign_valid_key_store": sigSetting.validation_key_identifier.store,
+                                "sign_valid_key_alias": sigSetting.validation_key_identifier.label
                             })
                     if sigSetting.signing_options != None:
                         methodArgs.update({
@@ -1291,9 +1309,10 @@ class FED_Configurator(object):
                 if config.authn_req_mapping != None:
                     methodArgs.update({
                             "authn_req_delegate_id": config.authn_req_mapping.active_delegate_id,
-                            "authn_req_mr": self._mapping_rule_to_id(config.authn_req_mapping.mapping_rule)
+                            "authn_req_mr": self._mapping_rule_to_id(config.authn_req_mapping.mapping_rule, 
+                                                                                                rules=self.mapping_rules)
                         })
-                
+            #_logger.debug("Federation create request {}".format(json.dumps(methodArgs, indent=4)))
             rsp = self.fed.federations.create_saml_federation(**methodArgs)
             if rsp.success == True:
                 _logger.info("Successfully created {} SAML2.0 Federation".format(federation.name))
@@ -1326,7 +1345,8 @@ class FED_Configurator(object):
                 if config.identity_mapping != None and config.identity_mapping.properties != None:
                     methodArgs.update({
                             "identity_delegate_id": config.identity_mapping.active_delegate_id,
-                            "identity_mapping_rule": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule),
+                            "identity_mapping_rule": self._mapping_rule_to_id(config.identity_mapping.properties.mapping_rule, 
+                                                                                                rules=self.mapping_rules),
                             "identity_auth_type": config.identity_mapping.properties.auth_type,
                             "identity_ba_user": config.identity_mapping.properties.basic_auth_username,
                             "identity_ba_password": config.identity_mapping.properties.basic_auth_password,
@@ -1340,12 +1360,15 @@ class FED_Configurator(object):
                 if config.advance_configuration != None:
                     methodArgs.update({
                             "adv_delegate_id": config.advance_configuration.active_delegate_id,
-                            "adv_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule),
-                            "adv_rule_type": config.advance_configuration.rule_type if config.advance_configuration.rule_type != None else "JAVASCRIPT"
+                            "adv_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule, 
+                                                                                                rules=self.mapping_rules),
+                            "adv_rule_type": config.advance_configuration.rule_type if \
+                                                        config.advance_configuration.rule_type != None else "JAVASCRIPT"
                         })
             rsp = self.fed.federations.create_oidc_federation(**methodArgs)
             if rsp.success == True:
                 _logger.info("Successfully created {} OIDC RP Federation".format(federation.name))
+                self.needsRestart = True
             else:
                 _logger.error("Failed to create {} OIDC RP Federation with config:\n{}\n{}".format(
                         federation.name, json.dumps(federation, indent=4), rsp.data))
@@ -1365,15 +1388,6 @@ class FED_Configurator(object):
                     protocol: "SAML2_0"
                     role: "ip"
                     export_metadata: "idpmetadata.xml"
-                    webseal:
-                      name: default
-                      runtime:
-                          username: easuser
-                          password: secret
-                          hostname: isva-idp-runtime
-                          port: 9443
-                      reuse_acls: true
-                      reuse_certs: true
                     configuration:
                       company_name: "IdP Company"
                       point_of_contact_url: "https://www.myidp.ibm.com/isam"
@@ -1422,14 +1436,6 @@ class FED_Configurator(object):
         '''
         class Federation(typing.TypedDict):
 
-            class Webseal(typing.TypedDict):
-
-                reuse_acls: bool
-                'A flag to indicate that any existing ACLs with the same name should be reused. If they are not reused, they will be replaced.'
-                reuse_certs: bool
-                'If the SSL certificate has already been saved, this flag indicates that the certificate should be reused instead of overwritten.'
-                runtime: Federation_Common.Runtime
-                'Runtime server properties.'
 
             class Partner(typing.TypedDict):
                 name: str
@@ -1747,14 +1753,14 @@ class FED_Configurator(object):
             'List of XML metadata documents which define partners for a configured Federation.'
             export_metadata: typing.Optional[str]
             "Optional path to file to write Federation's XML metadata file to. eg: 'idpmetadata.xml'"
-            webseal: typing.Optional[Webseal]
-            'Optional properties for the webseal configuration wizard '
 
         federations: typing.List[Federation]
         'List of federations and associated partner properties.'
 
     def configure_federations(self, federation_config):
         if federation_config.federations != None:
+            #cache the list of rules we have configured
+            self.mapping_rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
             for federation in federation_config.federations:
                 method = {"SAML2_0": self._configure_saml_federation,
                           "OIDC10": self._configure_oidc_federation
@@ -1787,48 +1793,11 @@ class FED_Configurator(object):
                 if self.needsRestart == True:
                     deploy_pending_changes(self.factory, self.config) # Federations must be deployed before the WRP wizard can be run
                     self.needsRestart = False
-                if federation.webseal:
-                    fed_objs = optional_list(self.fed.federations.list_federations().json)
-                    fed_obj = optional_list(filter_list("name", federation.name, fed_objs))[0]
-                    #Run the WebSEAL config wizard
-                    methodArgs = {
-                            "federation_id": fed_obj.get("id", "MISSING_ID"),
-                            "reuse_acls": federation.webseal.reuse_acls,
-                            "reuse_certs": federation.webseal.reuse_certs
-                        }
-                    if federation.webseal.runtime:
-                        methodArgs.update({
-                                            "runtime_hostname": federation.webseal.runtime.hostname,
-                                            "runtime_port": federation.webseal.runtime.port,
-                                            "runtime_username": federation.webseal.runtime.username,
-                                            "runtime_password": federation.webseal.runtime.password
-                                        })
-                    rsp = self.factory.get_web_settings().reverse_proxy.configure_fed(
-                                                                                federation.webseal.name, **methodArgs)
-                    if rsp.success == True:
-                        self.needsRestart = True
-                        if self.restartWRPs == None:
-                            self.restartWRPs = [federation.webseal.name]
-                        else:
-                            self.restartWRPs += [federation.webseal.name]
-                        _logger.info("Successfully ran WebSEAL configuration for {} Federation on the {} reverse"
-                                     "proxy instance".format(federation.name, federation.webseal.name))
-                    else:
-                        _logger.error("Failed to run WebSEAL fed config  wizard for {} on reverse proxy instance {} "
-                                    "with config:\n{}\n{}".format(federation.name, federation.webseal.name, 
-                                                                  json.dumps(federation, indent=4), rsp.data))
+
 
     def final_restarts(self):
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config)
-        if self.restartWRPs != None and len(self.restartWRPs) > 0:
-            for wrp in self.restartWRPs:
-                rsp = self.factory.get_web_settings().reverse_proxy.restart_instance(wrp)
-                if rsp.success == True:
-                    _logger.info("Successfully restarted {} reverse proxy instance".format(wrp))
-                else:
-                    _logger.error("Failed to restart {} reverse proxy:\n{}".format(wrp, rsp.data))
-
 
     def configure(self):
         if self.config.federation == None:

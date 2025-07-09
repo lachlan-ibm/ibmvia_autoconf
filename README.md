@@ -1,34 +1,57 @@
 # IBM Verify Identity Access Configuration Automation
-This repository is used to configure IBM Verify Identity Access (IVIA), and IBM Security Verify Access (ISVA) using a yaml file of the required configuration. 
+This repository is used to configure IBM Verify Identity Access (IVIA), and IBM Security Verify Access (ISVA) using a 
+yaml file of the required configuration. 
 
-This project aims to be idempotent, ie if the configuration is run multiple times on the same appliance it should not break and should pick up any configuration changes in the yaml configuration file.
+This project aims to be idempotent, ie if the configuration is run multiple times on the same appliance it should not 
+break and should pick up any configuration changes in the yaml configuration file.
 
 
 ## Documentation
-Documentation for using this library can be found on [Verify Identity Access Automated Configurator's GitHub pages](https://lachlan-ibm.github.io/ibmvia_autoconf/index.html).
+Documentation for using this library can be found on 
+[Verify Identity Access Automated Configurator's GitHub pages](https://lachlan-ibm.github.io/ibmvia_autoconf/index.html).
 
 
 ## Example deployments
-To get started several example deployments are available in the [Examples](examples/) directory. The example yaml files must be updated with deployment specific parameters, usually this is network addresses and IVIA activation codes.
+To get started several example deployments are available in the [Examples](examples/) directory. The example yaml files 
+must be updated with deployment specific parameters, usually this is network addresses and IVIA activation codes.
 
 # Setup
 ## Environment
-- `IVIA_CONFIG_BASE` = directory which contains the YAML configuration file as well as any http template pages, PKI, mapping rules, ect.
-- *depreciated* `ISVA_CONFIG_BASE` = directory which contains the YAML configuration file as well as any http template pages, PKI, mapping rules, ect.
-- `IVIA_CONFIG_YAML` = path to IVIA configuration yaml file. Path should be relative to `IVIA_CONFIG_BASE`
-- *depreciated* `ISVA_CONFIG_YAML` = path to IVIA configuration yaml file. Path should be relative to `IVIA_CONFIG_BASE`
-- `IVIA_MGMT_BASE_URL` = address to access IVIA LMI, eg. https://\<isva appliance\>:\<isva port\>. This property can also be specified in the configuration yaml file. If present, this property will take precedence.
-- *depreciated* `ISVA_MGMT_BASE_URL` = address to access IVIA LMI, eg. https://\<isva appliance\>:\<isva port\>. This property can also be specified in the configuration yaml file. If present, this property will take precedence.
-- `IVIA_MGMT_USER` = The user to perform configuration as. If not supplied the `admin` user is used.
-- *depreciated* `ISVA_MGMT_USER` = The user to perform configuration as. If not supplied the `admin` user is used.
-- `IVIA_MGMT_PWD` = administrator password for the administrator account performing configuration. This property can also be specified in the configuration yaml file. If present, this property will take precedence.
-- *depreciated* `ISVA_MGMT_PWD` = administrator password for the administrator account performing configuration. This property can also be specified in the configuration yaml file. If present, this property will take precedence.
-- `IVIA_MGMT_OLD_PWD` = if a password change for the administrator account (eg. from the default) is required, the old password can be specified with this environment variable. If present the administrator's password will be changed from `MGMT_OLD_PASSWORD` to `MGMT_PASSWORD`
-- *depreciated* `ISVA_MGMT_OLD_PWD` = if a password change for the administrator account (eg. from the default) is required, the old password can be specified with this environment variable. If present the administrator's password will be changed from `MGMT_OLD_PASSWORD` to `MGMT_PASSWORD`
-- `IVIA_KUBERNETES_YAML_CONFIG` (optional) = path to Kubernetes configuration yaml for kubernetes deployments. 
-  - Note: If your kubernetes cluster requires mutual authentication (TLS) then a pem certificate file must also be available to IBM VIA Configurator
+- `IVIA_CONFIG_BASE` :: directory which contains the YAML configuration file as well as any http template pages, PKI, 
+                      mapping rules, ect.
+- *depreciated* `ISVA_CONFIG_BASE` = directory which contains the YAML configuration file as well as any http template 
+                      pages, PKI, mapping rules, ect.
+- `IVIA_CONFIG_YAML` :: path to IVIA configuration yaml file. Path should be relative to `IVIA_CONFIG_BASE`
+- *depreciated* `ISVA_CONFIG_YAML` :: path to IVIA configuration yaml file. Path should be relative to `IVIA_CONFIG_BASE`
+- `IVIA_MGMT_BASE_URL` :: address to access IVIA LMI, eg. https://\<isva appliance\>:\<isva port\>. This property can 
+                      also be specified in the configuration yaml file. If present, this property will take precedence.
+- *depreciated* `ISVA_MGMT_BASE_URL` :: address to access IVIA LMI, eg. https://\<isva appliance\>:\<isva port\>. This 
+                      property can also be specified in the configuration yaml file. If present, this property will 
+                      take precedence.
+- `IVIA_MGMT_USER` :: The user to perform configuration as. If not supplied the `admin` user is used.
+- *depreciated* `ISVA_MGMT_USER` :: The user to perform configuration as. If not supplied the `admin` user is used.
+- `IVIA_MGMT_PWD` :: administrator password for the administrator account performing configuration. This property can 
+                      also be specified in the configuration yaml file. If present, this property will take precedence.
+- *depreciated* `ISVA_MGMT_PWD` :: Password for the administrator account performing configuration. This 
+                      property can also be specified in the configuration yaml file. If present, this property will 
+                      take precedence.
+- `IVIA_MGMT_OLD_PWD` :: If a password change for the administrator account (eg. from the default) is required, the old 
+                      password can be specified with this environment variable. If present the administrator's password 
+                      will be changed from `MGMT_OLD_PASSWORD` to `MGMT_PASSWORD`
+- *depreciated* `ISVA_MGMT_OLD_PWD` :: if a password change for the administrator account (eg. from the default) is 
+                      required, the old password can be specified with this environment variable. If present the 
+                      administrator's password will be changed from `MGMT_OLD_PASSWORD` to `MGMT_PASSWORD`
+- `IVIA_KUBERNETES_YAML_CONFIG` (optional) :: path to Kubernetes configuration yaml for kubernetes deployments. 
+  - Note: If your kubernetes cluster requires mutual authentication (TLS) then a pem certificate file must also be 
+          available to IBM VIA Configurator
   - Note: When run from a Kubernetes cluster a Service Account can be used in place of a YAML configuration file
-- *depreciated* `ISVA_KUBERNETES_YAML_CONFIG` (optional) = path to Kubernetes configuration yaml for kubernetes deployments. 
+- *depreciated* `ISVA_KUBERNETES_YAML_CONFIG` (optional) :: path to Kubernetes configuration yaml for kubernetes 
+                      deployments. 
+- `IVIA_EXT_USER` :: The user to continue configuration as once the Management Authentication configuration has been 
+                      applied. This may be required if you are using an external LDAP registry or OIDC identity provider
+                      for management authentication. If external authentication has previously been configured, then
+                      the credentials should be set as the `IVIA_MGMT_USER` and `IVIA_MGMT_PWD` properties.
+- `IVIA_EXT_PWD` :: The administrator password (or API token) to authenticate to the IVIA LMI as `IVIA_EXT_USER`.
 
 ## Deployment
 ### Local environment
@@ -41,9 +64,12 @@ python -m ibmvia_autoconf
 ```
 
 ### Docker
-IBM Verify Identity Access Automated Configurator can also be run within a docker container. Use to [Dockerfile](Dockerfile) to build a local docker image.
+IBM Verify Identity Access Automated Configurator can also be run within a docker container. Use to 
+[Dockerfile](Dockerfile) to build a local docker image.
 
-The docker container can be built and run with the following command executed from the top level directory of the configurator source code. When starting the container the required environment variables must be set and the docker container must be able to route to the IVIA appliances/containers which are to be configured.
+The docker container can be built and run with the following command executed from the top level directory of the 
+configurator source code. When starting the container the required environment variables must be set and the docker 
+container must be able to route to the IVIA appliances/containers which are to be configured.
 
 ```
 docker build --no-cache --force-rm -t verify-identity-access-configurator .
@@ -57,10 +83,13 @@ docker run --volume /path/to/config/yaml:/config \
 
 
 ### Kubernetes
-IBM Verify Identity Access Automated Configurator can be run from within a Kubernetes cluster. This is useful if there are routing issues between the deployment host and the kubernetes external addresses this option will allow for configuration using the kubernetes internal network.
+IBM Verify Identity Access Automated Configurator can be run from within a Kubernetes cluster. This is useful if there 
+are routing issues between the deployment host and the kubernetes external addresses this option will allow for 
+configuration using the kubernetes internal network.
 
 Here is an example Kubernetes batch" object which deploys a container to apply a configuration to a cluster.
-> note This requires a user to create the `verify-config` ConfigMap object with the required configuration files plus any additional Secrets which are referenced as environment variables.
+> note This requires a user to create the `verify-config` ConfigMap object with the required configuration files plus 
+any additional Secrets which are referenced as environment variables.
 
 ```
 apiVersion: batch/v1

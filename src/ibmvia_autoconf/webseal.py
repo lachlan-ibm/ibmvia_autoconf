@@ -6,9 +6,10 @@
 import logging
 import json
 import typing
+import copy
 
 from .util.configure_util import deploy_pending_changes, config_base_dir
-from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, KUBE_CLIENT_SLEEP
+from .util.data_util import prefix_keys, Map, FILE_LOADER, optional_list, filter_list, KUBE_CLIENT_SLEEP
 
 
 _logger = logging.getLogger(__name__)
@@ -130,12 +131,22 @@ class WEB_Configurator(object):
 
 
     def _configure_federations(self, proxy_id, fed_config):
-        rsp = self.web.reverse_proxy.configure_fed(proxy_id, **fed_config )
-        if rsp.success == True:
-            _logger.info("Successfully ran federation configuration utility with")
-        else:
-            _logger.error("Federation configuration wizard did not run successfully with config:\n{}\n{}".format(
-                json.dumps(fed_config, indent=4), rsp.data))
+        federations = optional_list(
+                self.factory.get_federation().federations.list_federations().json)
+        for fc in fed_config:
+            #Convert federation name to uuid
+            fed_cfg = copy.deepcopy(fc)
+            fed_cfg['federation_id'] = optional_list(filter_list(
+                        'name', fed_cfg.pop('name', "MISSING"), federations))[0].get("id", "-1")
+            prefix_keys(fed_cfg, "runtime", "runtime_")
+            #Run the wizard
+            #_logger.debug("Federation wizard request {}".format(json.dumps(fed_cfg, indent=4)))
+            rsp = self.web.reverse_proxy.configure_fed(proxy_id, **fed_cfg)
+            if rsp.success == True:
+                _logger.info("Successfully ran federation configuration utility for {} federation.".format(fc.name))
+            else:
+                _logger.error("Federation configuration wizard did not run successfully with config:\n{}\n{}".format(
+                    json.dumps(fc, indent=4), rsp.data))
 
 
     def _configure_api_protection(self, proxy_id, api_config):
@@ -192,10 +203,6 @@ class WEB_Configurator(object):
     class Reverse_Proxy(typing.TypedDict):
         '''
         .. note:: Configuration to connect to the user registry is read from the ``webseal.runtime`` entry.
-
-        .. note:: Federations configured in ths step must already exist. If federations are being created and configured
-                  for WebSEAL at the same time then the reverse proxy configuration should be added to the federation
-                  configuration properties.
 
         Example::
 
@@ -286,6 +293,12 @@ class WEB_Configurator(object):
                 'Username to use for basic authentication.'
                 password: str
                 'Password to use for basic authentication.'
+                type: typing.Optional[str]
+                'Type of runtime. Valid values are "local" for local runtimes (appliance) and "remote" for external runtime (container). Default is "local"'
+                load_cert: typing.Optional[str]
+                'Read the X.509 Certificate from the runtime server\'s https endpoint. Default is "on" (read the cert)'
+                enable_mtls: typing.Optional[bool]
+                'Boolean option indicates if mutual TLS (client certificate) authentication should be performed with the runtime server. Default is `false`.'
 
             name: str
             'Name of the Federation.'
@@ -471,7 +484,7 @@ class WEB_Configurator(object):
         'Properties for configuring this reverse proxy instance for use with advanced access control authentication and context based access service.'
         mmfa_configuration: typing.Optional[MMFA_Configuration]
         'Properties for configuring this reverse proxy instance to deliver MMFA capabilities.'
-        federation_configuration: typing.Optional[Federation_Configuration]
+        federation_configuration: typing.Optional[typing.List[Federation_Configuration]]
         'Properties for integrating with a running Federation runtime.'
         api_protection_configuration: typing.Optional[ApiProtectionConfiguration]
         'Properties for integrating this reverse proxy with OIDC API Protection Clients.'
@@ -1084,7 +1097,8 @@ class WEB_Configurator(object):
         if pdadmcfg.reverse_proxies != None:
             for proxy in pdadmcfg.reverse_proxies:
                 self._pdadmin_proxy(runtime, proxy)
-        #deploy_pending_changes(self.factory, self.config)
+        if self.factory.is_docker() == True:
+            deploy_pending_changes(self.factory, self.config)
 
 
     class Client_Certificate_Mapping(typing.TypedDict):
@@ -1940,21 +1954,17 @@ class WEB_Configurator(object):
         if websealConfig.rsa_config != None:
             self.rsa(websealConfig.rsa_config)
 
-        if websealConfig.runtime != None:
-            self.runtime(websealConfig.runtime)
-            if websealConfig.reverse_proxy != None:
-                for proxy in websealConfig.reverse_proxy:
-                    self.wrp(websealConfig.runtime, proxy)
+        #if websealConfig.runtime != None: done in configure.py global config
+        #    self.runtime(websealConfig.runtime)
+        if websealConfig.reverse_proxy != None:
+            for proxy in websealConfig.reverse_proxy:
+                self.wrp(websealConfig.runtime, proxy)
 
-            if websealConfig.pdadmin != None:
-                self.pdadmin(websealConfig.runtime, websealConfig.pdadmin)
-            
-            if websealConfig.api_access_control != None:
-                self.api_access_control(websealConfig.runtime, websealConfig.api_access_control)
-
-        else:
-            _logger.info("No runtime configuration detected, unable to set up any reverse proxy config or run pdadmin commands")
-
+        if websealConfig.pdadmin != None:
+            self.pdadmin(websealConfig.runtime, websealConfig.pdadmin)
+        
+        if websealConfig.api_access_control != None:
+            self.api_access_control(websealConfig.runtime, websealConfig.api_access_control)
 
 if __name__ == "__main__":
         w = WEB_Configurator()

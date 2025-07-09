@@ -73,6 +73,26 @@ def mgmt_base_url(cfg=None):
     else:
         return os.environ.get(const.MGMT_URL_ENV_VAR, cfg.mgmt_base_url)
 
+
+def ext_user_creds(cfg=None):
+    user = None; secret = None
+    if const.MGMT_EXT_USER_ENV_VAR in os.environ.keys():
+        user = os.environ.get(const.MGMT_EXT_USER_ENV_VAR)
+    if const.MGMT_EXT_PWD_ENV_VAR in os.environ.keys():
+        secret = os.environ.get(const.MGMT_EXT_PWD_ENV_VAR)
+    if cfg and not user:
+        user = cfg.get('mgmt_ext_user', None)
+    if cfg and not secret:
+        secret = cfg.get('mgmt_ext_pwd', None)
+    if not secret: # Only require secret for API key
+        old_user, old_pwd = creds(cfg) # Fall back to existing creds
+        if not user:
+            user = old_user
+        if not secret:
+            secret = old_pwd
+    return (user, secret)
+
+
 def creds(cfg=None):
     user = None
     secret = None
@@ -92,7 +112,7 @@ def creds(cfg=None):
         if cfg == None:
             cfg = config_yaml()
         if user == None:
-            user = cfg.get('mgmt_user', "admin")
+            user = cfg.get('mgmt_user', None) # SSO requires username is null
         if secret == None:
             secret = cfg.get('mgmt_pwd', "admin")
     return (user, secret)
@@ -231,9 +251,19 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
         factory = pyivia.Factory(mgmt_base_url(isvaConfig), *creds(isvaConfig))
 
     factory.get_system_settings().configuration.deploy_pending_changes()
-    if factory.is_docker() == True and isvaConfig.container is not None:
-        factory.get_system_settings().docker.publish()
-        if restartContainers == True:
+    if factory.is_docker() == True:
+        published = False
+        for i in range(5):
+            try:
+                response = factory.get_system_settings().docker.publish()
+                if response.success == True:
+                    published = True
+                    break
+            except Exception as e:
+                _logger.exception(e)
+            _logger.warn(f"Failed to publish, retrying in 3 seconds (attempt {i + 1}/5)")
+            time.sleep(3) # TODO config option?
+        if published == True and restartContainers == True and isvaConfig.container != None:
             if isvaConfig.container.k8s_deployments is not None:
                 namespace = isvaConfig.container.k8s_deployments.namespace
                 #Are we restarting the containers or rolling out a restart to the deployment descriptor

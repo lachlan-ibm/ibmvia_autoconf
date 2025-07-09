@@ -1,0 +1,112 @@
+### OpenLDAP ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ivia-mmfa-openldap
+  labels:
+    app: ivia-mmfa-openldap
+spec:
+  selector:
+    matchLabels:
+      app: ivia-mmfa-openldap
+  replicas: 1 
+  revisionHistoryLimit: 1
+  template: 
+    metadata:
+      labels:
+        app: ivia-mmfa-openldap
+    spec:
+      volumes:
+        - name: keys
+          secret:
+            secretName: ivia-mmfa-ldap-keys
+      containers:
+        - name: ivia-mmfa-openldap
+          image: icr.io/isva/verify-access-openldap:10.0.6.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 636
+          env:
+            - name: LDAP_DOMAIN
+              value: ibm.com
+            - name: LDAP_ADMIN_PASSWORD
+              value: Passw0rd
+            - name: LDAP_CONFIG_PASSWORD
+              value: Passw0rd
+          volumeMounts:
+            - mountPath: /container/service/slapd/assets/certs
+              name: keys
+          args: ["--copy-service"]
+---
+# The service to connect to OpenLDAP. For external service access, see https://console.bluemix.net/docs/containers/cs_apps.html#cs_apps_public_nodeport
+apiVersion: v1
+kind: Service
+metadata:
+  name: ivia-mmfa-openldap
+  labels:
+    app: ivia-mmfa-openldap
+spec:
+  ports:
+    - port: 636
+      name: ldaps
+      protocol: TCP
+  selector:
+    app: ivia-mmfa-openldap
+---
+### PostgreSQL ###
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ivia-mmfa-postgresql
+  labels:
+    app: ivia-mmfa-postgresql
+spec:
+  selector:
+    matchLabels:
+      app: ivia-mmfa-postgresql
+  replicas: 1 
+  revisionHistoryLimit: 1
+  template: 
+    metadata:
+      labels:
+        app: ivia-mmfa-postgresql
+    spec:
+      volumes:
+        - name: ivia-mmfa-postgresqldata
+          emptyDir: {}
+        - name: keys
+          secret:
+            secretName: ivia-mmfa-pgsql-keys
+      containers:
+        - name: ivia-mmfa-postgresql
+          image: icr.io/ivia/ivia-postgresql:11.0.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: Passw0rd
+            - name: POSTGRES_DB
+              value: isam
+            - name: POSTGRES_SSL_KEYDB
+              value: /var/local/server.crt
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: ivia-mmfa-postgresqldata
+            - mountPath: /var/local
+              name: keys
+---
+# The service to connect to Postgresql. Note this is a cluster ip service only.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ivia-mmfa-postgresql
+spec:
+  ports:
+    - port: 5432
+      name: ivia-mmfa-postgresql
+      protocol: TCP
+  selector:
+    app: ivia-mmfa-postgresql

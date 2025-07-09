@@ -90,18 +90,6 @@ defined requirements (such as device registration status, ip reputation, authent
    :members:
 
 
-Risk Profiles
-=============
-Risk profiles provide administrators with a mechanism to calculate the "risk" of an authentication request
-based on administrator-defined attributes. For example: creating a risk profile which examines the IPv4 
-address of an incoming request to identify the location (continent, country, region, etc.) that the request
-is coming from, and conditionally enforcing addition authentication requirements for more "risky" requests.
-
-
-.. autoclass:: src.ibmvia_autoconf.access_control.AAC_Configurator.Risk_Profiles
-   :members:
-
-
 Attributes
 ==========
 Attributes allow an administrator to source information about a user from a number of different sources

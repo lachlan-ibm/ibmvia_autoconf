@@ -1,3 +1,14 @@
+kind: PersistentVolumeClaim
+metadata:
+  name: ivia-fed-autoconf-pvc
+spec:
+  storageClassName: microk8s-hostpath
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -7,31 +18,37 @@ spec:
     spec:
       containers:
       - name: verify-identity-access-configurator
-        image: autoconf:latest
+        image: registry.access.redhat.com/ubi9/python-312
         imagePullPolicy: Never
         volumeMounts:
         - name: fedconfigvol
-          mountPath: /verify_access_config
+          mountPath: /config
         command:
         - "bash"
         - "-c"
         - |
-          echo "Starting SP Config"
-          IVIA_CONFIG_YAML=federation_idp.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
+          pip install ibmvia_autoconf
+
+          until [ -f /config/ready ]; do
+            echo "Waiting for config files to be copied across to PVC"
+            sleep 3
+          done
+          cd /config
+          echo "Starting IDP Config"
+          IVIA_CONFIG_YAML=federation_idp.yaml IVIA_MGMT_BASE_URL=https://ivia-fed-idp-config:9443 python3 -m ibmvia_autoconf;
           echo "Starting SP Config" && sleep 10;
-          IVIA_CONFIG_YAML=federation_sp.yaml IVIA_MGMT_BASE_URL=https://isva-sp-config:9443 python3 -m ibmvia_autoconf;
+          IVIA_CONFIG_YAML=federation_sp.yaml IVIA_MGMT_BASE_URL=https://ivia-fed-sp-config:9443 python3 -m ibmvia_autoconf;
           echo "Starting IDP partner Config" && sleep 10;
-          IVIA_CONFIG_YAML=federation_idp_partner.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf;
+          IVIA_CONFIG_YAML=federation_idp_partner.yaml IVIA_MGMT_BASE_URL=https://ivia-fed-idp-config:9443 python3 -m ibmvia_autoconf;
+
         envFrom:
         - secretRef:
             name: fed-env
       restartPolicy: Never
       volumes:
-      - name: fed-config
-        configMap:
-          name: fed-config
-      - name: fedconfigvol
-        emptyDir: {}
+      - name: ivia-fed-autoconf-pvc
+        persistentVolumeClaim:
+          claimName: ivia-fed-autoconf-pvc
       initContainers:
       - name: config-volume-builder
         image: autoconf:latest

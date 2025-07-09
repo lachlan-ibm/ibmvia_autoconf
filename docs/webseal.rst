@@ -37,7 +37,7 @@ Example
                       enabled: "yes"
                     domain: "Default"
                     ldap:
-                      ssl_yn: "yes"
+                      ssl: "yes"
                       port: 636
                       key_file: "lmi_trust_store"
                     aac_configuration:
@@ -91,9 +91,11 @@ Runtime Configuration Wizards
 _____________________________
 Every WebSEAL instance can optional provide more advanced authentication and authorization logic by integrating 
 the Advanced Access Control runtime server as an External Authentication Interface (EAI). To simplify this configuration,
-a number of wizards are available for :ref:`Access Control<>access-control.rst#Context Based Access Control`, :ref:`Federations<federations.rst#Federations>` 
-and :ref:`Mobile Multi-Factor Authentication<access-control.rst#Mobile Multi-Factor Authentication>`
+a number of wizards are available for :ref:`Access Control <Context Based Access Control>`, :ref:`Authentication <Authentication>`
+, :ref:`Federations <Federations>` and :ref:`Mobile Multi-Factor Authentication <Mobile Multi-Factor Authentication>`.
 
+Reverse Proxy
+_____________
 
 .. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Reverse_Proxy
    :members:
@@ -284,6 +286,8 @@ _____________________________
 The CORS properties can be used to configure the URI's which are permitted to make cross-origin resource requests as 
 well as the types of resources which are permitted to be shared.
 
+APIAC
+_____
 
 .. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Api_Access_Control
    :members:

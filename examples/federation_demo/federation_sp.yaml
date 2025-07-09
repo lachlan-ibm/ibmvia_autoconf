@@ -1,17 +1,26 @@
+mgmt_user: admin
+mgmt_pwd: !secret default/ivia-fed-autoconf-env:ISVA_MGMT_PWD
+mgmt_old_pwd: !secret default/ivia-fed-autoconf-env:ISVA_MGMT_OLD_PWD
 container:
   admin_cfg:
     session_timeout: 720
-  management_authorization:
-    authorization_enforcement: True
-    roles:
-    - operation: "update"
-      name: "Configuration Service"
-      users:
-      - name: "cfgsvc"
-        type: "local"
-      features:
-      - name: "shared_volume"
-        access: "w"
+  account_management:
+    users:
+    - name: "lgleeson@au1.ibm.com"
+      operation: "add"
+      password: !secret default/ivia-fed-autoconf-env:ISVA_MGMT_PWD
+    - name: "cfgsvc"
+      operation: "update"
+      password: !secret default/ivia-fed-autoconf-env:ISVA_MGMT_PWD
+    - name: "testuser"
+      operation: "add"
+      password: !secret default/ivia-fed-autoconf-env:ISVA_MGMT_PWD
+    - name: "adminuser"
+      operation: "add"
+      password: !secret default/ivia-fed-autoconf-env:ISVA_MGMT_PWD
+    - name: "dbadmin"
+      operation: "add"
+      password: !secret default/ivia-fed-autoconf-env:ISVA_MGMT_PWD
   ssl_certificates:
   - name: "lmi_trust_store"
     signer_certificates:
@@ -20,28 +29,36 @@ container:
   - name: "rt_profile_keys"
     signer_certificates:
     - "postgresql.pem"
-    load_certificates:
-    - label: "OP WebSEAL Cert"
-      server: "isva-idp-webseal"
-      port: 9443
+    personal_certificates:
+    - p12_file: "spkeys.p12"
+      name: myspkey
+      secret: !secret default/ivia-fed-autoconf-env:SPKEYSP12_SECRET
   - name: "myspkeys"
     personal_certificates:
     - p12_file: "spkeys.p12"
       name: myspkey
-      password: !environment SPKEYSP12_SECRET
+      secret: !secret default/ivia-fed-autoconf-env:SPKEYSP12_SECRET
+  - name: "pdsrv"
+    personal_certificates:
+    - p12_file: "idpkeys.p12"
+      name: myidpkey
+      secret: !secret default/ivia-fed-autoconf-env:IDPKEYSP12_SECRET
+    - p12_file: "spkeys.p12"
+      name: myspkey
+      secret: !secret default/ivia-fed-autoconf-env:SPKEYSP12_SECRET
+    signer_certificates:
+    - "ssl_certificates"
   cluster:
     runtime_database:
-      host: !environment SP_HVDB_HOST
-      port: !environment HVDB_PORT
+      host: !secret default/ivia-fed-autoconf-env:SP_HVDB_HOST
+      port: !secret default/ivia-fed-autoconf-env:HVDB_PORT
       type: "postgresql"
-      user: !environment HVDB_USER
-      password: !environment HVDB_PW
+      user: !secret default/ivia-fed-autoconf-env:HVDB_USER
+      password: !secret default/ivia-fed-autoconf-env:HVDB_PW
       ssl: True
       db_name: "isva"
   activation: #Activation codes
-    webseal: !environment IVIA_BASE_CODE
-    access_control: !environment IVIA_AAC_CODE
-    federation: !environment IVIA_FED_CODE
+    trial_license: "ISAM-Trial-IBM.cer"
   mapping_rules:
   - type: "saml2"
     files:
@@ -55,7 +72,11 @@ container:
   - name: "live.demos.enabled"
     value: "true"
   - name: "live.demos.settings"
-    value: !environment SP_LIVE_DEMO_CONFIG
+    value: !secret default/ivia-fed-autoconf-env:SP_LIVE_DEMO_CONFIG
+  - name: "sps.authsvcTargetURLAllowList"
+    value: "https://www.mysp.ibm.com/mga/.*"
+  - name: "sps.targetURLWhitelist"
+    value: "https://www.mysp.ibm.com/.*,/isam/.*"
   point_of_contact:
     active_profile: "Non-Access Manager Username, Access Manager groups and extended attributes"
 webseal:
@@ -63,20 +84,20 @@ webseal:
     policy_server: "ldap"
     user_registry: "ldap"
     ldap:
-      host: !environment SP_LDAP_HOST
-      port: !environment LDAP_PORT
-      dn: !environment LDAP_BIND_DN
-      dn_password: !environment LDAP_BIND_PW
+      host: !secret default/ivia-fed-autoconf-env:SP_LDAP_HOST
+      port: !secret default/ivia-fed-autoconf-env:LDAP_PORT
+      dn: !secret default/ivia-fed-autoconf-env:LDAP_BIND_DN
+      dn_password: !secret default/ivia-fed-autoconf-env:LDAP_BIND_PW
       key_file: "lmi_trust_store"
     clean_ldap: True
     domain: "Default"
     admin_user: "sec_master"
-    admin_password: !environment LDAP_SEC_PW
+    admin_password: !secret default/ivia-fed-autoconf-env:LDAP_SEC_PW
     admin_cert_lifetime: 1460
     ssl_compliance: "fips"
   reverse_proxy:
   - name: "default"
-    host: "isva-sp-webseal"
+    host: "www.mysp.ibm.com"
     http:
       enabled: "no"
     https:
@@ -84,12 +105,53 @@ webseal:
     domain: "Default"
     ldap:
       ssl: "yes"
-      port: !environment LDAP_PORT
+      port: !secret default/ivia-fed-autoconf-env:LDAP_PORT
       key_file: "lmi_trust_store"
+    federation_configuration:
+    - name: "saml20sp"
+      runtime:
+        username: !secret default/ivia-fed-autoconf-env:RUNTIME_USER
+        password: !secret default/ivia-fed-autoconf-env:RUNTIME_PASSWORD
+        hostname: !secret default/ivia-fed-autoconf-env:SP_RT_HOST
+        port: 9443
+        type: "remote"
+      reuse_acls: true
+      reuse_certs: true
+    - name: "isvarp"
+      runtime:
+        username: !secret default/ivia-fed-autoconf-env:RUNTIME_USER
+        password: !secret default/ivia-fed-autoconf-env:RUNTIME_PASSWORD
+        hostname: !secret default/ivia-fed-autoconf-env:SP_RT_HOST
+        port: 9443
+        type: "remote"
+      reuse_acls: true
+      reuse_certs: true
+    - name: "isvarp_implicit"
+      runtime:
+        username: !secret default/ivia-fed-autoconf-env:RUNTIME_USER
+        password: !secret default/ivia-fed-autoconf-env:RUNTIME_PASSWORD
+        hostname: !secret default/ivia-fed-autoconf-env:SP_RT_HOST
+        port: 9443
+        type: "remote"
+      reuse_acls: true
+      reuse_certs: true
+    - name: "isvarp_code"
+      runtime:
+        username: !secret default/ivia-fed-autoconf-env:RUNTIME_USER
+        password: !secret default/ivia-fed-autoconf-env:RUNTIME_PASSWORD
+        hostname: !secret default/ivia-fed-autoconf-env:SP_RT_HOST
+        port: 9443
+        type: "remote"
+      reuse_acls: true
+      reuse_certs: true
     stanza_configuration:
+    - stanza: "ssl"
+      entry_id: "webseal-cert-keyfile-label"
+      value: "CN=www.mysp.ibm.com,OU=Security,O=IBM,C=AU"
+      operation: "update"
     - stanza: "server"
       entry_id: "web-host-name"
-      value: "www.mysp.ibm.com"
+      value: "CN=www.mysp.ibm.com,OU=Security,O=IBM,C=AU"
       operation: "update"
     - stanza: "step-up"
       entry_id: "verify-step-up-user"
@@ -110,29 +172,94 @@ webseal:
     - stanza: "junction:/isam"
       operation: "add"
     - stanza: "junction:/isam"
-      operation: "add"
+      operation: "update"
       entry_id: "reset-cookies-list"
       value: "*ac.uuid,*JSESSIONID"
+    - stanza: "oidc"
+      entry_id: "oidc-auth"
+      value: "https"
+      operation: "update"
+    - stanza: "oidc:default"
+      operation: "add"
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "redirect-uri-host"
+      value: "www.mysp.ibm.com"
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "discovery-endpoint"
+      value: "https://www.myidp.ibm.com/mga/sps/oauth/oauth20/metadata/OIDCDefinition"
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "client-id"
+      value: !secret default/ivia-fed-autoconf-env:WEBSEAL_OIDC_CLIENT_ID
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "client-secret"
+      value: !secret default/ivia-fed-autoconf-env:WEBSEAL_OIDC_CLIENT_SECRET
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "response-type"
+      value: "id_token token"
+    - stanza: "oidc:default"
+      operation: "add"
+      entry_id: "mapped-identity"
+      value: "{iss}/{sub}"
+    - stanza: "oidc:default"
+      operation: "update"
+      entry_id: "external-user"
+      value: "true"
+    - stanza: "local-apps"
+      entry_id: "cred-viewer"
+      value: "cred"
+      operation: "update"
+    - stanza: "acnt-mgt"
+      operation: "update"
+      entry_id: "http-rsp-header"
+      value: "content-security-policy:TEXT{default-src 'self' 'unsafe-inline'; frame-ancestors 'self'; form-action 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; 'unsafe-inline';}"
   pdadmin:
+    acls:
+    - name: "default-webseal-unauth"
+      groups:
+      - name: "iv-admin"
+        permissions: "TcmdbsvaBRrxl"
+      - name: "webseal-servers"
+        permissions: "Tgmdbsrxl"
+      users:
+      - name: "sec_master"
+        permissions: "TcmdbsvaBRrxl"
+      any_other: "Tr"
+      unauthenticated: "Tr"
     users:
     - username: "anonymous"
       dn: "cn=anonymous,dc=ibm,dc=com"
-      password: !environment FED_ANON_PASSWORD
+      password: !secret default/ivia-fed-autoconf-env:FED_ANON_PASSWORD
     - username: "testuser"
       dn: "cn=testuser,dc=ibm,dc=com"
-      password: !environment TEST_PASSWORD
+      password: !secret default/ivia-fed-autoconf-env:TEST_PASSWORD
     groups:
     - name: "testgroup"
       dn: "cn=testgroup,dc=ibm,dc=com"
     - name: "testgroup2"
       dn: "cn=testgroup2,dc=ibm,dc=com"
     reverse_proxies:
-    - host: "isva-sp-webseal"
+    - host: "www.mysp.ibm.com"
       instance: "default"
       acls:
       - name: "default-webseal"
         junctions:
         - "/isam/mobile-demo"
+      - name: "default-webseal-unauth"
+        junctions:
+        - "/isam/mobile-demo/theme"
+        - "/isam/mobile-demo/oauth/oauth2Client.jsp"
+    objects:
+    - hostname: "www.mysp.ibm.com"
+      instance: "default"
+      junction: "/isam/mobile-demo"
+      attributes:
+      - key: "HTTP-Tag-Value"
+        value: "AUTHENTICATION_LEVEL=authentication_level"
 federation:
   federations:
   - name: "saml20sp"
@@ -142,18 +269,9 @@ federation:
     - name: "idp_partner"
       metadata: "idpmetadata.xml"
     export_metadata: "spmetadata.xml"
-    webseal:
-      name: default
-      runtime:
-        username: !environment RUNTIME_USER
-        password: !environment RUNTIME_PASSWORD
-        hostname: isva-sp-runtime
-        port: 9443
-      reuse_acls: true
-      reuse_certs: true
     configuration:
       company_name: "SP Company"
-      point_of_contact_url: "https://www.mysp.ibm.com/isam"
+      point_of_contact_url: "https://www.mysp.ibm.com/isam/sps"
       assertion_settings:
         valid_before: 300
         valid_after: 300
@@ -167,7 +285,10 @@ federation:
           sign_logout_response: true
         signing_key_identifier:
           store: "myspkeys"
-          label: "CN=sp,OU=Security,O=IBM,C=AU"
+          label: "CN=www.mysp.ibm.com,OU=Security,O=IBM,C=AU"
+        validation_key_identifier:
+          store: "myspkeys"
+          label: "CN=www.mysp.ibm.com,OU=Security,O=IBM,C=AU"
         key_info_elements:
           include_x509_certificate_data: true
           include_x509_subject_name: false
@@ -195,21 +316,14 @@ federation:
       encryption_settings:
         decryption_key_identifier:
           store: "myspkeys"
-          label: "CN=sp,OU=Security,O=IBM,C=AU"
+          label: "CN=www.mysp.ibm.com,OU=Security,O=IBM,C=AU"
       message_valid_time: 300
       session_timeout: 7200
   - name: "isvarp"
     protocol: "OIDC10"
     role: "rp"
-    webseal:
-      name: default
-      runtime:
-        username: !environment RUNTIME_USER
-        password: !environment RUNTIME_PASSWORD
-        hostname: isva-sp-runtime
-        port: 9443
     configuration:
-      redirect_uri_prefix: "https://www.mysp.ibm.com/mga"
+      redirect_uri_prefix: "https://www.mysp.ibm.com/isam"
       response_types:
       - "code"
       - "id_token"
@@ -226,11 +340,11 @@ federation:
       enabled: True
       role: "rp"
       configuration:
-        client_id: "clientID"
-        client_secret: "clientSecret"
+        client_id: !secret default/ivia-fed-autoconf-env:OIDC_CLIENT_ID
+        client_secret: !secret default/ivia-fed-autoconf-env:OIDC_CLIENT_SECRET
         basic_configuration:
           active_delegate_id: "metadataEndpointUrl"
-          metadata_endpoint_url: "https://isva-idp-webseal:9443/mga/sps/oauth/oauth20/metadata/OIDCDefinition"
+          metadata_endpoint_url: "https://www.myidp.ibm.com/mga/sps/oauth/oauth20/metadata/OIDCDefinition"
         scope:
         - "openid"
         signature_algorithm: "RS256"
@@ -240,15 +354,8 @@ federation:
   - name: "isvarp_implicit"
     protocol: "OIDC10"
     role: "rp"
-    webseal:
-      name: default
-      runtime:
-        username: !environment RUNTIME_USER
-        password: !environment RUNTIME_PASSWORD
-        hostname: isva-sp-runtime
-        port: 9443
     configuration:
-      redirect_uri_prefix: "https://www.mysp.ibm.com/mga"
+      redirect_uri_prefix: "https://www.mysp.ibm.com/isam"
       response_types:
       - "id_token"
       - "token"
@@ -264,11 +371,11 @@ federation:
       enabled: True
       role: "rp"
       configuration:
-        client_id: "clientID"
-        client_secret: "clientSecret"
+        client_id: !secret default/ivia-fed-autoconf-env:OIDC_CLIENT_ID
+        client_secret: !secret default/ivia-fed-autoconf-env:OIDC_CLIENT_SECRET
         basic_configuration:
           active_delegate_id: "metadataEndpointUrl"
-          metadata_endpoint_url: "https://isva-idp-webseal:9443/mga/sps/oauth/oauth20/metadata/OIDCDefinition"
+          metadata_endpoint_url: "https://www.myidp.ibm.com/mga/sps/oauth/oauth20/metadata/OIDCDefinition"
         scope:
         - "openid"
         signature_algorithm: "RS256"
@@ -278,15 +385,8 @@ federation:
   - name: "isvarp_code"
     protocol: "OIDC10"
     role: "rp"
-    webseal:
-      name: default
-      runtime:
-        username: !environment RUNTIME_USER
-        password: !environment RUNTIME_PASSWORD
-        hostname: isva-sp-runtime
-        port: 9443
     configuration:
-      redirect_uri_prefix: "https://www.mysp.ibm.com/mga"
+      redirect_uri_prefix: "https://www.mysp.ibm.com/isam"
       response_types:
       - "code"
       identity_mapping:
@@ -301,11 +401,11 @@ federation:
       enabled: True
       role: "rp"
       configuration:
-        client_id: "clientID"
-        client_secret: "clientSecret"
+        client_id: !secret default/ivia-fed-autoconf-env:OIDC_CLIENT_ID
+        client_secret: !secret default/ivia-fed-autoconf-env:OIDC_CLIENT_SECRET
         basic_configuration:
           active_delegate_id: "metadataEndpointUrl"
-          metadata_endpoint_url: "https://isva-idp-webseal:9443/mga/sps/oauth/oauth20/metadata/OIDCDefinition"
+          metadata_endpoint_url: "https://www.myidp.ibm.com/mga/sps/oauth/oauth20/metadata/OIDCDefinition"
         scope:
         - "openid"
         signature_algorithm: "RS256"

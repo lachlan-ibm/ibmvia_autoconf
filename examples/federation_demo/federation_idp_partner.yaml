@@ -1,3 +1,6 @@
+mgmt_user: admin
+mgmt_pwd: !secret default/ivia-fed-autoconf-env:ISVA_MGMT_PWD
+mgmt_old_pwd: !secret default/ivia-fed-autoconf-env:ISVA_MGMT_OLD_PWD
 federation:
   federations:
   - name: "saml20idp"

@@ -117,7 +117,7 @@ The cluster configuration options can be used to add additional servers to the V
  external databases (HVDB and config) as well as Verify Identity Identity Access HA servers are supported.
 
 This option is typically used in a container deployment to configure the HVDB connection. A complete list of the available 
-configuration properties can be found :ref:`here <pyivia:systemsettings#cluster>`. 
+configuration properties can be found `here <https://lachlan-ibm.github.io/pyivia/systemsettings.html#cluster>`_. 
 
     .. note:: PKI required to connect to any servers should be imported in the previous step.
 

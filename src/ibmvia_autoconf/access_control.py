@@ -39,6 +39,17 @@ class AAC_Configurator(object):
         else:
             return None
 
+    def _access_policy_to_id(self, rule_name):
+        '''
+        Helper method to convert rule name to Verify Identity Access ID
+        '''
+        rules = optional_list(self.factory.get_federation().access_policy.list_policies().json)
+        mapping_rule = optional_list(filter_list('name', rule_name, rules))[0]
+        if mapping_rule:
+            return int(mapping_rule['id'])
+        else:
+            return None
+
     class Push_Notification_Provider(typing.TypedDict):
         '''
         Example::
@@ -1316,7 +1327,7 @@ class AAC_Configurator(object):
                 attrs += [{"attributeName": attrSrc.name, "attributeSourceId": attrSrcId}]
             methodArgs.update({"attribute_sources": attrs})
         if definition.access_policy:
-            methodArgs["access_policy_id"] = self._mapping_rule_to_id(definition.access_policy)
+            methodArgs["access_policy_id"] = self._access_policy_to_id(definition.access_policy)
         rsp = self.aac.api_protection.create_definition(**methodArgs)
         if rsp.success == True:
             self.needsRestart = True
@@ -1342,11 +1353,12 @@ class AAC_Configurator(object):
                         _logger.error("Failed to upload {} {}".format(definition.name, rulePrettyName))
 
     def _configure_api_protection_client(self, definitions, client):
+        methodArgs = copy.deepcopy(client)
         apiDefId = optional_list(filter_list('name', client.definition, definitions))[0].get('id', "NULL")
-        rsp = self.aac.api_protection.create_client(name=client.name, redirect_uri=client.redirect_uri,
-                company_name=client.company_name, company_url=client.company_url, contact_person=client.contact_person,
-                contact_type=client.contact_type, email=client.email, phone=client.phone, other_info=client.other_info,
-                definition=apiDefId, client_id=client.client_id, client_secret=client.client_secret)
+        methodArgs['definition'] = apiDefId
+        if 'require_pkce' in methodArgs.keys():
+            methodArgs['require_pkce_verification'] = methodArgs.pop('require_pkce')
+        rsp = self.aac.api_protection.create_client(**methodArgs)
         if rsp.success == True:
             self.needsRestart = True
             _logger.info("Successfully created {} API Protection client.".format(client.name))
