@@ -263,7 +263,7 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
                 _logger.exception(e)
             _logger.warn(f"Failed to publish, retrying in 3 seconds (attempt {i + 1}/5)")
             time.sleep(3) # TODO config option?
-        if published and restartContainers == True:
+        if published == True and restartContainers == True and isvaConfig.container != None:
             if isvaConfig.container.k8s_deployments is not None:
                 namespace = isvaConfig.container.k8s_deployments.namespace
                 #Are we restarting the containers or rolling out a restart to the deployment descriptor
