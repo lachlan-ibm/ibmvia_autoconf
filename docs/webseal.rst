@@ -286,6 +286,8 @@ _____________________________
 The CORS properties can be used to configure the URI's which are permitted to make cross-origin resource requests as 
 well as the types of resources which are permitted to be shared.
 
+APIAC
+_____
 
 .. autoclass:: src.ibmvia_autoconf.webseal.WEB_Configurator.Api_Access_Control
    :members:
