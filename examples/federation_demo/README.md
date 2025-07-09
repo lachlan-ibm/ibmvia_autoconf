@@ -173,17 +173,13 @@ kubectl create -f federation_demo_deployment.yaml
 ## Running the configuration tool
 
 ### Required files
-This deployment example relied on a number of additional configuration files in order to be deployed
+This deployment example relies on a number of additional configuration files in order to be deployed
 successfully. The required files include:
 
-- mapping_rules.zip
-- idpkeys.p12
-- spkeys.p12
-- postgresql.pem
-- ldap.pem
-- idp.pem
-- sp.pem
-- fed.env
+- JavaScript mapping rule: `mapping_rules.zip`
+- PKCS12 Keystores: `idpkeys.p12` and `spkeys.p12`
+- X.509 Certificates: `postgresql.pem`, `ldap.pem`, `idp.pem` and `sp.pem`
+- Environments secrets: `fed.env`
 
 The mapping rule files can be downloaded from the [federation demo] (https://www.github.com/lachlan-ibm) 
 directory. The X.509 certificates (and corresponding keys) and `fed.env` should be generated and deployed to
@@ -199,6 +195,7 @@ The final two stages configures the IDP and SP partner relationships between the
 This can all be done using a Kubernetes Job, which can run the required configuration sequentially.
 
 #### Configure IDP
+Set up the Identity Provider (IdP).
 
 ```bash
 source fed.env
@@ -210,6 +207,7 @@ python3 -m ibmvia_autoconf | tee idp_config.log
 
 
 #### Configure SP
+Set up the Service Provider (SP).
 
 ```bash
 source fed.env
@@ -220,6 +218,7 @@ python3 -m ibmvia_autoconf | tee sp_config.log
 ```
 
 #### Configure IDP partner
+Import the Service Provider's SAML 2.0 Partner metadata document to the IdP.
 
 ```bash
 source fed.env
@@ -232,8 +231,11 @@ python3 -m ibmvia_autoconf | tee idp_partner.log
 
 
 ### Kubernetes job to run all configuration with PVC for MicroK8s
+The following YAML fragment performs the above configuration steps as a Kubernetes job. It uses the 
+Universal Base Image as the base container, it also unpacks some of the configuration files from
+archive
 
-```
+```yaml
 kind: PersistentVolumeClaim
 metadata:
   name: ivia-autoconf-pvc
@@ -254,7 +256,7 @@ spec:
     spec:
       containers:
       - name: verify-identity-access-configurator
-        image: registry.access.redhat.com/ubi9/python-312
+        image: registry.access.redhat.com/ubi9/ubi-minimal
         imagePullPolicy: Never
         volumeMounts:
         - name: fedconfigvol
@@ -263,6 +265,7 @@ spec:
         - "bash"
         - "-c"
         - |
+          microdnf -y install python3 python3-pip
           pip install ibmvia_autoconf
           echo "Starting IDP Config"
           IVIA_CONFIG_YAML=federation_idp.yaml IVIA_MGMT_BASE_URL=https://isva-idp-config:9443 python3 -m ibmvia_autoconf | tee /verify_access_config/idp_config.log
@@ -283,7 +286,7 @@ spec:
           claimName: ivia-mmfa-autoconf-pvc
       initContainers:
       - name: config-volume-builder
-        image: registry.access.redhat.com/ubi9/python-312
+        image: registry.access.redhat.com/ubi9/ubi-minimal
         imagePullPolicy: Never
         volumeMounts:
         - mountPath: /verify_access_config
@@ -294,6 +297,7 @@ spec:
         - "bash"
         - "-c"
         - |
+          microdnf -y install unzip
           cp /tmp/fed_config/*.{p12,pem,yaml} /verify_access_config/
           unzip /tmp/fed_config/mapping_rules.zip -d /verify_access_config/
   backoffLimit: 2
