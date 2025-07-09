@@ -204,10 +204,6 @@ class WEB_Configurator(object):
         '''
         .. note:: Configuration to connect to the user registry is read from the ``webseal.runtime`` entry.
 
-        .. note:: Federations configured in ths step must already exist. If federations are being created and configured
-                  for WebSEAL at the same time then the reverse proxy configuration should be added to the federation
-                  configuration properties.
-
         Example::
 
                   reverse_proxy:

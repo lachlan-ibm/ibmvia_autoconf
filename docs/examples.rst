@@ -118,7 +118,7 @@ include:
 - Update the default WebSEAL login page to use AAC
 
 You can run this configuration script on a deployment which has already been activated / licensed, eg.
-by running :ref:`First Steps`.
+by running :ref:`First Steps (container deployment)`.
 
 The deployment can be tested with the ``testuser`` IVIA user account. The user is created in the reverse 
 proxy user registry, and can have password control and other account management capabilities applied.
