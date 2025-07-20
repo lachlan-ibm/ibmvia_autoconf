@@ -1262,8 +1262,8 @@ class WEB_Configurator(object):
             for http_transform_file_pointer in rules:
                 http_transform_files = FILE_LOADER.read_files(http_transform_file_pointer)
                 for http_transform_file in http_transform_files:
-                    rsp = self.web.http_transform.create(name=http_transform_file['name'], template=key.rstrip('s'),
-                            contents=http_transform_file['contents'])
+                    rsp = self.web.http_transform.create(name=http_transform_file['name'], 
+                                                     contents=http_transform_file['contents'].decode())
                     if rsp.success == True:
                         _logger.info("Successfully created {} HTTP transform rule".format(http_transform_file['name']))
                     else:

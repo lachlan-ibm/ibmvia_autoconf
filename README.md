@@ -28,8 +28,10 @@ must be updated with deployment specific parameters, usually this is network add
 - *depreciated* `ISVA_MGMT_BASE_URL` :: address to access IVIA LMI, eg. https://\<isva appliance\>:\<isva port\>. This 
                       property can also be specified in the configuration yaml file. If present, this property will 
                       take precedence.
-- `IVIA_MGMT_USER` :: The user to perform configuration as. If not supplied the `admin` user is used.
-- *depreciated* `ISVA_MGMT_USER` :: The user to perform configuration as. If not supplied the `admin` user is used.
+- `IVIA_MGMT_USER` :: The user to perform configuration as. If not supplied then the provided password is used as an API 
+                      access token.
+- *depreciated* `ISVA_MGMT_USER` :: The user to perform configuration as. If not supplied then the provided password is 
+                      used as an API access token.
 - `IVIA_MGMT_PWD` :: administrator password for the administrator account performing configuration. This property can 
                       also be specified in the configuration yaml file. If present, this property will take precedence.
 - *depreciated* `ISVA_MGMT_PWD` :: Password for the administrator account performing configuration. This 

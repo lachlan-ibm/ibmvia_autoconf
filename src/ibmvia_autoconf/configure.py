@@ -20,7 +20,7 @@ from .util.data_util import FILE_LOADER, optional_list, KUBE_CLIENT_SLEEP
 from .util.configure_util import deploy_pending_changes, creds, old_creds, ext_user_creds, mgmt_base_url, config_yaml
 from .util.constants import HEADERS, LOG_LEVEL
 
-logging.basicConfig(stream=sys.stdout, level=os.environ.get(LOG_LEVEL, logging.DEBUG))
+logging.basicConfig(stream=sys.stdout, level=os.environ.get(LOG_LEVEL, logging.INFO))
 _logger = logging.getLogger(__name__)
 
 class IVIA_Configurator(object):
@@ -267,7 +267,7 @@ class IVIA_Configurator(object):
         personal_parsed_file = optional_list(FILE_LOADER.read_file(cert.p12_file))[0]
         rsp = ssl.import_personal(db_name, 
                                     file_path=os.path.abspath(personal_parsed_file['path']), 
-                                    password=cert.get("secret", ""))
+                                    password=cert.get("secret", ""), label=cert.name)
         if rsp.success == True:
             _logger.info("Successfully uploaded {} personal certificate to {}".format(
                 personal_parsed_file['name'], db_name))
@@ -297,8 +297,10 @@ class IVIA_Configurator(object):
         '''
 
         class Personal_Certificate(typing.TypedDict):
-            path: str
-            'Path to file to import as a personal certificate.'
+            name: typing.Optional[str]
+            'Optional label to incldue when importing the certificate. If this is not present the CN X.500 attribute is used.'
+            p12_file: str
+            'Path to PKCS12 file to import as a personal certificate/key.'
             secret: typing.Optional[str]
             'Optional secret to decrypt personal certificate.'
 

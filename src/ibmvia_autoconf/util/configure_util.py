@@ -24,23 +24,22 @@ def config_yaml(config_file=None):
     if config_file:
         _logger.info("Reading file from provided path {}".format(config_file))
         return Map(yaml.load(open(config_file, 'r'), Loader=CustomLoader))
-    cfg_file_var = const.CONFIG_YAML
-    if const.LEGACY_CONFIG_YAML_ENV_VAR in os.environ.keys():
+    cfg_file_var = None
+    if const.CONFIG_YAML_ENV_VAR in os.environ.keys():
+        cfg_file_var = const.CONFIG_YAML_ENV_VAR
+    elif const.LEGACY_CONFIG_YAML_ENV_VAR in os.environ.keys():
         cfg_file_var = const.LEGACY_CONFIG_YAML_ENV_VAR
         _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd "
                      "properties instead".format(const.LEGACY_CONFIG_YAML_ENV_VAR))
-    if cfg_file_var in os.environ.keys():
+    base_dir = config_base_dir()
+    cfg_file = const.CONFIG_YAML
+    if cfg_file_var: #you have told me the name of the file
         cfg_file = os.environ.get(cfg_file_var)
-        if not cfg_file.startswith("/"):
-            cfg_file = config_base_dir() + '/' + cfg_file
-        _logger.info("Reading file from env var {} = {}".format(cfg_file_var, cfg_file))
+    if not cfg_file.startswith("/"):
+        cfg_file = base_dir + '/' + cfg_file
+    _logger.info(f"Trying to read file from env var {cfg_file_var} [{cfg_file}]")
+    if os.path.exists(cfg_file):
         return Map(yaml.load(open(cfg_file, 'r'), Loader=CustomLoader))
-    elif config_base_dir() and cfg_file_var in os.listdir(config_base_dir()):
-        base_dir = config_base_dir()
-        _logger.info("Reading config file from {} env var: {}/config.yaml".format(
-            const.CONFIG_BASE_DIR, base_dir))
-        return Map(yaml.load(open(
-            os.path.join(base_dir, cfg_file_var), 'r'), Loader=CustomLoader))
     else:
         raise RuntimeError("Failed to find a YAML configuration file, help!")
 

@@ -110,9 +110,10 @@ An example of a compose deployment configuration is::
 
 .. _runtime-database-configuration:
 
-Database Configuration
-======================
-The database configuration for container deployments can be done using the :ref:`cluster-configuration` entry.
+Database and Distribued Session Cache configuration
+===================================================
+The database and dsc configuration for container deployments can be done using the 
+:ref:`cluster-configuration` entry.
 
 .. autoclass:: src.ibmvia_autoconf.container.Docker_Configurator.Cluster_Configuration
 
