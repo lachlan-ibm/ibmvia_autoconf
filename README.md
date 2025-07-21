@@ -151,3 +151,17 @@ pip install -r dev-requirements.txt
 python setup.py sdist bdist_wheel
 ```
 The generated wheel can then be installed into a docker container and used in any supported container runtime.
+
+# Troubleshooting install
+In some python environments you may encounter erros like the following
+```
+AttributeError: cython_sources
+```
+To resolve this, install `setuptools` and then install `ibmvia_autoconf` with the `--no-build-isolation`
+flag:
+```
+pip install setuptools
+pip install --no-build-isolation ibmvia_autoconf
+```
+
+
