@@ -1,0 +1,167 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "federations.json",
+  "description": "Configuration for federation providers and partners supporting SAML 2.0, OIDC, and WS-Federation protocols.",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/Federation"
+  },
+  "$defs": {
+    "Federation": {
+      "type": "object",
+      "description": "A federation configuration with protocol-specific settings and partners.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A meaningful name to identify this federation."
+        },
+        "protocol": {
+          "type": "string",
+          "description": "The name of the protocol to be used in the federation.",
+          "enum": [
+            "SAML2_0",
+            "OIDC10",
+            "WSFED"
+          ]
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of a federation. Use 'ip' for a SAML 2.0 identity provider federation, and 'sp' for a SAML 2.0 service provider federation. Use 'op' for an OpenID Connect Provider federation, and 'rp' for an OpenID Connect Relying Party federation.",
+          "enum": [
+            "ip",
+            "sp",
+            "op",
+            "rp"
+          ]
+        },
+        "template_name": {
+          "type": "string",
+          "description": "An identifier for the template on which to base this federation."
+        },
+        "configuration": {
+          "description": "The protocol-specific configuration data. The contents will be different for each protocol and role combination."
+        },
+        "partners": {
+          "type": "array",
+          "description": "List of federation partners to create for this federation.",
+          "items": {
+            "type": "object"
+          }
+        },
+        "import_partners": {
+          "type": "array",
+          "description": "List of XML metadata documents which define partners for a configured Federation.",
+          "items": {
+            "$ref": "#/$defs/ImportPartner"
+          }
+        },
+        "export_metadata": {
+          "type": "string",
+          "description": "Optional path to file to write Federation's XML metadata file to. eg: 'idpmetadata.xml'"
+        }
+      },
+      "required": [
+        "name",
+        "protocol",
+        "role"
+      ]
+    },
+    "ImportPartner": {
+      "type": "object",
+      "description": "A partner to import from XML metadata.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the federation partner to create."
+        },
+        "metadata": {
+          "type": "string",
+          "description": "Path to XML metadata file which contains the partner's configuration properties."
+        }
+      },
+      "required": [
+        "name",
+        "metadata"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "federations": [
+        {
+          "name": "saml20idp",
+          "protocol": "SAML2_0",
+          "role": "ip",
+          "export_metadata": "idpmetadata.xml",
+          "configuration": {
+            "company_name": "IdP Company",
+            "point_of_contact_url": "https://www.myidp.ibm.com/isam",
+            "assertion_settings": {
+              "valid_before": 300,
+              "valid_after": 300
+            },
+            "need_consent_to_federate": false,
+            "signature_settings": {
+              "validation_options": {
+                "validate_authn_request": true
+              },
+              "signing_options": {
+                "sign_authn_response": true,
+                "sign_logout_request": true,
+                "sign_logout_response": true,
+                "signing_key_identifier": {
+                  "store": "myidpkeys",
+                  "label": "CN=idp,OU=Security,O=IBM,C=AU"
+                }
+              },
+              "key_info_elements": {
+                "include_x509_certificate_data": true,
+                "include_x509_subject_name": false,
+                "include_x509_subject_key_identifier": false,
+                "include_x509_issuer_details": false,
+                "include_public_key": false
+              }
+            },
+            "identity_mapping": {
+              "active_delegate_id": "default-map",
+              "properties": {
+                "mapping_rule": "ip_saml20"
+              }
+            },
+            "extension_mapping": {
+              "active_delegate_id": "skip-extension-map"
+            },
+            "name_id_format": {
+              "default": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+            },
+            "single_sign_on_service": [
+              {
+                "binding": "post"
+              },
+              {
+                "binding": "redirect"
+              }
+            ],
+            "exclude_session_index_in_single_logout_request": false,
+            "single_logout_service": [
+              {
+                "binding": "post"
+              },
+              {
+                "binding": "redirect"
+              }
+            ],
+            "encryption_settings": {
+              "decryption_key_identifier": {
+                "store": "myidpkeys",
+                "label": "CN=idp,OU=Security,O=IBM,C=AU"
+              }
+            },
+            "message_valid_time": 300,
+            "session_timeout": 7200
+          }
+        }
+      ]
+    }
+  ]
+}

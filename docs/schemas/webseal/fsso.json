@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/fsso.json",
+  "description": "The FSSO (forms single sing-on) module can be used by WebSEAL to authenticate a user to a junctioned application server. The module is capable of intercepting authentication requests from an application server, and then supplying the required identity information (retrieved from either the WebSEAl user registry or a HTTP service) to the application server to complete the authentication challenge. More detailed information about FSSO concepts can be found [here](https://www.ibm.com/docs/en/sva/latest?topic=solutions-forms-single-sign-concepts). The name of the FSSO configuration file will be used as the name of the resulting FSSO configuration in Verify Identity Access.",
+  "type": "array",
+  "items": {
+    "type": "string",
+    "description": "Path to FSSO configuration file."
+  },
+  "examples": [
+    {
+      "fsso": [
+        "liberty_jsp_fsso.conf",
+        "fsso.conf"
+      ]
+    }
+  ]
+}

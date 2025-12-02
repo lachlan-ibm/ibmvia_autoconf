@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "mapping_rules.json",
+  "description": "Configuration for uploading JavaScript mapping rules used in authentication and authorization flows. These rules are typically used to implement custom business logic for a particular integration requirement.",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/MappingRule"
+  },
+  "$defs": {
+    "MappingRule": {
+      "type": "object",
+      "description": "A mapping rule configuration specifying the type and files to upload.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Type of JavaScript rule to create.",
+          "enum": [
+            "InfoMap",
+            "AuthSVC",
+            "FIDO2",
+            "OAUTH",
+            "OTP",
+            "OIDC",
+            "SAML2_0"
+          ]
+        },
+        "files": {
+          "type": "array",
+          "description": "List of files or directories to upload as JavaScript mapping rules. Path to files can be relative to the IVIA_CONFIG_BASE property or fully-qualified file paths.",
+          "items": {
+            "type": "string",
+            "description": "File path to a JavaScript mapping rule file."
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "type",
+        "files"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "mapping_rules": [
+        {
+          "type": "SAML2",
+          "files": [
+            "saml20.js",
+            "adv_saml20.js"
+          ]
+        },
+        {
+          "type": "InfoMap",
+          "files": [
+            "mapping_rules/basic_user_email_otp.js",
+            "mapping_rules/basic_user_sms_otp.js",
+            "mapping_rules/add_user_mmfa.js"
+          ]
+        },
+        {
+          "type": "FIDO2",
+          "files": [
+            "mediator.js"
+          ]
+        }
+      ]
+    }
+  ]
+}

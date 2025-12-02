@@ -1,0 +1,143 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "attributes.json",
+  "description": "Configuration for custom attributes used in risk profiles and access control policies. Attributes allow an administrator to source information about a user from a number of different places (LDAP, Session, Static) to build up credential attributes, which can then be used by subsequent authentication and authorization flows.",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/Attribute"
+  },
+  "$defs": {
+    "Attribute": {
+      "type": "object",
+      "description": "A custom attribute definition for use in risk-based access control.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A unique name for the attribute."
+        },
+        "description": {
+          "type": "string",
+          "description": "An optional description of the attribute."
+        },
+        "uri": {
+          "type": "string",
+          "description": "The identifier of the attribute that is used in the generated XACML policy.",
+          "format": "uri"
+        },
+        "type": {
+          "$ref": "#/$defs/AttributeType",
+          "description": "Type of attribute being used."
+        },
+        "datatype": {
+          "type": "string",
+          "description": "The type of values that the attribute can accept.",
+          "enum": [
+            "String",
+            "Integer",
+            "Double",
+            "Boolean",
+            "Time",
+            "Date",
+            "X500Name"
+          ]
+        },
+        "issuer": {
+          "type": "string",
+          "description": "The name of the policy information point from which the value of the attribute is retrieved."
+        },
+        "category": {
+          "type": "string",
+          "description": "The part of the XACML request that the attribute value comes from.",
+          "enum": [
+            "Subject",
+            "Environment",
+            "Action",
+            "Resource"
+          ]
+        },
+        "matcher": {
+          "type": "string",
+          "description": "ID of the attribute matcher that is used to compare the value of this attribute in an incoming device fingerprint with an existing device fingerprint of the user."
+        },
+        "storage": {
+          "$ref": "#/$defs/AttributeStorage",
+          "description": "Define where the attribute is stored."
+        }
+      },
+      "required": [
+        "name",
+        "uri",
+        "type",
+        "datatype",
+        "category",
+        "matcher",
+        "storage"
+      ]
+    },
+    "AttributeType": {
+      "type": "object",
+      "description": "Defines how the attribute is used in the system.",
+      "properties": {
+        "risk": {
+          "type": "boolean",
+          "description": "True if the attribute is used in risk profiles."
+        },
+        "policy": {
+          "type": "boolean",
+          "description": "True if the attribute is used in policies."
+        }
+      },
+      "required": [
+        "risk",
+        "policy"
+      ]
+    },
+    "AttributeStorage": {
+      "type": "object",
+      "description": "Defines where and how the attribute value is stored.",
+      "properties": {
+        "session": {
+          "type": "boolean",
+          "description": "True if the attribute is collected in the user session. Session attributes are stored temporarily until the session times out."
+        },
+        "behavior": {
+          "type": "boolean",
+          "description": "True if historic data for this attribute is stored in the database and used for behavior-based attribute matching."
+        },
+        "device": {
+          "type": "boolean",
+          "description": "True if the attribute is stored when a device is registered as part of the device fingerprint."
+        }
+      },
+      "required": [
+        "session",
+        "behavior",
+        "device"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "attributes": [
+        {
+          "name": "urn:ibm:demo:transferamount",
+          "description": "Verify Demo Transfer Amount",
+          "uri": "urn:ibm:demo:transferamount",
+          "type": {
+            "risk": true,
+            "policy": false
+          },
+          "datatype": "Double",
+          "issuer": "",
+          "category": "Action",
+          "matcher": "1",
+          "storage": {
+            "session": true,
+            "behavior": false,
+            "device": true
+          }
+        }
+      ]
+    }
+  ]
+}

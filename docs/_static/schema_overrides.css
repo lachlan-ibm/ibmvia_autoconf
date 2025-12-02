@@ -1,0 +1,122 @@
+/* Override json-schema-for-humans font sizes to match Sphinx theme */
+
+#root {
+    font-size: 10px !important;
+    line-height: 1.5 !important;
+}
+
+#root * {
+    font-size: inherit !important;
+}
+
+/* Schema titles are now h3 (converted from h1) - style appropriately */
+#root h3 {
+    font-size: 1.15em !important;
+    font-weight: 600 !important;
+    margin-top: 0.8em !important;
+    margin-bottom: 0.5em !important;
+    color: #2c3e50 !important;
+}
+
+/* Nested headings in schema (if any) */
+#root h4 {
+    font-size: 1.0em !important;
+    margin-top: 0.5em !important;
+    margin-bottom: 0.4em !important;
+}
+
+#root h5, #root h6 {
+    font-size: 0.9em !important;
+    margin-top: 0.4em !important;
+    margin-bottom: 0.3em !important;
+}
+
+/* Reduce property names and descriptions */
+.property-name {
+    font-size: 10px !important;
+}
+
+.property-name-button {
+    font-size: 10px !important;
+}
+
+.description {
+    font-size: 10px !important;
+}
+
+.description p {
+    font-size: 10px !important;
+    margin-bottom: 0.5em !important;
+}
+
+/* Reduce code/example font size */
+.examples pre,
+.examples code,
+pre, code {
+    font-size: 10px !important;
+    line-height: 1.4 !important;
+}
+
+/* Reduce badge sizes */
+.badge {
+    font-size: 10px !important;
+    padding: 1px 4px !important;
+}
+
+/* Reduce accordion headers */
+.accordion-button {
+    font-size: 10px !important;
+    padding: 0.5rem !important;
+}
+
+/* Reduce table text */
+table {
+    font-size: 10px !important;
+}
+
+table td, table th {
+    font-size: 10px !important;
+    padding: 0.4rem !important;
+}
+
+/* Reduce type information */
+.type-label {
+    font-size: 10px !important;
+}
+
+/* Compact spacing */
+.property-definition {
+    margin-bottom: 0.4rem !important;
+}
+
+/* Reduce padding in cards */
+.card-body {
+    padding: 0.5rem !important;
+}
+
+.card {
+    margin-bottom: 0.5rem !important;
+}
+
+/* Reduce jumbotron padding */
+.jumbotron {
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Compact lists */
+ul, ol {
+    margin-bottom: 0.5rem !important;
+}
+
+li {
+    margin-bottom: 0.2rem !important;
+}
+
+/* Reduce button sizes */
+.btn {
+    font-size: 10px !important;
+    padding: 0.25rem 0.5rem !important;
+}
+
+/* Made with Bob */

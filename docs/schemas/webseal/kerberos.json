@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/kerberos.json",
+  "description": "The SPNEGO/Kerberos module can be used to enable SSO solutions to Microsoft (Active Directory) systems via Kerberos delegation. Kerberos is configured by setting properties by id and subsections. There are several top level id's which can be used to configure Kerberos Realms, Local Domain Realms, Certificate Authority paths and key files.",
+  "type": "object",
+  "properties": {
+    "libdefaults": {
+      "type": "array",
+      "description": "List of key: value properties to configure as defaults.",
+      "items": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    },
+    "realms": {
+      "type": "array",
+      "description": "List of Kerberos Realm's to configure.",
+      "items": {
+        "$ref": "#/$defs/Realm"
+      }
+    },
+    "domain_realms": {
+      "type": "array",
+      "description": "List of Kerberos Domain Realm's to configure.",
+      "items": {
+        "$ref": "#/$defs/Domain_Realm"
+      }
+    },
+    "keytabs": {
+      "type": "array",
+      "description": "List of files to import as Kerberos Keytab files.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "capaths": {
+      "type": "object",
+      "description": "Kerberos capaths configuration.",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "Realm": {
+      "type": "object",
+      "description": "Kerberos realm configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the Kerberos realm."
+        },
+        "properties": {
+          "type": "array",
+          "description": "List of key / value properties to configure for realm.",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": ["name"]
+    },
+    "Domain_Realm": {
+      "type": "object",
+      "description": "Kerberos domain realm mapping.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the Domain Realm."
+        },
+        "dns": {
+          "type": "string",
+          "description": "DNS server for the Domain Realm."
+        }
+      },
+      "required": ["name", "dns"]
+    }
+  },
+  "examples": [
+    {
+      "kerberos": {
+        "libdefault": {
+          "default_realm": "test.com"
+        },
+        "realms": [
+          {
+            "name": "test.com",
+            "properties": [
+              {
+                "kdc": "test.com"
+              }
+            ]
+          }
+        ],
+        "domain_realms": [
+          {
+            "name": "demo.com",
+            "dns": "test.com"
+          }
+        ],
+        "keytabs": [
+          "admin.keytab",
+          "user.keytab"
+        ]
+      }
+    }
+  ]
+}

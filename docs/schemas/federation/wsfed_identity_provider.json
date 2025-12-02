@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "wsfed_identity_provider.json",
+  "title": "WS-Federation Identity Provider Configuration",
+  "description": "Configuration for a WS-Federation Identity Provider federation.",
+  "type": "object",
+  "properties": {
+    "assertion_settings": {
+      "$ref": "common_definitions.json#/$defs/AssertionSettings",
+      "description": "The assertion settings."
+    },
+    "company_name": {
+      "type": "string",
+      "description": "The name of the company that creates the identity provider or service provider."
+    },
+    "identity_mapping": {
+      "$ref": "common_definitions.json#/$defs/IdentityMapping",
+      "description": "The identity mapping data."
+    },
+    "point_of_contact_url": {
+      "type": "string",
+      "description": "The endpoint URL of the point of contact server. The point of contact server is a reverse proxy server that is configured in front of the runtime listening interfaces. The format is http[s]://hostname[:portnumber]/[junction]/sps.",
+      "format": "uri"
+    }
+  },
+  "required": ["company_name", "point_of_contact_url", "identity_mapping"]
+}

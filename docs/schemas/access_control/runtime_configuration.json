@@ -1,0 +1,184 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "runtime_configuration.json",
+  "description": "Configuration for the Access Control and Federation runtime environment. Configuration options includes: configuring trace; managing endpoints and interfaces that the runtime server listens on; setting server configuration parameters (such as proxy settings, SSL configuration); and defining users and groups in the runtime user registry.",
+  "type": "object",
+  "properties": {
+    "users": {
+      "type": "array",
+      "description": "List of users to add/update in the AAC/Federation runtime user registry. Users are created before groups.",
+      "items": {
+        "$ref": "#/$defs/User"
+      }
+    },
+    "groups": {
+      "type": "array",
+      "description": "List of groups to add/update in the AAC/Federation runtime user registry.",
+      "items": {
+        "$ref": "#/$defs/Group"
+      }
+    },
+    "tuning_parameters": {
+      "type": "array",
+      "description": "List of AAC/Federation runtime JVM tuning parameters.",
+      "items": {
+        "$ref": "#/$defs/RuntimeTuningParameter"
+      }
+    },
+    "endpoints": {
+      "type": "array",
+      "description": "List of http(s) endpoints that the AAC/Federation runtime is listening on.",
+      "items": {
+        "$ref": "#/$defs/Endpoint"
+      }
+    },
+    "trace": {
+      "type": "string",
+      "description": "Set the runtime trace specification in Liberty."
+    }
+  },
+  "$defs": {
+    "User": {
+      "type": "object",
+      "description": "A runtime user account.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the user to create or update."
+        },
+        "password": {
+          "type": "string",
+          "description": "The password for the new user. This can contain any ASCII characters."
+        },
+        "groups": {
+          "type": "array",
+          "description": "A list of groups the new user will belong to.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "password"
+      ]
+    },
+    "Group": {
+      "type": "object",
+      "description": "A runtime user group.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the group to create or update."
+        },
+        "users": {
+          "type": "array",
+          "description": "List of users to add to the group.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "Endpoint": {
+      "type": "object",
+      "description": "An HTTP/HTTPS endpoint configuration for the runtime.",
+      "properties": {
+        "interface": {
+          "type": "string",
+          "description": "The interface the runtime endpoint will listen on."
+        },
+        "address": {
+          "type": "string",
+          "description": "The static address that the runtime endpoint will listen on.",
+          "format": "ipv4"
+        },
+        "dhcp4": {
+          "type": "boolean",
+          "description": "Endpoint should listen on the DHCP IPv4 address for the given interface."
+        },
+        "dhcp6": {
+          "type": "boolean",
+          "description": "Endpoint should listen on the DHCP IPv6 address for the given interface."
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port that endpoint will listen on.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "ssl": {
+          "type": "boolean",
+          "description": "Endpoint should use SSL encryption for connections."
+        }
+      },
+      "required": [
+        "interface",
+        "port",
+        "ssl"
+      ]
+    },
+    "RuntimeTuningParameter": {
+      "type": "object",
+      "description": "A JVM tuning parameter for the runtime.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The tuning parameter to set."
+        },
+        "value": {
+          "type": "string",
+          "description": "The new value for the specified parameter."
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "runtime_properties": {
+        "users": [
+          {
+            "name": "easuser",
+            "password": "password",
+            "groups": [
+              "scimAdmin",
+              "fidoAdmin"
+            ]
+          }
+        ],
+        "tuning_parameters": [
+          {
+            "name": "https_proxy_host",
+            "value": "http://my.proxy"
+          },
+          {
+            "name": "https_proxy_port",
+            "value": "3128"
+          }
+        ],
+        "endpoints": [
+          {
+            "interface": "1.1",
+            "address": "192.168.42.102",
+            "port": 444,
+            "ssl": true
+          },
+          {
+            "interface": "1.2",
+            "dhcp4": true,
+            "dhcp6": false,
+            "port": 443,
+            "ssl": true
+          }
+        ]
+      }
+    }
+  ]
+}

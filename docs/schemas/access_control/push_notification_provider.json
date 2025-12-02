@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/access_control/push_notification_provider.json",
+  "description": "Push notification configuration is used to integrate with mobile push notification service. Supports Apple APNS and Android Firebase providers.",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/PushNotificationProvider"
+  },
+  "$defs": {
+    "PushNotificationProvider": {
+      "type": "object",
+      "description": "A push notification provider configuration.",
+      "properties": {
+        "app_id": {
+          "type": "string",
+          "description": "The application identifier associated with the registration."
+        },
+        "platform": {
+          "type": "string",
+          "description": "The platform the registration is for.",
+          "enum": [
+            "apple",
+            "android"
+          ]
+        },
+        "provider_address": {
+          "type": "string",
+          "description": "The host:port address of the push notification service provider.",
+          "pattern": "^[^:]+:\\d+$"
+        },
+        "apple_key_store": {
+          "type": "string",
+          "description": "The key store database containing the APNS certificate. Only valid if 'platform' is 'apple'."
+        },
+        "apple_key_label": {
+          "type": "string",
+          "description": "The key label of the imported APNS certificate. Only valid if 'platform' is 'apple'."
+        },
+        "firebase_server_key": {
+          "type": "string",
+          "description": "The server key for access to the Firebase push notification service. Only valid if 'platform' is 'android'.",
+          "format": "password"
+        },
+        "imc_client_id": {
+          "type": "string",
+          "description": "The IBM Marketing Cloud issued Oauth client ID."
+        },
+        "imc_client_secret": {
+          "type": "string",
+          "description": "The IBM Marketing Cloud issued Oauth client secret.",
+          "format": "password"
+        },
+        "imc_refresh_token": {
+          "type": "string",
+          "description": "The IBM Marketing Cloud issued Oauth refresh token.",
+          "format": "password"
+        },
+        "imc_app_key": {
+          "type": "string",
+          "description": "The app key issued by IBM Marketing Cloud for the associated application."
+        }
+      },
+      "required": [
+        "app_id",
+        "platform",
+        "provider_address"
+      ]
+    }
+  },
+  "examples":[
+    {
+      "push_notification_providers": [
+        {
+          "platform": "android",
+          "app_id": "com.ibm.security.verifyapp",
+          "provider": "imc",
+          "provider_address": "verifypushcreds.mybluemix.net",
+          "imc_app_key": "android_app_key",
+          "imc_client_id": "android_client_id",
+          "imc_client_secret": "android_client_secret",
+          "imc_refresh_token": "android_refresh_token"
+        },
+        {
+          "platform": "apple",
+          "app_id": "com.ibm.security.verifyapp",
+          "provider": "imc",
+          "provider_address": "verifypushcreds.mybluemix.net",
+          "imc_app_key": "apple_app_key",
+          "imc_client_id": "apple_client_id",
+          "imc_client_secret": "apple_client_secret",
+          "imc_refresh_token": "apple_refresh_token"
+        }
+      ]
+    }
+  ]
+}

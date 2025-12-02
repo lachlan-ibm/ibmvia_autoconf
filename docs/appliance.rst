@@ -69,75 +69,64 @@ Verify Identity Access.
 
 FIPS Compliance
 ===============
-Verify Identity Access can be configured to FIPS compliance when required. FIPS compliance can only be enabled on new (unconfigured) 
-appliances and should be enabled before any other configuration options are applied.
 
 
-.. autoclass::  src.ibmvia_autoconf.configure.IVIA_Configurator.FIPS
-   :members:
+.. raw:: html
+   :file: schema_html/base/fips.html
 
+|br|
 
 .. _appliance-networking:
 
 Networking
 ==========
-The networking settings can be used to define networking routes, as well as interface address, netmask and gateway 
-setting on a Verify Identity Access appliance. This configuration is also able to add hostfile entries as well as setting the
-hostname of Verify Identity Access. Care must be taken when configuring network interfaces to ensure that the 
-interface used to configure the appliance is not changed (as this will result in the automation tool failing).
 
-    .. note:: Interfaces can only be updated using the LMI, they cannot be created.
+    .. note:: Care must be taken when configuring network interfaces to ensure that 
+              the interface used to configure the appliance is not changed (as this 
+              will result in the automation tool failing).
+
+    .. note:: Network interfaces can only be updated, they cannot be created.
 
 
-.. autoclass::  src.ibmvia_autoconf.appliance.Appliance_Configurator.Networking
-   :members:
+.. raw:: html
+   :file: schema_html/appliance/networking.html
 
+|br|
 
 .. _appliance-date-time:
 
 Date / Time settings
 ====================
-The date and time settings can be adjusted on a Verify Identity Access appliance or synchronized to a external NTP server. Admins 
-are also able to set the time zone of the appliance using canonical name.
-
-To set the Date/Time configuration using either a NTP server or manually setting the date via a formatted string. A 
-complete list of the available configuration properties can be found `here <https://lachlan-ibm.github.io/pyivia>`_. 
-An example configuration is:
 
 
-.. autoclass::  src.ibmvia_autoconf.appliance.Appliance_Configurator.Date_Time
-   :members:
+.. raw:: html
+   :file: schema_html/appliance/date_time.html
 
+|br|
 
 .. _cluster-configuration:
 
 Cluster Configuration
 =====================
-The cluster configuration options can be used to add additional servers to the Verify Identity Identity Access deployment. Currently only
- external databases (HVDB and config) as well as Verify Identity Identity Access HA servers are supported.
 
-This option is typically used in a container deployment to configure the HVDB connection. A complete list of the available 
-configuration properties can be found `here <https://lachlan-ibm.github.io/pyivia/systemsettings.html#cluster>`_. 
-
-    .. note:: PKI required to connect to any servers should be imported in the previous step.
+    .. note:: PKI required to connect to any servers should be defined in the the `ssl_certificates` property.
 
 
-.. autoclass::  src.ibmvia_autoconf.appliance.Appliance_Configurator.Cluster_Configuration
-   :members:
+.. raw:: html
+   :file: schema_html/appliance/cluster.html
 
+|br|
 
 .. _managed-containers:
 
 Managed Containers
 ==================
-The managed containers properties allows administrators to deploy IBM containerize products to IBM Verify Identity
-Access appliances. This is particularly useful for administrators with hardware based appliances, allowing them to
-deploy a greater range of IBM products with their existing hardware.
 
 
-.. autoclass::  src.ibmvia_autoconf.appliance.Appliance_Configurator.Managed_Containers
-   :members:
+.. raw:: html
+   :file: schema_html/appliance/managed_containers.html
 
+|br|
 
 .. _global-configuration:
 

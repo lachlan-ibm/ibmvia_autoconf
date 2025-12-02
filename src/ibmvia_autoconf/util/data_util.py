@@ -123,12 +123,17 @@ class CustomLoader(yaml.SafeLoader):
         #Split secret into name and key
         namespaceName, key = secret.split(':')
         k8sSecret = self.k8s_cache.get(namespaceName, None)
+        if not KUBE_CLIENT:
+            raise RuntimeError("Kubernetes client not found")
         if k8sSecret == None:
             namespace, name = namespaceName.split('/')
             #Use k8s API to look up secret
             k8sSecret = KUBE_CLIENT.CoreV1Api().read_namespaced_secret(name, namespace)
             self.k8s_cache[namespaceName] = k8sSecret
-        return base64.b64decode(k8sSecret.data[key]).decode()
+        if k8sSecret is None or not hasattr(k8sSecret, 'data'):
+            raise RuntimeError("Uknown secret object {}".format(secret))
+        data = getattr(k8sSecret, 'data', {})
+        return base64.b64decode(data[key]).decode()
 
     def env_secret(self, node):
         try:
@@ -208,8 +213,8 @@ KUBE_CLIENT = IVIA_Kube_Client.get_client()
 KUBE_CLIENT_SLEEP = 15
 try:
     if const.KUBERNETES_CLIENT_SLEEP in os.environ.keys():
-        KUBE_CLIENT_SLEEP = int(os.environ.get(const.KUBERNETES_CLIENT_SLEEP))
+        KUBE_CLIENT_SLEEP = int(os.environ.get(const.KUBERNETES_CLIENT_SLEEP, 15))
     elif const.LEGACY_KUBERNETES_CLIENT_SLEEP in os.environ.keys():
-        KUBE_CLIENT_SLEEP = int(os.environ.get(const.LEGACY_KUBERNETES_CLIENT_SLEEP))
+        KUBE_CLIENT_SLEEP = int(os.environ.get(const.LEGACY_KUBERNETES_CLIENT_SLEEP, 15))
 except ValueError:
     KUBE_CLIENT_SLEEP = 15

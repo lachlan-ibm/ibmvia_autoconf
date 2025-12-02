@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "template_files.json",
+  "description": "Upload files or directories containing HTML files which are compatible with the AAC and Federation templating engine. The directory structure of any directories to upload should follow the default top level directories. If you are defining a directory it should contain a trailing ``/``.",
+  "type": "array",
+  "items": {
+    "type": "string",
+    "description": "File path to an HTML template file or ZIP archive containing multiple templates."
+  },
+  "examples": [
+    {
+      "template_files": [
+        "aac/isva_template_files.zip",
+        "login.html",
+        "2fa.html"
+      ]
+    }
+  ]
+}

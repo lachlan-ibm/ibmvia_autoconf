@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "alias_service.json",
+  "description": "The alias service stores and retrieves aliases that are related to a federated identity. Persistent name identifier format allows you to link a user at the identity provider with a user at the service provider. Verify Identity Access stores these account linkages in a high-volume database or an LDAP database.",
+  "type": "object",
+  "properties": {
+    "db_type": {
+      "type": "string",
+      "description": "The alias database type.",
+      "enum": [
+        "JDBC",
+        "LDAP"
+      ]
+    },
+    "ldap_connection": {
+      "type": "string",
+      "description": "The LDAP server connection name."
+    },
+    "ldap_base_dn": {
+      "type": "string",
+      "description": "The baseDN to search for the user entry."
+    },
+    "aliases": {
+      "type": "array",
+      "description": "The SAML aliases to create.",
+      "items": {
+        "$ref": "#/$defs/Alias"
+      }
+    }
+  },
+  "required": [
+    "db_type",
+    "ldap_connection",
+    "ldap_base_dn"
+  ],
+  "$defs": {
+    "Alias": {
+      "type": "object",
+      "description": "An alias association for a user in a federation.",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "The user to associate aliases with."
+        },
+        "federation": {
+          "type": "string",
+          "description": "The federation this alias is for."
+        },
+        "partner": {
+          "type": "string",
+          "description": "Optionally, specify a partner as well as a federation."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of the aliases. Defaults to 'self'.",
+          "enum": [
+            "self",
+            "partner",
+            "old"
+          ],
+          "default": "self"
+        },
+        "aliases": {
+          "type": "array",
+          "description": "An array of aliases to associate with the user.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "username",
+        "federation",
+        "aliases"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "alias_service": {
+                  "ldap_connection": "LocalLDAP",
+                  "aliases": [
+                    {
+                      "username": "mary",
+                      "federation_id": "https://mysp.com/isam/sps/samlsp/saml20",
+                      "type": "partner",
+                      "aliases": [
+                        "mary@ibm.com",
+                         "mary@au.ibm.com"
+                      ]
+                    }
+                  ]
+                }
+    }
+  ]
+}

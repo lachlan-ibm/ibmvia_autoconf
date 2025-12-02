@@ -1,0 +1,325 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "networking.json",
+  "description": "Configuration for network interfaces, routes, DNS, host file entries, and hostname on IBM Verify Access appliances.",
+  "type": "object",
+  "properties": {
+    "hostname": {
+      "type": "string",
+      "description": "Hostname to set for the Verify Identity Access appliance."
+    },
+    "host_file": {
+      "type": "array",
+      "description": "Entries to add to an appliance's hosts file.",
+      "items": {
+        "$ref": "#/$defs/HostEntry"
+      }
+    },
+    "routes": {
+      "type": "array",
+      "description": "Optional list of routes to add to an interface.",
+      "items": {
+        "$ref": "#/$defs/Route"
+      }
+    },
+    "interfaces": {
+      "type": "array",
+      "description": "List of properties for attached interfaces.",
+      "items": {
+        "$ref": "#/$defs/Interface"
+      }
+    },
+    "dns": {
+      "$ref": "#/$defs/DNS",
+      "description": "Domain Name Server settings for appliance."
+    }
+  },
+  "$defs": {
+    "HostEntry": {
+      "type": "object",
+      "description": "A host file entry mapping an IP address to hostnames.",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "IPv4 address to add for hosts.",
+          "format": "ipv4"
+        },
+        "hosts": {
+          "type": "array",
+          "description": "List of host names or domain names to add.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "address",
+        "hosts"
+      ]
+    },
+    "Route": {
+      "type": "object",
+      "description": "A static network route configuration.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable this route."
+        },
+        "interface": {
+          "type": "string",
+          "description": "Interface this route is attached to."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Optional comment to add to route."
+        },
+        "address": {
+          "type": "string",
+          "description": "Network address to use for route."
+        },
+        "gateway": {
+          "type": "string",
+          "description": "Network gateway to use for route.",
+          "format": "ipv4"
+        },
+        "mask_or_prefix": {
+          "type": "string",
+          "description": "Network bitmask or prefix to use for route."
+        },
+        "metric": {
+          "type": "integer",
+          "description": "Route metric.",
+          "minimum": 0
+        },
+        "table": {
+          "type": "string",
+          "description": "Route table."
+        }
+      },
+      "required": [
+        "enabled",
+        "interface",
+        "address",
+        "gateway",
+        "mask_or_prefix",
+        "metric",
+        "table"
+      ]
+    },
+    "Interface": {
+      "type": "object",
+      "description": "Network interface configuration.",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "System assigned label of interface."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the interface."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Comment to add to interface."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable this interface."
+        },
+        "vlan_id": {
+          "type": "string",
+          "description": "System assigned vlan ID."
+        },
+        "bonding_mode": {
+          "type": "string",
+          "description": "Bonding mode for the interface."
+        },
+        "bonded_to": {
+          "type": "string",
+          "description": "Interface this is bonded to."
+        },
+        "ipv4": {
+          "$ref": "#/$defs/IPv4",
+          "description": "IPv4 settings."
+        }
+      },
+      "required": [
+        "label",
+        "enabled",
+        "ipv4"
+      ]
+    },
+    "IPv4": {
+      "type": "object",
+      "description": "IPv4 configuration for an interface.",
+      "properties": {
+        "dhcp": {
+          "$ref": "#/$defs/IPv4DHCP",
+          "description": "DHCP configuration for an interface."
+        },
+        "addresses": {
+          "type": "array",
+          "description": "Static IPv4 addresses assigned to an interface.",
+          "items": {
+            "$ref": "#/$defs/IPv4Address"
+          }
+        }
+      }
+    },
+    "IPv4DHCP": {
+      "type": "object",
+      "description": "DHCP configuration for IPv4.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable DHCP on this interface."
+        },
+        "allow_management": {
+          "type": "boolean",
+          "description": "Use a DHCP address for the Local Management Interface."
+        },
+        "provides_default_route": {
+          "type": "boolean",
+          "description": "Use DHCP to determine the default network route."
+        },
+        "route_metric": {
+          "type": "integer",
+          "description": "Route metric.",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "enabled"
+      ]
+    },
+    "IPv4Address": {
+      "type": "object",
+      "description": "A static IPv4 address configuration.",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "IPv4 address to assign to interface.",
+          "format": "ipv4"
+        },
+        "mask_or_prefix": {
+          "type": "string",
+          "description": "IPv4 netmask or prefix to assign to address."
+        },
+        "broadcast_address": {
+          "type": "string",
+          "description": "IPv4 address to use for broadcasting.",
+          "format": "ipv4"
+        },
+        "allow_mgmt": {
+          "type": "boolean",
+          "description": "Use this address for the Local Management Interface."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable this address."
+        }
+      },
+      "required": [
+        "address",
+        "mask_or_prefix",
+        "broadcast_address",
+        "allow_mgmt",
+        "enabled"
+      ]
+    },
+    "DNS": {
+      "type": "object",
+      "description": "DNS configuration.",
+      "properties": {
+        "auto": {
+          "type": "boolean",
+          "description": "true if DNS should be auto configured via dhcp."
+        },
+        "auto_from_interface": {
+          "type": "string",
+          "description": "Name or ID of interface whose dhcp will defined the dns settings."
+        },
+        "primary_server": {
+          "type": "string",
+          "description": "Primary DNS Server address.",
+          "format": "ipv4"
+        },
+        "secondary_server": {
+          "type": "string",
+          "description": "Secondary DNS Server address.",
+          "format": "ipv4"
+        },
+        "tertiary_server": {
+          "type": "string",
+          "description": "Tertiary DNS Server address.",
+          "format": "ipv4"
+        },
+        "search_domains": {
+          "type": "string",
+          "description": "Comma-separated list of DNS search domains."
+        }
+      },
+      "required": [
+        "auto"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "network": {
+        "hostname": "isam.myidp.ibm.com",
+        "host_file": [
+          {
+            "address": "192.168.42.102",
+            "hosts": [
+              "www.myidp.ibm.com"
+            ]
+          },
+          {
+            "address": "192.168.42.101",
+            "hosts": [
+              "isam.myidp.ibm.com"
+            ]
+          }
+        ],
+        "routes": [
+          {
+            "enabled": true,
+            "address": "default",
+            "gateway": "192.168.42.1",
+            "interface": "1.1",
+            "metric": 0,
+            "table": "main",
+            "comment": "Example route"
+          }
+        ],
+        "interfaces": [
+          {
+            "ipv4": {
+              "dhcp": {
+                "enabled": false
+              },
+              "addresses": [
+                {
+                  "address": "192.168.42.101",
+                  "mask_or_prefix": "255.255.255.0",
+                  "broadcast_address": "192.168.42.10",
+                  "allow_mgmt": true,
+                  "enabled": true
+                },
+                {
+                  "address": "192.168.42.102",
+                  "mask_or_prefix": "/24",
+                  "broadcast_address": "192.168.42.10",
+                  "allow_mgmt": false,
+                  "enabled": true
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -11,3 +11,5 @@ sphinx-rtd-theme
 sphinx_toolbox
 typing
 build
+json-schema-for-humans
+check-jsonschema

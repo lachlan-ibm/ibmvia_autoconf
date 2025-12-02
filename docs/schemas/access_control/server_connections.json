@@ -1,0 +1,584 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "server_connections.json",
+  "description": "Configuration for external server connections used by Access Control and Federation components. Server connections are used to connect to third party infrastructure such as LDAP registries, email servers, SMS servers, ect.",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/ServerConnection"
+  },
+  "$defs": {
+    "ServerConnection": {
+      "type": "object",
+      "description": "A server connection configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the connection."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the connection."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of server connection.",
+          "enum": [
+            "ci",
+            "ldap",
+            "isamruntime",
+            "jdbc",
+            "redis",
+            "smtp",
+            "ws"
+          ]
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Controls whether the connection is allowed to be deleted.",
+          "default": false
+        },
+        "properties": {
+          "description": "Connection specific properties. The structure depends on the connection type.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/IbmsecVerifyConnection"
+            },
+            {
+              "$ref": "#/$defs/LDAPConnection"
+            },
+            {
+              "$ref": "#/$defs/VerifyAccessRuntimeConnection"
+            },
+            {
+              "$ref": "#/$defs/JavaDatabaseConnection"
+            },
+            {
+              "$ref": "#/$defs/RedisConnection"
+            },
+            {
+              "$ref": "#/$defs/SMTPConnection"
+            },
+            {
+              "$ref": "#/$defs/WebServiceConnection"
+            }
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "properties"
+      ]
+    },
+    "IbmsecVerifyConnection": {
+      "type": "object",
+      "description": "Connection properties for IBM Security Verify (Cloud Identity) - type: ci",
+      "properties": {
+        "admin_host": {
+          "type": "string",
+          "description": "The IBM Security Verify administration host to connect to.",
+          "format": "hostname"
+        },
+        "client_id": {
+          "type": "string",
+          "description": "The client ID to authenticate to the IBM Security Verify tenant."
+        },
+        "client_secret": {
+          "type": "string",
+          "description": "The client secret to authenticate to the IBM Security Verify tenant."
+        },
+        "ssl": {
+          "type": "boolean",
+          "description": "Controls whether SSL is used to establish the connection."
+        },
+        "ssl_truststore": {
+          "type": "string",
+          "description": "The key database to be used as an SSL truststore. This field is required when ssl is true."
+        },
+        "ssl_key_label": {
+          "type": "string",
+          "description": "The name of the key which should be used during mutual authentication with the web server."
+        },
+        "user_endpoint": {
+          "type": "string",
+          "description": "The versioned endpoint for user requests."
+        },
+        "authorize_endpoint": {
+          "type": "string",
+          "description": "The versioned endpoint for authorization requests."
+        },
+        "authenticators_endpoint": {
+          "type": "string",
+          "description": "The versioned endpoint for authenticator requests."
+        },
+        "authnmethods_endpoint": {
+          "type": "string",
+          "description": "The DEPRECATED versioned endpoint for authentication method requests."
+        },
+        "factors_endpoint": {
+          "type": "string",
+          "description": "The versioned endpoint for factors requests."
+        }
+      },
+      "required": [
+        "admin_host",
+        "client_id",
+        "client_secret",
+        "ssl"
+      ]
+    },
+    "LDAPConnection": {
+      "type": "object",
+      "description": "Connection properties for LDAP server - type: ldap",
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "description": "The IP address or hostname of the LDAP server.",
+          "format": "hostname"
+        },
+        "port": {
+          "type": "integer",
+          "description": "The port that the LDAP server is listening on.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "bind_dn": {
+          "type": "string",
+          "description": "The distinguished name to use to bind to the LDAP server."
+        },
+        "bind_password": {
+          "type": "string",
+          "description": "The password for bindDN to use when binding to the LDAP server."
+        },
+        "ssl": {
+          "type": "boolean",
+          "description": "Controls whether SSL is used to establish the connection."
+        },
+        "key_file": {
+          "type": "string",
+          "description": "The key database to be used as an SSL truststore."
+        },
+        "key_label": {
+          "type": "string",
+          "description": "The name of the key which should be used during mutual authentication with the LDAP server."
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Amount of time, in seconds, after which a connection to the LDAP server times out.",
+          "minimum": 1
+        },
+        "servers": {
+          "type": "array",
+          "description": "Additional LDAP servers for this connection.",
+          "items": {
+            "$ref": "#/$defs/LDAPServer"
+          }
+        }
+      },
+      "required": [
+        "hostname",
+        "port",
+        "bind_dn",
+        "bind_password",
+        "ssl",
+        "key_file",
+        "key_label"
+      ]
+    },
+    "LDAPServer": {
+      "type": "object",
+      "description": "Additional LDAP server configuration.",
+      "properties": {
+        "order": {
+          "type": "integer",
+          "description": "The order of precedence for this server.",
+          "minimum": 1
+        },
+        "connection": {
+          "type": "object",
+          "description": "The connection properties. This uses the same properties as LDAPConnection."
+        }
+      },
+      "required": [
+        "order",
+        "connection"
+      ]
+    },
+    "VerifyAccessRuntimeConnection": {
+      "type": "object",
+      "description": "Connection properties for Verify Access Runtime LDAP - type: isamruntime",
+      "properties": {
+        "bind_dn": {
+          "type": "string",
+          "description": "The distinguished name to use to bind to the Verify Identity Access Runtime LDAP server."
+        },
+        "bind_pwd": {
+          "type": "string",
+          "description": "The password for bindDN to use when binding to the Verify Identity Access Runtime LDAP server."
+        },
+        "ssl": {
+          "type": "boolean",
+          "description": "Controls whether SSL is used to establish the connection."
+        },
+        "ssl_truststore": {
+          "type": "string",
+          "description": "The key database to be used as an SSL truststore. This field is required when ssl is true."
+        },
+        "ssl_key_label": {
+          "type": "string",
+          "description": "The name of the key which should be used during mutual authentication with the Verify Identity Access runtime LDAP server."
+        }
+      },
+      "required": [
+        "bind_dn",
+        "bind_pwd",
+        "ssl"
+      ]
+    },
+    "JavaDatabaseConnection": {
+      "type": "object",
+      "description": "Connection properties for JDBC database - type: jdbc",
+      "properties": {
+        "server_name": {
+          "type": "string",
+          "description": "The IP address or hostname of the database.",
+          "format": "hostname"
+        },
+        "port": {
+          "type": "integer",
+          "description": "The port that the database is listening on.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "ssl": {
+          "type": "boolean",
+          "description": "Controls whether SSL is used to establish the connection."
+        },
+        "user": {
+          "type": "string",
+          "description": "The user name used to authenticate with the database."
+        },
+        "password": {
+          "type": "string",
+          "description": "The password used to authenticate with the database."
+        },
+        "type": {
+          "type": "string",
+          "description": "The Oracle JDBC driver type. Only applicable for Oracle connection.",
+          "enum": [
+            "thin",
+            "oci"
+          ]
+        },
+        "service_name": {
+          "type": "string",
+          "description": "The name of the database service to connect to. Only applicable for Oracle connection."
+        },
+        "database_name": {
+          "type": "string",
+          "description": "The name of the database to connect to. Only applicable for DB2 and PostgreSQL connections."
+        },
+        "age_timeout": {
+          "type": "integer",
+          "description": "Amount of time before a physical connection can be discarded by pool maintenance. A value of -1 disables this timeout.",
+          "default": -1
+        },
+        "connection_timeout": {
+          "type": "integer",
+          "description": "Amount of time after which a connection request times out. A value of -1 disables this timeout.",
+          "default": 30
+        },
+        "max_connections_per_thread": {
+          "type": "integer",
+          "description": "Limits the number of open connections on each thread.",
+          "minimum": 0
+        },
+        "max_idle_time": {
+          "type": "integer",
+          "description": "Amount of time after which an unused or idle connection can be discarded during pool maintenance.",
+          "default": 1800
+        },
+        "max_pool_size": {
+          "type": "integer",
+          "description": "Maximum number of physical connections for a pool. A value of 0 means unlimited.",
+          "minimum": 0,
+          "default": 50
+        },
+        "min_pool_size": {
+          "type": "integer",
+          "description": "Minimum number of physical connections to maintain in the pool.",
+          "minimum": 0
+        },
+        "connections_per_thread": {
+          "type": "integer",
+          "description": "Caches the specified number of connections for each thread.",
+          "minimum": 0
+        },
+        "connection_purge_policy": {
+          "type": "string",
+          "description": "Specifies which connections to destroy when a stale connection is detected in a pool.",
+          "enum": [
+            "EntirePool",
+            "FailingConnectionOnly",
+            "ValidateAllConnections"
+          ],
+          "default": "EntirePool"
+        },
+        "connection_reap_time": {
+          "type": "string",
+          "description": "Amount of time between runs of the pool maintenance thread. A value of -1 disables pool maintenance.",
+          "default": "3m"
+        }
+      },
+      "required": [
+        "server_name",
+        "port",
+        "ssl",
+        "user",
+        "password"
+      ]
+    },
+    "RedisConnection": {
+      "type": "object",
+      "description": "Connection properties for Redis server - type: redis",
+      "properties": {
+        "deployment_model": {
+          "type": "string",
+          "description": "The Redis deployment model.",
+          "enum": [
+            "standalone",
+            "sentinel"
+          ]
+        },
+        "master_name": {
+          "type": "string",
+          "description": "The key used in the redis sentinel node to store the master/slave configuration."
+        },
+        "hostname": {
+          "type": "string",
+          "description": "The IP address or hostname of the Redis server. This is only required if the deployment_model is set as standalone.",
+          "format": "hostname"
+        },
+        "port": {
+          "type": "integer",
+          "description": "The port that the Redis server is listening on.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "user": {
+          "type": "string",
+          "description": "The user name to authenticate to the Redis server."
+        },
+        "password": {
+          "type": "string",
+          "description": "The password used to authenticate with the Redis server."
+        },
+        "ssl": {
+          "type": "boolean",
+          "description": "Controls whether SSL is used to establish the connection."
+        },
+        "ssl_truststore": {
+          "type": "string",
+          "description": "The key database to be used as an SSL truststore. Only required if ssl is set to true."
+        },
+        "ssl_key_label": {
+          "type": "string",
+          "description": "The key database to be used as an SSL keystore. Only required if ssl is set to true."
+        },
+        "connection_timeout": {
+          "type": "integer",
+          "description": "Amount of time, in seconds, after which a connection to the Redis server times out.",
+          "minimum": 1
+        },
+        "idle_timeout": {
+          "type": "integer",
+          "description": "Amount of time, in seconds, after which an established connection will be discarded as idle.",
+          "minimum": 1
+        },
+        "max_pool_size": {
+          "type": "integer",
+          "description": "Number of connections which will be pooled.",
+          "minimum": 1
+        },
+        "min_pool_size": {
+          "type": "integer",
+          "description": "The minimum number of idle connections in the pool.",
+          "minimum": 0
+        },
+        "max_idle_size": {
+          "type": "integer",
+          "description": "The maximum number of idle connections in the pool.",
+          "minimum": 0
+        },
+        "io_timeout": {
+          "type": "integer",
+          "description": "Amount of time, in seconds, after which the connection socket will timeout.",
+          "minimum": 1
+        },
+        "servers": {
+          "type": "array",
+          "description": "Additional Redis servers for this connection.",
+          "items": {
+            "$ref": "#/$defs/RedisServer"
+          }
+        }
+      },
+      "required": [
+        "deployment_model",
+        "master_name",
+        "port",
+        "ssl"
+      ]
+    },
+    "RedisServer": {
+      "type": "object",
+      "description": "Additional Redis server configuration.",
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "description": "The IP address or hostname of the Redis server.",
+          "format": "hostname"
+        },
+        "port": {
+          "type": "string",
+          "description": "The port that the Redis server is listening on."
+        }
+      },
+      "required": [
+        "hostname",
+        "port"
+      ]
+    },
+    "SMTPConnection": {
+      "type": "object",
+      "description": "Connection properties for SMTP server - type: smtp",
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "description": "The IP address or hostname of the SMTP server.",
+          "format": "hostname"
+        },
+        "port": {
+          "type": "integer",
+          "description": "The port that the SMTP server is listening on.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "user": {
+          "type": "string",
+          "description": "The user name to authenticate to the SMTP server."
+        },
+        "password": {
+          "type": "string",
+          "description": "The password used to authenticate with the SMTP server."
+        },
+        "ssl": {
+          "type": "boolean",
+          "description": "Controls whether SSL is used to establish the connection."
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Amount of time, in seconds, after which a connection to the SMTP server times out.",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "hostname",
+        "port",
+        "ssl"
+      ]
+    },
+    "WebServiceConnection": {
+      "type": "object",
+      "description": "Connection properties for web service - type: ws",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "The fully qualified URL of the web service endpoint, including the protocol, host/IP, port and path.",
+          "format": "uri"
+        },
+        "user": {
+          "type": "string",
+          "description": "The user name to authenticate to the web service."
+        },
+        "password": {
+          "type": "string",
+          "description": "The password used to authenticate with the web service."
+        },
+        "ssl": {
+          "type": "boolean",
+          "description": "Controls whether SSL is used to establish the connection."
+        },
+        "key_file": {
+          "type": "string",
+          "description": "The key database to be used as an SSL truststore. This field is required when ssl is true."
+        },
+        "key_label": {
+          "type": "string",
+          "description": "The name of the key which should be used during mutual authentication with the web server."
+        }
+      },
+      "required": [
+        "url",
+        "user",
+        "password",
+        "ssl"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "server_connections": [
+        {
+          "name": "intent-svc",
+          "type": "web_service",
+          "description": "A connection to the intent service.",
+          "properties": {
+            "url": "http://ibmsec.intent.svc:16080",
+            "user": "",
+            "password": "",
+            "ssl": false
+          }
+        },
+        {
+          "name": "Cloud Identity tenant connection",
+          "type": "ci",
+          "description": "A connection to the companion CI Tenant.",
+          "properties": {
+            "ci_tenant": "https://my.verify.tenant",
+            "ci_client_id": "abcd1234ABCD",
+            "ci_client_secret": "abcd1234ABCD",
+            "ssl_truststore": "rt_profile_keys.kdb"
+          }
+        },
+        {
+          "name": "Local LDAP connection",
+          "type": "ldap",
+          "description": "A connection to this ISAMs LDAP.",
+          "locked": false,
+          "properties": {
+            "hostname": "ibmsec.ldap.domain",
+            "port": 636,
+            "bind_dn": "cn=root,secAuthority=Default",
+            "bind_password": "bind password",
+            "ssl": true,
+            "ssl_truststore": "lmi_trust_store"
+          }
+        },
+        {
+          "name": "SCIM web service connection",
+          "type": "web_service",
+          "description": "A connection to this ISAMs SCIM server.",
+          "locked": false,
+          "properties": {
+            "url": "https://ibmsec.runtime.svc",
+            "user": "runtime_user",
+            "password": "runtime_secret",
+            "ssl": true,
+            "key_file": "rt_profile_keys.kdb"
+          }
+        }
+      ]
+    }
+  ]
+}

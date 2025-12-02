@@ -1,0 +1,181 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cluster.json",
+  "description": "Configuration for config and runtime database connections; and distributed session cache settings in container deployments.",
+  "type": "object",
+  "properties": {
+    "runtime_database": {
+      "$ref": "#/$defs/Database",
+      "description": "Configuration for the runtime (HVDB) database."
+    },
+    "dsc": {
+      "$ref": "#/$defs/DistributedSessionCache",
+      "description": "Configuration for the distributed session cache runtime containers."
+    }
+  },
+  "$defs": {
+    "Database": {
+      "type": "object",
+      "description": "External runtime database configuration.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Database type.",
+          "enum": [
+            "postgresql",
+            "db2",
+            "oracle"
+          ]
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname or address of database."
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port database is listening on.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "ssl": {
+          "type": "boolean",
+          "description": "Enable SSL encryption of connections."
+        },
+        "ssl_keystore": {
+          "type": "string",
+          "description": "SSL database to use to verify connections. Only valid if ssl == true."
+        },
+        "user": {
+          "type": "string",
+          "description": "Username to authenticate to database as."
+        },
+        "password": {
+          "type": "string",
+          "description": "Password to authenticate as username.",
+          "format": "password"
+        },
+        "db_name": {
+          "type": "string",
+          "description": "Name of the database instance to use."
+        },
+        "extra_config": {
+          "type": "object",
+          "description": "Database type specific configuration.",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "type",
+        "host",
+        "port",
+        "ssl",
+        "user",
+        "password",
+        "db_name"
+      ]
+    },
+    "DistributedSessionCache": {
+      "type": "object",
+      "description": "Distributed Session Cache configuration for container deployments.",
+      "properties": {
+        "client_grace": {
+          "type": "integer",
+          "description": "The length of time (in seconds) that a client (aka WebSEAL) has to reconnect before sessions owned by that client are discarded.",
+          "minimum": 0
+        },
+        "connection_idle_timeout": {
+          "type": "integer",
+          "description": "The maximum length of time that a connection from a client can remain idle before it is closed by the server. A value of 0 indicates that connections will not be reused.",
+          "minimum": 0
+        },
+        "max_session_lifetime": {
+          "type": "integer",
+          "description": "The maximum lifetime (in seconds) of any session stored by the DSC.",
+          "minimum": 1
+        },
+        "service_port": {
+          "type": "integer",
+          "description": "The port number on which the DSC will listen for requests.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "replication_port": {
+          "type": "integer",
+          "description": "The port number on which the DSC will listen for replication requests.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "ssl_ciphers": {
+          "type": "string",
+          "description": "The comma separated list of permitted SSL algorithms for TLS connections to the DSC."
+        },
+        "worker_threads": {
+          "type": "integer",
+          "description": "The number of worker threads allocated to processing requests.",
+          "minimum": 1
+        },
+        "servers": {
+          "type": "array",
+          "description": "The external connection data for each instance of the DSC. This corresponds to the IP address and ports to which clients will connect. Up to 4 servers may be defined (primary, secondary, tertiary and quaternary). The role of the server will be determined by the order of elements within the servers array.",
+          "items": {
+            "$ref": "#/$defs/DSCServer"
+          },
+          "minItems": 1,
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "client_grace",
+        "connection_idle_timeout",
+        "max_session_lifetime",
+        "service_port",
+        "replication_port",
+        "worker_threads",
+        "servers"
+      ]
+    },
+    "DSCServer": {
+      "type": "object",
+      "description": "A Distributed Session Cache server configuration.",
+      "properties": {
+        "ip": {
+          "type": "string",
+          "description": "The name/IP address over which clients can connect to the DSC."
+        },
+        "service_port": {
+          "type": "integer",
+          "description": "The port which can be used by clients to connect to the DSC for session requests.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "replication_port": {
+          "type": "integer",
+          "description": "The port which can be used by the DSC to replicate data to a replication DSC.",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      },
+      "required": [
+        "ip",
+        "service_port",
+        "replication_port"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "cluster": {
+        "runtime_database": {
+          "type": "postgresql",
+          "host": "postgresql",
+          "port": 5432,
+          "ssl": true,
+          "ssl_keystore": "rt_profile_keys",
+          "user": "postgres",
+          "password": "Passw0rd",
+          "db_name": "isva"
+        }
+      }
+    }
+  ]
+}

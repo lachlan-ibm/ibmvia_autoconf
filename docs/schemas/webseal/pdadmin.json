@@ -1,0 +1,434 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/pdadmin.json",
+  "description": "Administrators can use the `pdadmin` tool to modify the configured User Registry and Policy Server. This tool isused to: create Access Control Lists (ACL's); create Protected Object Policies (POP's); create users or groups; as well as attaching ACL's or POP's to a reverse proxy instance's object space. Configuration to connect to the user registry is read from the webseal.runtime entry.",
+  "type": "object",
+  "properties": {
+    "users": {
+      "type": "array",
+      "description": "List of users to add to the User Registry. These will be created as 'full' Verify Identity Access users.",
+      "items": {
+        "$ref": "#/$defs/User"
+      }
+    },
+    "groups": {
+      "type": "array",
+      "description": "List of groups to add to the User Registry. These will be created as 'full' Verify Identity Access groups.",
+      "items": {
+        "$ref": "#/$defs/Group"
+      }
+    },
+    "acls": {
+      "type": "array",
+      "description": "List of ACL's to create in the Policy Server.",
+      "items": {
+        "$ref": "#/$defs/Access_Control_List"
+      }
+    },
+    "pops": {
+      "type": "array",
+      "description": "List of POP's to create in the Policy Server.",
+      "items": {
+        "$ref": "#/$defs/Protected_Object_Policy"
+      }
+    },
+    "objects": {
+      "type": "array",
+      "description": "List of objects to attach attributes to.",
+      "items": {
+        "$ref": "#/$defs/WebSEALObject"
+      }
+    },
+    "reverse_proxies": {
+      "type": "array",
+      "description": "List of ACL's and POP's to attach to a WebSEAL reverse proxy instance.",
+      "items": {
+        "$ref": "#/$defs/Reverse_Proxy"
+      }
+    }
+  },
+  "$defs": {
+    "User": {
+      "type": "object",
+      "description": "User account configuration.",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "The name the user will authenticate as. By default this is the UID LDAP attribute."
+        },
+        "first_name": {
+          "type": "string",
+          "description": "The CN LDAP attribute for this user. If not set then username will be used."
+        },
+        "last_name": {
+          "type": "string",
+          "description": "The SN LDAP attribute for this user. If not set then username will be used."
+        },
+        "password": {
+          "type": "string",
+          "description": "The secret to authenticate as username.",
+          "format": "password"
+        },
+        "dn": {
+          "type": "string",
+          "description": "The DN LDAP attribute for this user."
+        }
+      },
+      "required": ["username", "password", "dn"]
+    },
+    "Group": {
+      "type": "object",
+      "description": "Group configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The CN LDAP attribute for this group."
+        },
+        "dn": {
+          "type": "string",
+          "description": "The DN LDAP attribute for this group."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description of group."
+        },
+        "users": {
+          "type": "array",
+          "description": "Optional list of users to add to group. These users must already exist in the user registry.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["name", "dn"]
+    },
+    "Access_Control_List": {
+      "type": "object",
+      "description": "Access Control List configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the ACL."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description of the ACL"
+        },
+        "attributes": {
+          "type": "array",
+          "description": "List of extended attributes to add to ACL.",
+          "items": {
+            "$ref": "#/$defs/ACL_Attribute"
+          }
+        },
+        "users": {
+          "type": "array",
+          "description": "List of users and the permissions they are permitted to perform.",
+          "items": {
+            "$ref": "#/$defs/Entity"
+          }
+        },
+        "groups": {
+          "type": "array",
+          "description": "List of groups and the permissions they are permitted to perform.",
+          "items": {
+            "$ref": "#/$defs/Entity"
+          }
+        },
+        "any_other": {
+          "type": "string",
+          "description": "Permissions applied to users who do not match any of the defined user/group permissions.",
+          "pattern": "^[Tcmdbsvarxl]*$"
+        },
+        "unauthenticated": {
+          "type": "string",
+          "description": "Permissions applied to unauthenticated users.",
+          "pattern": "^[Tcmdbsvarxl]*$"
+        }
+      },
+      "required": ["name", "any_other", "unauthenticated"]
+    },
+    "ACL_Attribute": {
+      "type": "object",
+      "description": "ACL extended attribute.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the ACL attribute"
+        },
+        "value": {
+          "type": "string",
+          "description": "Value of the ACL attribute."
+        }
+      },
+      "required": ["name", "value"]
+    },
+    "Entity": {
+      "type": "object",
+      "description": "User or Group entity with permissions.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "User or Group entity to set permissions for."
+        },
+        "permissions": {
+          "type": "string",
+          "description": "Permission bit-string, eg. Tcmdbsvarxl",
+          "pattern": "^[Tcmdbsvarxl]*$"
+        }
+      },
+      "required": ["name", "permissions"]
+    },
+    "Protected_Object_Policy": {
+      "type": "object",
+      "description": "Protected Object Policy configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the POP."
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description of the POP."
+        },
+        "attributes": {
+          "type": "array",
+          "description": "List of extended attribute to add to POP.",
+          "items": {
+            "$ref": "#/$defs/POP_Attribute"
+          }
+        },
+        "tod_access": {
+          "type": "string",
+          "description": "Sets the time of day range for the specified protected object policy."
+        },
+        "audit_level": {
+          "type": "string",
+          "description": "Sets the audit level for the specified POP.",
+          "enum": ["none", "all", "permit", "deny", "admin", "error"]
+        },
+        "ip_auth": {
+          "type": "array",
+          "description": "Sets the IP endpoint authentication settings in the specified POP.",
+          "items": {
+            "$ref": "#/$defs/IP_Authorization"
+          }
+        }
+      },
+      "required": ["name", "tod_access", "audit_level"]
+    },
+    "POP_Attribute": {
+      "type": "object",
+      "description": "POP extended attribute.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the POP attribute."
+        },
+        "value": {
+          "type": "string",
+          "description": "value of the POP attribute."
+        }
+      },
+      "required": ["name", "value"]
+    },
+    "IP_Authorization": {
+      "type": "object",
+      "description": "IP-based authorization configuration.",
+      "properties": {
+        "any_other_network": {
+          "type": "string",
+          "description": "Permissions for IP authentication not explicitly listed in the POP."
+        },
+        "networks": {
+          "type": "array",
+          "description": "List of IP addresses to perform IP endpoint authentication.",
+          "items": {
+            "$ref": "#/$defs/Network"
+          }
+        }
+      },
+      "required": ["any_other_network"]
+    },
+    "Network": {
+      "type": "object",
+      "description": "Network IP authorization entry.",
+      "properties": {
+        "network": {
+          "type": "string",
+          "description": "TCP/IP address to apply to this POP.",
+          "format": "ipv4"
+        },
+        "netmask": {
+          "type": "string",
+          "description": "The corresponding netmask to apply to this POP."
+        },
+        "auth_level": {
+          "type": "string",
+          "description": "Required step-up authentication level."
+        }
+      },
+      "required": ["network", "netmask", "auth_level"]
+    },
+    "Reverse_Proxy": {
+      "type": "object",
+      "description": "Reverse proxy ACL and POP attachments.",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Hostname use by the reverse proxy in the Policy Server's namespace."
+        },
+        "instance": {
+          "type": "string",
+          "description": "WebSEAL instance name if the Policy Server's namespace."
+        },
+        "acls": {
+          "type": "array",
+          "description": "List of ACL's to attach to reverse proxy instance.",
+          "items": {
+            "$ref": "#/$defs/Reverse_Proxy_ACL"
+          }
+        },
+        "pops": {
+          "type": "array",
+          "description": "List of POP's to attach to reverse proxy instance.",
+          "items": {
+            "$ref": "#/$defs/Reverse_Proxy_POP"
+          }
+        }
+      },
+      "required": ["host", "instance"]
+    },
+    "Reverse_Proxy_ACL": {
+      "type": "object",
+      "description": "ACL attachment to reverse proxy junctions.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the ACL to attach to resources."
+        },
+        "junctions": {
+          "type": "array",
+          "description": "List of junction paths which use the specified ACL.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["name", "junctions"]
+    },
+    "Reverse_Proxy_POP": {
+      "type": "object",
+      "description": "POP attachment to reverse proxy junctions.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the POP to attach to resources."
+        },
+        "junction": {
+          "type": "string",
+          "description": "List of junction paths which use the specified POP."
+        }
+      },
+      "required": ["name", "junction"]
+    },
+    "WebSEALObject": {
+      "type": "object",
+      "description": "WebSEAL object attribute configuration.",
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "description": "Hostname use by the reverse proxy in the Policy Server's namespace."
+        },
+        "instance": {
+          "type": "string",
+          "description": "WebSEAL instance name if the Policy Server's namespace."
+        },
+        "junction": {
+          "type": "string",
+          "description": "WebSEAL junction to modify."
+        },
+        "attributes": {
+          "type": "array",
+          "description": "List of attributes to add to junction object.",
+          "items": {
+            "$ref": "#/$defs/Object_Attribute"
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["hostname", "instance", "junction", "attributes"]
+    },
+    "Object_Attribute": {
+      "type": "object",
+      "description": "Attribute to attach to junction object.",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Name of the attribute to attach to the junction object."
+        },
+        "value": {
+          "type": "string",
+          "description": "Value of the attribute to attach to the junction object."
+        }
+      },
+      "required": ["key", "value"]
+    }
+  },
+  "examples": [
+    {
+      "pdadmin": {
+        "users": [
+          {
+            "username": "testuser",
+            "password": "test_password",
+            "dn": "cn=testuser,dc=iswga"
+          },
+          {
+            "username": "aaascc",
+            "password": "aac_user_password",
+            "dn": "cn=aaascc,dc=iswga"
+          }
+        ],
+        "reverse_proxies": [
+          {
+            "host": "isva-wrp",
+            "instance": "default-proxy",
+            "acls": [
+              {
+                "name": "isam_mobile_anyauth",
+                "junctions": [
+                  "/mga/sps/authsvc",
+                  "/mga/sps/apiauthsvc",
+                  "/intent/account-requests"
+                ]
+              },
+              {
+                "name": "isam_mobile_rest_unauth",
+                "junctions": [
+                  "/mga/websock/mmfa-wss/",
+                  "/mga/sps/ac/info.js",
+                  "/mga/sps/ac/js/info.js",
+                  "/mga/sps/ac",
+                  "/.well-known",
+                  "/CertificateManagement/.well-known",
+                  "/mga/sps/mmfa/user/mgmt/qr_code",
+                  "/intent"
+                ]
+              }
+            ],
+            "pops": [
+              {
+                "name": "oauth-pop",
+                "junctions": [
+                  "/scim"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

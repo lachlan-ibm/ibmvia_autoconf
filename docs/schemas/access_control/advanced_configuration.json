@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "advanced_configuration.json",
+  "description": "Advanced Configuration Parameters define system wide properties for authentication and authorization components. The list of available properties is dependent on the target version of Verify Identity Access being configured. Administrators are able to use either the Verify Identity Access assigned identifier or the name of the property.",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/AdvancedConfigurationProperty"
+  },
+  "$defs": {
+    "AdvancedConfigurationProperty": {
+      "type": "object",
+      "description": "An advanced configuration property with its value.",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "The Verify Identity Access assigned property id. Either the property ID or name must be defined."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the advanced configuration property. Either the property ID or name must be defined."
+        },
+        "value": {
+          "type": "string",
+          "description": "The updated value of the advanced configuration property."
+        }
+      },
+      "required": [
+        "value"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "advanced_configuration": [
+        {
+          "name": "attributeCollection.authenticationContextAttributes",
+          "value": "resource,action,ac.uuid,header:userAgent,urn:ibm:demo:transferamount"
+        },
+        {
+          "name": "mmfa.transactionArchival.maxPendingPerUser",
+          "value": "1"
+        }
+      ]
+    }
+  ]
+}

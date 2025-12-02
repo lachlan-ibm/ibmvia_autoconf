@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/http_transformations.json",
+  "description": "HTTP transformation rules allow WebSEAL to inspect and rewrite request and response objects as they pass through the reverse proxy. HTTP transforms can be applied: when the request is received (by WebSEAL); after an authorization decision has been made; and when the response is received (by WebSEAL). Prior to Verify Access 10.0.4.0 only XSLT rules were supported, from 10.0.4.0 onwards, LUA scripts can also be used to write HTTP transforms. Detailed information about HTTP transformation concepts can be found [here](https://www.ibm.com/docs/en/sva/latest?topic=junctions-http-transformations). The name of the HTTP transform file will be used as the name of the resulting HTTP transformation rule in Verify Identity Access. ",
+  "type": "object",
+  "properties": {
+    "requests": {
+      "type": "array",
+      "description": "List of files to be uploaded as XSLT request HTTP Transformation Rules.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "responses": {
+      "type": "array",
+      "description": "List of files to be uploaded as XSLT response HTTP Transformation Rules.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "lua": {
+      "type": "array",
+      "description": "List of files to be uploaded as LUA HTTP Transformation Rules.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "examples": [
+    {
+      "http_transforms": {
+        "requests": [
+          "inject_header.xslt"
+        ],
+        "lua": [
+          "eai.lua"
+        ]
+      }
+    }
+  ]
+}

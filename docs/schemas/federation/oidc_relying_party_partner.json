@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "oidc_relying_party_partner.json",
+  "title": "OIDC Relying Party Partner Configuration",
+  "description": "Configuration for an OpenID Connect Relying Party partner.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the OIDC Relying Party partner."
+    },
+    "client_id": {
+      "type": "string",
+      "description": "The ID that identifies this client to the provider."
+    },
+    "client_secret": {
+      "type": "string",
+      "description": "The secret associated with the client ID. Do not include if creating a public client.",
+      "format": "password"
+    },
+    "basic_configuration": {
+      "$ref": "common_definitions.json#/$defs/BasicConfiguration",
+      "description": "The basic configuration data."
+    },
+    "signature_algorithm": {
+      "type": "string",
+      "description": "The signing algorithm to use.",
+      "enum": ["none", "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "ES256", "ES384", "ES512", "PS256", "PS384", "PS512"]
+    },
+    "verification_keystore": {
+      "type": "string",
+      "description": "When signature algorithm requires a certificate, the keystore which contains the selected certificate to perform the signing."
+    },
+    "verification_key_alias": {
+      "type": "string",
+      "description": "When signature algorithm requires a certificate, the alias of the public key in the selected keystore to use in signature verification."
+    },
+    "jwks_endpoint_url": {
+      "type": "string",
+      "description": "When signature algorithm requires a certificate, the JWK endpoint of the provider. If a metadata endpoint is specified in BasicConfigurationData, the JWK URL will be read from metadata information. Cannot be specified if using a signingKeyLabel.",
+      "format": "uri"
+    },
+    "key_management_algorithm": {
+      "type": "string",
+      "description": "The key management algorithm to use.",
+      "enum": ["none", "dir", "A128KW", "A192KW", "A256KW", "A128GCMKW", "A192GCMKW", "A256GCMKW", "ECDH-ES", "ECDH-ES+A128KW", "ECDH-ES+A192KW", "ECDH-ES+A256KW", "RSA1_5", "RSA-OAEP", "RSA-OAEP-256"]
+    },
+    "content_encryption_algorithm": {
+      "type": "string",
+      "description": "The content encryption algorithm to use.",
+      "enum": ["none", "A128CBC-HS256", "A192CBC-HS384", "A256CBC-HS512", "A128GCM", "A192GCM", "A256GCM"]
+    },
+    "decryption_keystore": {
+      "type": "string",
+      "description": "When key management algorithm requires a certificate, the keystore which contains the selected certificate to perform JWT decryption."
+    },
+    "decryption_key_alias": {
+      "type": "string",
+      "description": "When key management algorithm requires a certificate, the alias of the private key in the selected keystore to perform JWT decryption."
+    },
+    "scope": {
+      "type": "array",
+      "description": "An array of strings that identify the scopes to request from the provider. Defaults to ['openid'].",
+      "items": {
+        "type": "string"
+      },
+      "default": ["openid"]
+    },
+    "perform_user_info": {
+      "type": "boolean",
+      "description": "A setting that specifies whether to perform user info request automatically whenever possible."
+    },
+    "token_endpoint_auth_method": {
+      "type": "string",
+      "description": "The token endpoint authentication method.",
+      "enum": ["client_secret_basic", "client_secret_post"]
+    },
+    "attribute_mappings": {
+      "$ref": "common_definitions.json#/$defs/AttributeMapping",
+      "description": "The attribute mapping data."
+    },
+    "identity_mapping": {
+      "$ref": "common_definitions.json#/$defs/IdentityMapping",
+      "description": "The identity mapping data."
+    },
+    "advance_configuration": {
+      "$ref": "common_definitions.json#/$defs/AdvancedConfiguration",
+      "description": "The advance configuration data."
+    }
+  },
+  "required": ["name", "client_id", "basic_configuration", "token_endpoint_auth_method"]
+}

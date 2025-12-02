@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "wsfed_service_provider_partner.json",
+  "title": "WS-Federation Service Provider Partner Configuration",
+  "description": "Configuration for a WS-Federation Service Provider partner within an Identity Provider federation.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the federation partner."
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Whether this partner is enabled.",
+      "default": true
+    },
+    "role": {
+      "type": "string",
+      "description": "The role of the partner.",
+      "enum": ["sp"],
+      "default": "sp"
+    },
+    "template_name": {
+      "type": "string",
+      "description": "An identifier for the template on which to base this partner."
+    },
+    "endpoint": {
+      "type": "string",
+      "description": "The endpoint of the WS-Federation partner.",
+      "format": "uri"
+    },
+    "identity_mapping": {
+      "$ref": "common_definitions.json#/$defs/IdentityMapping",
+      "description": "The identity mapping data."
+    },
+    "key_alias": {
+      "$ref": "common_definitions.json#/$defs/KeyIdentifier",
+      "description": "The keystore and certificate to use to validate the signature. Only required if verify_signatures is set to true and use_key_info is set to false."
+    },
+    "key_info": {
+      "type": "string",
+      "description": "The regular expression used to find the X509 certificate for signature validation. Only required if verify_signatures is set to true and use_key_info is set to true."
+    },
+    "max_request_lifetime": {
+      "type": "integer",
+      "description": "The amount of time that the request is valid (in milliseconds).",
+      "minimum": 1
+    },
+    "realm": {
+      "type": "string",
+      "description": "The realm of the WS-Federation partner."
+    },
+    "use_key_info": {
+      "type": "boolean",
+      "description": "Whether to use the keyInfo of the XML signature to find the X509 certificate for signature validation (true) or the specified key_alias (false). Only required if verify_signatures is set to true."
+    },
+    "verify_signatures": {
+      "type": "boolean",
+      "description": "Whether to enable signature validation. Defaults to false if not specified.",
+      "default": false
+    },
+    "want_multiple_attribute_statements": {
+      "type": "boolean",
+      "description": "Whether to create multiple attribute statements in the Universal User."
+    }
+  },
+  "required": ["name", "endpoint", "identity_mapping", "max_request_lifetime", "realm", "want_multiple_attribute_statements"]
+}

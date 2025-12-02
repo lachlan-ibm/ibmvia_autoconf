@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "access_policies.json",
+  "description": "Configuration for federation access policies that define JavaScript-based policy rules. Access policies can be applied to the deployment types:\n- SAML 2.0 identity provider federation\n- SAML 2.0 service provider partner to an identity provider federation\n- OpenID Connect and API Protection Definition",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/AccessPolicy"
+  },
+  "$defs": {
+    "AccessPolicy": {
+      "type": "object",
+      "description": "A federation access policy with JavaScript content.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A unique name for the access policy. Maximum of 256 bytes.",
+          "maxLength": 256
+        },
+        "type": {
+          "type": "string",
+          "description": "System default type for each access policy. For example, 'JavaScript'.",
+          "default": "JavaScript"
+        },
+        "category": {
+          "type": "string",
+          "description": "A grouping of related access polices. For example, category 'OAUTH' identifies all the rules associated with the OAUTH flow. Maximum 256 bytes.",
+          "enum": [
+            "InfoMap",
+            "AuthSVC",
+            "OAUTH",
+            "OTP",
+            "OIDC",
+            "SAML2_0"
+          ],
+          "maxLength": 256
+        },
+        "policy_file": {
+          "type": "string",
+          "description": "A file with the JavaScript content of the access policy. Path can be absolute or relative to IVIA_CONFIG_BASE environment variable."
+        }
+      },
+      "required": [
+        "name",
+        "policy_file"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "access_policies": [
+        {
+          "name": "MyNewAccessPolicy",
+          "type": "JavaScript",
+          "policy_file": "path/to/policy.file",
+          "category": "OTP"
+        }
+      ]
+    }
+  ]
+}

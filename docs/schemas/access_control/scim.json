@@ -1,0 +1,348 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "scim.json",
+  "description": "System for Cross-domain Identity Management (SCIM) configuration. SCIM can be configured with a LDAP or a Verify Identity Access User Registry (WebSEAL runtime component) server connection. SCIM allows administrators to create and manage users, as well as provide attributes to other Verify Identity Access authentication components.",
+  "type": "object",
+  "properties": {
+    "admin_group": {
+      "type": "string",
+      "description": "The name of the administrator group. Used to determine if the authenticated user is an administrator."
+    },
+    "schemas": {
+      "type": "array",
+      "description": "List of managed schema to modify",
+      "items": {
+        "$ref": "#/$defs/Schema"
+      }
+    },
+    "enable_header_authentication": {
+      "type": "boolean",
+      "description": "Whether or not SCIM header authentication is enabled."
+    },
+    "enable_authz_filter": {
+      "type": "boolean",
+      "description": "Whether or not the authorization filter is enabled."
+    },
+    "attribute_modes": {
+      "type": "array",
+      "description": "The customized attribute modes.",
+      "items": {
+        "$ref": "#/$defs/AttributeMode"
+      }
+    },
+    "max_user_response": {
+      "type": "integer",
+      "description": "The maximum number of entries that can be returned from a single call to the /User endpoint.",
+      "minimum": 1
+    }
+  },
+  "required": [
+    "admin_group"
+  ],
+  "$defs": {
+    "AttributeMode": {
+      "type": "object",
+      "description": "Customized attribute access modes for a SCIM schema.",
+      "properties": {
+        "schema": {
+          "type": "string",
+          "description": "The name of the schema."
+        },
+        "modes": {
+          "type": "array",
+          "description": "An array of customised attribute modes for the schema.",
+          "items": {
+            "$ref": "#/$defs/Mode"
+          }
+        }
+      },
+      "required": [
+        "schema",
+        "modes"
+      ]
+    },
+    "Mode": {
+      "type": "object",
+      "description": "Access mode for a specific attribute.",
+      "properties": {
+        "attribute": {
+          "type": "string",
+          "description": "The name of the attribute."
+        },
+        "mode": {
+          "type": "string",
+          "description": "The mode for the attribute.",
+          "enum": [
+            "readonly",
+            "writeonly",
+            "readwrite",
+            "adminwrite",
+            "immutable"
+          ]
+        },
+        "subattribute": {
+          "type": "string",
+          "description": "For a multivalued attribute - the second level SCIM attribute name."
+        }
+      },
+      "required": [
+        "attribute",
+        "mode"
+      ]
+    },
+    "Schema": {
+      "type": "object",
+      "description": "SCIM schema configuration.",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "description": "Name of schema properties to modify.",
+          "enum": [
+            "urn:ietf:params:scim:schemas:core:2.0:User",
+            "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+            "urn:ietf:params:scim:schemas:core:2.0:Group",
+            "urn:ietf:params:scim:schemas:extension:isam:1.0:User"
+          ]
+        },
+        "properties": {
+          "description": "Schema unique properties to apply. The structure depends on the schema URI."
+        }
+      },
+      "required": [
+        "uri",
+        "properties"
+      ]
+    },
+    "UserSchemaProperties": {
+      "type": "object",
+      "description": "Properties for urn:ietf:params:scim:schemas:core:2.0:User schema.",
+      "properties": {
+        "ldap_connection": {
+          "type": "string",
+          "description": "The name of the ldap server connection."
+        },
+        "ldap_object_classes": {
+          "type": "array",
+          "description": "The list of ldap object classes that are used to indicate a user object.",
+          "items": {
+            "$ref": "#/$defs/LDAPObjectClass"
+          }
+        },
+        "search_suffix": {
+          "type": "string",
+          "description": "The suffix from which searches will commence in the LDAP server."
+        },
+        "user_suffix": {
+          "type": "string",
+          "description": "The suffix that will house any users that are created through the SCIM interface."
+        },
+        "user_dn": {
+          "type": "string",
+          "description": "The LDAP attribute that will be used to construct the user DN. Defaults to cn.",
+          "default": "cn"
+        },
+        "connection_type": {
+          "type": "string",
+          "description": "Indicates the type of ldap server connection type.",
+          "enum": [
+            "ldap",
+            "isamruntime"
+          ],
+          "default": "ldap"
+        },
+        "attrs_dir": {
+          "type": "string",
+          "description": "The name of a federated directory used to generate the list of available ldap object classes and ldap attribute names. Only valid if the connection_type is set to isamruntime."
+        },
+        "enforce_password_policy": {
+          "type": "boolean",
+          "description": "Set this field to true if SCIM needs to honour the backend password policy when changing a user password."
+        },
+        "user_id": {
+          "type": "string",
+          "description": "The LDAP attribute that will be used as the user ID. Defaults to uid.",
+          "default": "uid"
+        },
+        "mappings": {
+          "type": "array",
+          "description": "The list of SCIM attribute mappings.",
+          "items": {
+            "$ref": "#/$defs/SCIMMapping"
+          }
+        }
+      },
+      "required": [
+        "ldap_connection",
+        "ldap_object_classes",
+        "search_suffix",
+        "user_suffix",
+        "enforce_password_policy"
+      ]
+    },
+    "EnterpriseSchemaProperties": {
+      "type": "object",
+      "description": "Properties for urn:ietf:params:scim:schemas:extension:enterprise:2.0:User schema.",
+      "properties": {
+        "mappings": {
+          "type": "array",
+          "description": "The list of SCIM enterprise user attribute mappings.",
+          "items": {
+            "$ref": "#/$defs/SCIMMapping"
+          }
+        }
+      },
+      "required": [
+        "mappings"
+      ]
+    },
+    "GroupSchemaProperties": {
+      "type": "object",
+      "description": "Properties for urn:ietf:params:scim:schemas:core:2.0:Group schema.",
+      "properties": {
+        "ldap_object_classes": {
+          "type": "array",
+          "description": "The list of ldap object classes that are used to indicate a group object.",
+          "items": {
+            "$ref": "#/$defs/LDAPObjectClass"
+          }
+        },
+        "group_dn": {
+          "type": "string",
+          "description": "The LDAP attribute that will be used to construct the group DN."
+        }
+      },
+      "required": [
+        "ldap_object_classes",
+        "group_dn"
+      ]
+    },
+    "IVIAUserSchemaProperties": {
+      "type": "object",
+      "description": "Properties for urn:ietf:params:scim:schemas:extension:isam:1.0:User schema.",
+      "properties": {
+        "ldap_connection": {
+          "type": "string",
+          "description": "The name of the ldap server connection to the Verify Identity Access user registry. If a connection is not specified the SCIM application will not attempt to manage Verify Identity Access users."
+        },
+        "isam_domain": {
+          "type": "string",
+          "description": "The name of the Verify Identity Access domain. This will default to Default",
+          "default": "Default"
+        },
+        "update_native_users": {
+          "type": "boolean",
+          "description": "Enable update of Verify Identity Access specific attributes when LDAP standard attributes are updated."
+        },
+        "connection_type": {
+          "type": "string",
+          "description": "Indicates the type of ldap server connection ldap or isamruntime.",
+          "enum": [
+            "ldap",
+            "isamruntime"
+          ],
+          "default": "ldap"
+        },
+        "attrs_dir": {
+          "type": "string",
+          "description": "The name of a federated directory used to generate the list of available ldap object classes and ldap attribute names. Only valid if the connection_type is set to isamruntime."
+        },
+        "enforce_password_policy": {
+          "type": "boolean",
+          "description": "Set this field to true if SCIM needs to honour the backend password policy when changing a user password.",
+          "default": false
+        }
+      }
+    },
+    "LDAPObjectClass": {
+      "type": "object",
+      "description": "LDAP object class definition.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the ldap object class type that is used to indicate a user or group object."
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "SCIMMapping": {
+      "type": "object",
+      "description": "Mapping between SCIM attributes and backend attributes.",
+      "properties": {
+        "scim_attribute": {
+          "type": "string",
+          "description": "The name of the SCIM attribute being mapped."
+        },
+        "mapping": {
+          "description": "For a simple SCIM attribute - the mapping for this attribute. For a complex SCIM attribute this can be an array of mappings."
+        }
+      },
+      "required": [
+        "scim_attribute",
+        "mapping"
+      ]
+    },
+    "Mapping": {
+      "type": "object",
+      "description": "Individual attribute mapping definition.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "The type of attribute to map to the SCIM attribute.",
+          "enum": [
+            "ldap",
+            "session",
+            "fixed"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "description": "The attribute to map to the SCIM attribute."
+        },
+        "scim_subattribute": {
+          "type": "string",
+          "description": "For a multivalued attribute - the second level SCIM attribute name to be mapped. eg. work or home for SCIM attribute email."
+        }
+      },
+      "required": [
+        "type",
+        "source"
+      ]
+    }
+  },
+  "examples":[
+    {
+      "scim": {
+        "admin_group": "SecurityGroup",
+        "schemas": [
+          {
+            "uri": "urn:ietf:params:scim:schemas:core:2.0:User",
+            "properties": {
+              "connection_type": "ldap",
+              "ldap_connection": "Local LDAP connection",
+              "search_suffix": "dc=ibm,dc=com",
+              "user_suffix": "dc=ibm,dc=com"
+            }
+          }
+        ],
+        "attribute_modes": [
+          {
+            "schema": "urn:ietf:params:scim:schemas:extension:isam:1.0:MMFA:Transaction",
+            "modes": [
+              {
+                "attribute": "transactionsPending",
+                "mode": "readwrite"
+              },
+              {
+                "attribute": "transactionsPending",
+                "subattribute": "txnStatus",
+                "mode": "readwrite"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

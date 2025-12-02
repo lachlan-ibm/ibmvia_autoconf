@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/url_mapping.json",
+  "description": "A URL mapping table is used to map WebSEAL access control lists (ACLs) and protected object policies (POPs) to dynamically generated URLs, such as URLs with query string parameters. URLs can be matched using a subset of UNIX shell pattern matching (including wildcards). A complete list of supported regex can be found [here](https://www.ibm.com/docs/en/sva/latest?topic=configuration-supported-wildcard-pattern-matching-characters#ref_wildcard_sup)",
+  "type": "array",
+  "items": {
+    "type": "string",
+    "description": "Path to URL mapping configuration file."
+  },
+  "examples": [
+    {
+      "url_mapping": [
+        "dyn.url.conf",
+        "url.map.conf"
+      ]
+    }
+  ]
+}

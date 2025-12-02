@@ -1940,9 +1940,7 @@ class AAC_Configurator(object):
                     use_all_metadata: true
                     metadata_soft_fail: false
                     metadata_services:
-                    - url: "https://mds3.fidoalliance.org"
-                      truststore: "rt_profile_keys"
-                      jws_truststore: "fido_mds_certs"
+                    - "https://mds3.fidoalliance.org"
                     mediator: "fido2_mediator_verifysecuritypoc.js"
                     attestation:
                       statement_types:

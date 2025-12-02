@@ -1,0 +1,150 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "policy_information_points.json",
+  "description": "Policy Information Points (PIPs) allow administrators to integrate third party information sources to provide additional context to an authorization policy before making a decision to permit or deny access.",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/PolicyInformationPoint"
+  },
+  "$defs": {
+    "PolicyInformationPoint": {
+      "type": "object",
+      "description": "A policy information point that retrieves attribute values from external sources.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A unique name for the policy information point. This name is used as the Issuer for custom attributes whose value is returned by this policy information point."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the policy information point."
+        },
+        "type": {
+          "type": "string",
+          "description": "The policy information point type for this policy information point.",
+          "enum": [
+            "JavaScript",
+            "RESTful Web Service",
+            "Database",
+            "LDAP",
+            "FiberLink MaaS360",
+            "QRadar User Behavior Analytics"
+          ]
+        },
+        "attributes": {
+          "type": "array",
+          "description": "A list of custom attributes whose values are retrieved from select portions of the response from this policy information point. Specify when the policy information point type has supportSelector true.",
+          "items": {
+            "$ref": "#/$defs/AttributeSelector"
+          }
+        },
+        "properties": {
+          "type": "array",
+          "description": "Configurable properties defining this policy information point. These entries are specific to the policy information point type.",
+          "items": {
+            "$ref": "#/$defs/Property"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "attributes",
+        "properties"
+      ]
+    },
+    "AttributeSelector": {
+      "type": "object",
+      "description": "Defines how to extract an attribute value from the PIP response.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the attribute whose value will come from the selected data portion of the policy information point response. The attribute must be defined on the appliance before it can be assigned to this selector."
+        },
+        "selector": {
+          "type": "string",
+          "description": "Identifies how to select the part of the policy information point response that will be assigned as the attribute value. The format of the selector for a RESTful Web Service policy information point is dependent on the responseFormat property value (JSON, XML, or Text)."
+        }
+      },
+      "required": [
+        "name",
+        "selector"
+      ]
+    },
+    "Property": {
+      "type": "object",
+      "description": "A configurable property for the policy information point.",
+      "properties": {
+        "read_only": {
+          "type": "boolean",
+          "description": "True if the property value cannot be updated."
+        },
+        "value": {
+          "type": "string",
+          "description": "Value given to the property."
+        },
+        "datatype": {
+          "type": "string",
+          "description": "Data type of the property.",
+          "enum": [
+            "Binary",
+            "Boolean",
+            "Double",
+            "Integer",
+            "String",
+            "JavaScript",
+            "KeyStore",
+            "Email",
+            "X500",
+            "URI",
+            "URL",
+            "Hostname"
+          ]
+        },
+        "key": {
+          "type": "string",
+          "description": "Name of the property as used by the policy information point. A key of 'javascript.code' or 'fileContent' identify special properties whose values can be imported and exported by a file."
+        },
+        "sensitive": {
+          "type": "boolean",
+          "description": "Used internally to indicate properties with values private in nature, such as passwords."
+        }
+      },
+      "required": [
+        "read_only",
+        "value",
+        "datatype",
+        "key",
+        "sensitive"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "pips": [
+        {
+          "name": "myJSpip",
+          "description": "Custom JavaScript PIP.",
+          "type": "JavaScript",
+          "attributes": [],
+          "properties": [
+            {
+              "read_only": false,
+              "value": "\n/** Import packages necessary for the script to execute. */\nimportPackage(com.ibm. . .);\n/** Your code here */\n....\nvar name = getName();\nreturn\n",
+              "datatype": "JavaScript",
+              "key": "javascript.code",
+              "sensitive": false
+            },
+            {
+              "read_only": false,
+              "value": "89",
+              "datatype": "Integer",
+              "key": "limit",
+              "sensitive": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

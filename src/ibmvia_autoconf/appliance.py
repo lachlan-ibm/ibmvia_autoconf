@@ -320,8 +320,11 @@ class Appliance_Configurator(object):
 
     def date_time(self, config):
         if config.date_time != None:
+            ntpServer = None
+            if "ntp_servers" in config.date_time:
+                ntpServer = ",".join(config.date_time.ntp_servers)
             rsp = self.appliance.get_system_settings().date_time.update(enable_ntp=config.date_time.enable_ntp,
-                    ntp_servers=config.date_time.ntp_servers, time_zone=config.date_time.time_zone,
+                    ntp_servers=ntpServer, time_zone=config.date_time.time_zone,
                     date_time=config.date_time.date_time)
             if rsp.success == True:
                 _logger.info("Successfully updated Date/Time settings on appliance")
@@ -418,7 +421,7 @@ class Appliance_Configurator(object):
         if config.runtime_database != None:
             hvdbExtraConfig = config.runtime_database.copy()
             methodArgs = {'embedded': False, 'db_type': hvdbExtraConfig.pop('type'), 'host': hvdbExtraConfig.pop('host'),
-                          'port': hvdbExtraConfig.po('port'), 'secure': hvdbExtraConfig.pop('ssl'),
+                          'port': hvdbExtraConfig.pop('port'), 'secure': hvdbExtraConfig.pop('ssl'),
                           'db_keystore': hvdbExtraConfig.pop('ssl_keystore'), 'user': hvdbExtraConfig.pop('user'),
                           'passwd': hvdbExtraConfig.pop('password'), 'db_name': hvdbExtraConfig.pop('db_name'),
                           'extra_config': hvdbExtraConfig
@@ -442,16 +445,17 @@ class Appliance_Configurator(object):
         if containers.volumes != None:
             for volume in containers.volumes:
                 existing = optional_list(filter_list('name', volume.name, 
-                                                     self.appliance.get_system_settings().managed_containers.volumes.list()))[0]
+                                                     self.appliance.get_system_settings().container_mgmt.volumes.list().json))[0]
                 rsp = verb = None
+                volume_file = optional_list(FILE_LOADER.read_file(volume.archive))[0]
                 if existing:
-                    rsp = self.appliance.get_system_settings().managed_containers.volumes.import_volume(
-                        existing['id'], FILE_LOADER.read_file(volume.archive))
+                    rsp = self.appliance.get_system_settings().container_mgmt.volumes.import_volume(
+                        existing['id'], volume_file['path'])
                     verb = "updated" if rsp.success == True else "update"
                 else:
-                    existing = self.appliance.get_system_settings().managed_containers.volumes.create(volume.name).id_from_location
-                    rsp = self.appliance.get_system_settings().managed_containers.volumes.create(
-                                                            existing, FILE_LOADER.read_file(volume.archive))
+                    existing = self.appliance.get_system_settings().container_mgmt.volumes.create(volume.name).json['id']
+                    rsp = self.appliance.get_system_settings().container_mgmt.volumes.import_volume(
+                                                            existing, volume_file['path'])
                     verb = "created" if rsp.success == True else "create"
                 if rsp.success == True:
                     _logger.info("Successfully {} managed container volume {}".format(verb, volume.name))
@@ -464,13 +468,16 @@ class Appliance_Configurator(object):
         if containers.registries != None:
             for rgy in containers.registries:
                 existing = optional_list(filter_list('host', rgy.host, 
-                                                     self.appliance.get_system_settings().managed_containers.registries.list()))[0]
+                                                     self.appliance.get_system_settings().container_mgmt.registry.list().json))[0]
                 rsp = verb = None
+                if 'ca' in rgy:
+                    ca_file = optional_list(FILE_LOADER.read_file(rgy.ca))[0]
+                    rgy.ca = ca_file['path'] # Maybe convert relative path to fully qualified
                 if existing:
-                    rsp = self.appliance.get_system_settings().managed_containers.registries.update(existing['id'], **rgy)
+                    rsp = self.appliance.get_system_settings().container_mgmt.registry.update(existing['id'], **rgy)
                     verb = "updated" if rsp.success == True else "update"
                 else:
-                    rsp = self.appliance.get_system_settings().managed_containers.registries.create(**rgy)
+                    rsp = self.appliance.get_system_settings().container_mgmt.registry.create(**rgy)
                     verb = "created" if rsp.success == True else "create"
                 if rsp.success == True:
                     _logger.info("Successfully {} {} container registry properties".format(verb, rgy.host))
@@ -483,13 +490,13 @@ class Appliance_Configurator(object):
         if containers.images != None:
             for image in containers.images:
                 existing = optional_list(filter_list('image', image, 
-                                                     self.appliance.get_system_settings().managed_containers.images.list()))[0]
+                                                     self.appliance.get_system_settings().container_mgmt.images.list().json))[0]
                 rsp = verb = None
                 if existing:
-                    rsp = self.appliance.get_system_settings().managed_containers.images.update(existing['id'])
+                    rsp = self.appliance.get_system_settings().container_mgmt.images.update(existing['id'])
                     verb = "updated" if rsp.success == True else "update"
                 else:
-                    rsp = self.appliance.get_system_settings().managed_containers.images.create(image)
+                    rsp = self.appliance.get_system_settings().container_mgmt.images.create(image)
                     verb = "created" if rsp.success == True else "create"
                 if rsp.success == True:
                     _logger.info("Successfully {} {} cached container image".format(verb, image))
@@ -499,17 +506,23 @@ class Appliance_Configurator(object):
 
     def _container_deployments(self, containers):
         if containers.deployments != None:
+            volumes = optional_list(self.appliance.get_system_settings().container_mgmt.volumes.list().json)
             for deployment in containers.deployments:
+                if 'volumes' in deployment:
+                    for volume in deployment.volumes:
+                        for v in volumes: #Iterate list of volumes, replace name with uuid if matches
+                            if v['name'] == volume['value']:
+                                volume['value'] = v['id']
                 existing = optional_list(filter_list('name', deployment.name, 
-                                                     self.appliance.get_system_settings().managed_containers.deployments.list()))[0]
+                                                     self.appliance.get_system_settings().container_mgmt.deployments.list().json))[0]
                 rsp = verb = None
                 if existing:
-                    rsp = self.appliance.get_system_settings().managed_containers.deployments.delete(existing['id'])
+                    rsp = self.appliance.get_system_settings().container_mgmt.deployments.delete(existing['id'])
                     if rsp.success == True:
-                        rsp = self.appliance.get_system_settings().managed_containers.deployments.create(**deployment)
+                        rsp = self.appliance.get_system_settings().container_mgmt.deployments.create(**deployment)
                     verb = "redeploy"
                 else:
-                    rsp = self.appliance.get_system_settings().managed_containers.registries.create(**deployment)
+                    rsp = self.appliance.get_system_settings().container_mgmt.deployments.create(**deployment)
                     verb = "created" if rsp.success == True else "create"
                 if rsp.success == True:
                     _logger.info("Successfully {} {} managed container deployment".format(verb, deployment.name))
@@ -635,7 +648,7 @@ class Appliance_Configurator(object):
         deployments: typing.Optional[typing.List[Deployment]]
         'List of managed container deployments to create.'
 
-    def managed_containers(self, config):
+    def container_management(self, config):
         if config.managed_containers != None:
             self._container_volumes(config.managed_containers)
             self._container_registries(config.managed_containers)
@@ -647,7 +660,7 @@ class Appliance_Configurator(object):
         self.update_network(self.config.appliance)
         self.date_time(self.config.appliance)
         self.cluster(self.config.appliance)
-        self.managed_containers(self.config.appliance)
+
 
 if __name__ == "__main__":
     Appliance_Configurator(config_yaml(), None).configure()

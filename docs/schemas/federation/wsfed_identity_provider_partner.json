@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "wsfed_identity_provider_partner.json",
+  "title": "WS-Federation Identity Provider Partner Configuration",
+  "description": "Configuration for a WS-Federation Identity Provider partner within a Service Provider federation.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the federation partner."
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Whether this partner is enabled.",
+      "default": true
+    },
+    "role": {
+      "type": "string",
+      "description": "The role of the partner.",
+      "enum": ["ip"],
+      "default": "ip"
+    },
+    "template_name": {
+      "type": "string",
+      "description": "An identifier for the template on which to base this partner."
+    },
+    "attribute_types": {
+      "type": "array",
+      "description": "Specifies the types of attributes to include in the assertion. The default, an asterisk (*), includes all the attribute types that are specified in the identity mapping file.",
+      "items": {
+        "type": "string"
+      },
+      "default": ["*"]
+    },
+    "endpoint": {
+      "type": "string",
+      "description": "The endpoint of the WS-Federation partner.",
+      "format": "uri"
+    },
+    "identity_mapping": {
+      "$ref": "common_definitions.json#/$defs/IdentityMapping",
+      "description": "The identity mapping data."
+    },
+    "include_certificate_data": {
+      "type": "boolean",
+      "description": "Whether to include the BASE64 encoded certificate data with the signature. Defaults to true if not specified.",
+      "default": true
+    },
+    "include_issuer_details": {
+      "type": "boolean",
+      "description": "Whether to include the issuer name and the certificate serial number with the signature. Defaults to false if not specified.",
+      "default": false
+    },
+    "include_public_key": {
+      "type": "boolean",
+      "description": "Whether to include the public key with the signature. Defaults to false if not specified.",
+      "default": false
+    },
+    "include_subject_key_identifier": {
+      "type": "boolean",
+      "description": "Whether to include the X.509 subject key identifier with the signature. Defaults to false if not specified.",
+      "default": false
+    },
+    "include_subject_name": {
+      "type": "boolean",
+      "description": "Whether to include the subject name with the signature. Defaults to false if not specified.",
+      "default": false
+    },
+    "max_request_lifetime": {
+      "type": "integer",
+      "description": "The amount of time that the request is valid (in milliseconds).",
+      "minimum": 1
+    },
+    "realm": {
+      "type": "string",
+      "description": "The realm of the WS-Federation partner."
+    },
+    "signature_algorithm": {
+      "type": "string",
+      "description": "The signature algorithm to use for signing SAML assertions. Only required if sign_saml_assertion is set to true.",
+      "enum": ["RSA-SHA1", "RSA-SHA256", "RSA-SHA512"]
+    },
+    "signing_key_identifier": {
+      "$ref": "common_definitions.json#/$defs/KeyIdentifier",
+      "description": "The certificate to use for signing the SAML assertions. Only required if sign_saml_assertion is set to true."
+    },
+    "sign_saml_assertion": {
+      "type": "boolean",
+      "description": "Whether or not the assertion needs to be signed."
+    },
+    "subject_confirmation_method": {
+      "type": "string",
+      "description": "The subject confirmation method.",
+      "enum": [
+        "No Subject Confirmation Method",
+        "urn:oasis:names:tc:SAML:1.0:cm:bearer",
+        "urn:oasis:names:tc:SAML:1.0:cm:holder-of-key",
+        "urn:oasis:names:tc:SAML:1.0:cm:sender-vouches"
+      ]
+    },
+    "use_inclusive_namespace": {
+      "type": "boolean",
+      "description": "Whether or not to use the InclusiveNamespaces construct. Defaults to true if not specified.",
+      "default": true
+    }
+  },
+  "required": ["name", "endpoint", "identity_mapping", "max_request_lifetime", "realm"]
+}

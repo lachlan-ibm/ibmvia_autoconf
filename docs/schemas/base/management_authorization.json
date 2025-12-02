@@ -1,0 +1,142 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/management_authorization.json",
+  "description": "Manage access to Verify Identity Access features and defining Role Based Access Control (RBAC) to the local management interface. This allows for fine-grained control over which accounts are permitted to modify a deployment. Administrators can create roles which contain permissions for one or more features. Each feature in a role has two permission levels: read access (can view but cannot modify); and write access (permission to modify).",
+  "type": "object",
+  "properties": {
+    "authorization_enforcement": {
+      "type": "boolean",
+      "description": "Enable role based authorization for this deployment."
+    },
+    "roles": {
+      "type": "array",
+      "description": "Optional list of roles to modify for role based authorization.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation to perform on authorization role.",
+            "enum": [
+              "add",
+              "remove",
+              "update"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of role."
+          },
+          "users": {
+            "type": "array",
+            "description": "Optional list of users to add to role.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Name of user."
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Type of user.",
+                  "enum": [
+                    "local",
+                    "remote"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ]
+            }
+          },
+          "groups": {
+            "type": "array",
+            "description": "Optional list of groups to add to role.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Name of group."
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Type of group.",
+                  "enum": [
+                    "local",
+                    "remote"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ]
+            }
+          },
+          "features": {
+            "type": "array",
+            "description": "List of features to authorize users/groups for. Each feature has two permission levels: read access (can view but cannot modify) and write access (permission to modify).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Name of feature."
+                },
+                "access": {
+                  "type": "string",
+                  "description": "Access to grant to feature. 'r' for read access, 'w' for write access.",
+                  "enum": [
+                    "r",
+                    "w"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "access"
+              ]
+            }
+          }
+        },
+        "required": [
+          "operation",
+          "name",
+          "features"
+        ]
+      }
+    }
+  },
+  "required": [
+    "authorization_enforcement"
+  ],
+  "examples": [
+    {
+      "management_authorization": {
+        "authorization_enforcement": true,
+        "roles": [
+          {
+            "operation": "update",
+            "name": "Configuration Service",
+            "users": [
+              {
+                "name": "cfgsvc",
+                "type": "local"
+              }
+            ],
+            "features": [
+              {
+                "name": "shared_volume",
+                "access": "w"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

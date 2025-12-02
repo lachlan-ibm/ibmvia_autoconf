@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/ssl_certificates.json",
+  "description": "X509 Certificates and PCKS12 key-files can be imported into Verify Identity Access SSL databases. Each entry in the list can have four keys: database name; personal certificates; certificates loaded from URL's; and signer certificates. Alternatively a SSL Certifiacte Datbase can be imported from a `.kdb` and corresponding `.sth` file. If a database does not exist on the appliance then it is created before files are imported.\n\nSSL certificates are imported into the appliance by reading files from the file system. Therefore any PKI which is to be imported into the appliance must specify the fully-qualified path or be a path relative to the `IVIA_CONFIG_BASE` environment variable.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of SSL database to configure. If database does not exist it will be created. Either name or kdb_file must be defined."
+    },
+    "kdb_file": {
+      "type": "string",
+      "description": "Path to the .kdb file to import as a SSL database. Required if importing a SSL KDB.",
+      "pattern": ".*\\.kdb$"
+    },
+    "stash_file": {
+      "type": "string",
+      "description": "Path to the .sth file for the specified kdb_file. Required if kdb_file is set.",
+      "pattern": ".*\\.sth$"
+    },
+    "signer_certificates": {
+      "type": "array",
+      "description": "List of file paths for signer certificates (PEM or DER) to import.",
+      "items": {
+        "type": "string",
+        "pattern": ".*\\.(pem|der|crt|cer)$"
+      }
+    },
+    "personal_certificates": {
+      "type": "array",
+      "description": "List of file paths for personal certificates (PKCS#12) to import.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Optional label to include when importing the certificate. If this is not present the CN X.500 attribute is used."
+          },
+          "p12_file": {
+            "type": "string",
+            "description": "Path to PKCS12 file to import as a personal certificate/key.",
+            "pattern": ".*\\.(p12|pfx)$"
+          },
+          "secret": {
+            "type": "string",
+            "description": "Optional secret to decrypt personal certificate.",
+            "format": "password"
+          }
+        },
+        "required": ["p12_file"]
+      }
+    },
+    "load_certificates": {
+      "type": "array",
+      "description": "Load X509 certificates from TCPS endpoints.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "server": {
+            "type": "string",
+            "description": "Domain name or address of web service.",
+            "format": "hostname"
+          },
+          "port": {
+            "type": "integer",
+            "description": "Port Web service is listening on.",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "label": {
+            "type": "string",
+            "description": "Name of retrieved X509 certificate alias in SSL database."
+          }
+        },
+        "required": ["server", "port", "label"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "ssl_certificates": [
+        {
+          "name": "lmi_trust_store",
+          "personal_certificates": [
+            {
+              "path": "ssl/lmi_trust_store/personal.p12",
+              "secret": "S3cr37"
+            }
+          ],
+          "signer_certificates": [
+            "ssl/lmi_trust_store/signer.pem"
+          ]
+        },
+        {
+          "name": "rt_profile_keys",
+          "signer_certificates": [
+            "ssl/rt_profile_keys/signer.pem"
+          ]
+        },
+        {
+          "kdb_file": "my_keystore.kdb",
+          "stash_file": "my_keystore.sth"
+        }
+      ]
+    }
+  ]
+}

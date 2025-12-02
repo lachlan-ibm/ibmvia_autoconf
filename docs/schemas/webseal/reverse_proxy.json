@@ -1,0 +1,619 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/reverse_proxy.json",
+  "description": "Properties to configure a WebSEAL Reverse Proxy instance. A reverse proxy instance typically defines one or more junctions to protected application servers. This section can also be used to define configuration for the `webseal.conf` file as well as run the integration wizards for MMFA, AAC and Federation capabilities from the Federated Runtime Server. Configuration to connect to the user registry is read from the webseal.runtime entry.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the reverse proxy instance."
+    },
+    "host": {
+      "type": "string",
+      "description": "The host name that is used by the Security Verify Identity Access policy server to contact the appliance."
+    },
+    "nw_interface_yn": {
+      "type": "string",
+      "description": "Specifies whether to use a logical network interface for the instance. Only valid for appliance deployments.",
+      "enum": ["yes", "no"]
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "The IP address for the logical interface. Only valid for appliance deployments where nw_interface_yn is yes.",
+      "format": "ipv4"
+    },
+    "listening_port": {
+      "type": "integer",
+      "description": "This is the listening port through which the instance communicates with the Security Verify Identity Access policy server.",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "domain": {
+      "type": "string",
+      "description": "The Security Verify Identity Access domain."
+    },
+    "ldap": {
+      "$ref": "#/$defs/LDAP",
+      "description": "LDAP policy server properties."
+    },
+    "http": {
+      "$ref": "#/$defs/Endpoint",
+      "description": "HTTP traffic endpoint properties."
+    },
+    "https": {
+      "$ref": "#/$defs/Endpoint",
+      "description": "HTTPS traffic endpoint properties."
+    },
+    "junctions": {
+      "type": "array",
+      "description": "Junctions to backend resource servers for this reverse proxy instance.",
+      "items": {
+        "$ref": "#/$defs/Junction"
+      }
+    },
+    "aac_configuration": {
+      "$ref": "#/$defs/AAC_Configuration",
+      "description": "Properties for configuring this reverse proxy instance for use with advanced access control authentication and context based access service."
+    },
+    "mmfa_configuration": {
+      "$ref": "#/$defs/MMFA_Configuration",
+      "description": "Properties for configuring this reverse proxy instance to deliver MMFA capabilities."
+    },
+    "federation_configuration": {
+      "type": "array",
+      "description": "Properties for integrating with a running Federation runtime.",
+      "items": {
+        "$ref": "#/$defs/Federation_Configuration"
+      }
+    },
+    "api_protection_configuration": {
+      "$ref": "#/$defs/ApiProtectionConfiguration",
+      "description": "Properties for integrating this reverse proxy with OIDC API Protection Clients."
+    },
+    "stanza_configuration": {
+      "$ref": "#/$defs/Stanza_Configuration",
+      "description": "For each WebSEAL reverse proxy instance, administrators are able to define section/key/value entries to modify the `webseal.conf` file for that instance. Each stanza modification must also include an operation to either: add an entry, creating duplicate entries if the particular section/key combination already exists; update an entry if it already exists, or add it if it does not; and remove an entry if it exists."
+    },
+    "management_root": {
+      "type": "array",
+      "description": "List of files to import into WebSEAL hosted pages. Directory structure should be relative to the predefined top-level directories.",
+      "items": {
+        "type": "string"
+      }
+    }
+    },
+    "required": [
+      "name",
+      "host",
+      "listening_port",
+      "domain",
+      "ldap",
+      "http",
+      "https"
+    ]
+  },
+  "$defs": {
+    "LDAP": {
+      "type": "object",
+      "description": "LDAP policy server connection properties.",
+      "properties": {
+        "ssl": {
+          "type": "string",
+          "description": "Enable SSL Verification of connections.",
+          "enum": ["yes", "no"]
+        },
+        "key_file": {
+          "type": "string",
+          "description": "The SSL Database to use to verify connections. Only valid if ssl is yes."
+        },
+        "cert_file": {
+          "type": "string",
+          "description": "The SSL Certificate to use to verify connections. Only valid of ssl is yes."
+        },
+        "port": {
+          "type": "integer",
+          "description": "The network port to communicate with the LDAP server.",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      },
+      "required": ["ssl", "port"]
+    },
+    "Endpoint": {
+      "type": "object",
+      "description": "HTTP/HTTPS endpoint configuration.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable traffic on this endpoint."
+        },
+        "port": {
+          "type": "integer",
+          "description": "Network port that endpoint should listen on.",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      },
+      "required": ["enabled"]
+    },
+    "Junction": {
+      "type": "object",
+      "description": "For each WebSEAL instance, administrators will typically define one or more standard or virtual junctions. Junctions are how an administrator defines the relationship and behavior between a WebSEAL server and an application server (for whom TCP traffic is being proxied by WebSEAL). Some advanced configuration options cannot be set in this entry and the `stanza_configuration` configuration must be used to set key/value entries in the reverse proxy config file.",
+      "properties": {
+        "junction_type": {
+          "type": "string",
+          "description": "Type of junction.",
+          "enum": ["tcp", "ssl", "tcpproxy", "sslproxy", "mutual"]
+        },
+        "junction_point": {
+          "type": "string",
+          "description": "Name of the location in the Reverse Proxy namespace where the root of the back-end application server namespace is mounted."
+        },
+        "description": {
+          "type": "string",
+          "description": "An optional description for this junction."
+        },
+        "server_hostname": {
+          "type": "string",
+          "description": "The DNS host name or IP address of the target back-end server."
+        },
+        "server_port": {
+          "type": "string",
+          "description": "TCP port of the back-end third-party server."
+        },
+        "basic_auth_mode": {
+          "type": "string",
+          "description": "Defines how the Reverse Proxy server passes client identity information in HTTP basic authentication (BA) headers to the back-end server.",
+          "enum": ["filter", "ignore", "supply", "gso"]
+        },
+        "tfim_sso": {
+          "type": "boolean",
+          "description": "Enables IBM Security Federated Identity Manager single sign-on (SSO) for the junction."
+        },
+        "stateful_junction": {
+          "type": "string",
+          "description": "Specifies whether the junction supports stateful applications.",
+          "enum": ["yes", "no"]
+        },
+        "preserve_cookie": {
+          "type": "string",
+          "description": "Specifies whether modifications of the names of non-domain cookies are to be made.",
+          "enum": ["yes", "no"]
+        },
+        "cookie_include_path": {
+          "type": "string",
+          "description": "Specifies whether script generated server-relative URLs are included in cookies for junction identification.",
+          "enum": ["yes", "no"]
+        },
+        "transparent_path_junction": {
+          "type": "string",
+          "description": "Specifies whether a transparent path junction is created.",
+          "enum": ["yes", "no"]
+        },
+        "mutual_auth": {
+          "type": "boolean",
+          "description": "Specifies whether to enforce mutual authentication between a front-end Reverse Proxy server and a back-end Reverse Proxy server over SSL."
+        },
+        "insert_ltpa_cookie": {
+          "type": "boolean",
+          "description": "Controls whether LTPA cookies are passed to the junctioned Web server."
+        },
+        "insert_session_cookie": {
+          "type": "boolean",
+          "description": "Controls whether to send the session cookie to the junctioned Web server."
+        },
+        "request_encoding": {
+          "type": "string",
+          "description": "Specifies the encoding to use when the system generates HTTP headers for junctions.",
+          "enum": ["utf8_bin", "utf8_uri", "lcp_bin", "lcp_uri"]
+        },
+        "enable_basic_auth": {
+          "type": "string",
+          "description": "Specifies whether to use BA header information to authenticate to back-end server.",
+          "enum": ["yes", "no"]
+        },
+        "key_label": {
+          "type": "string",
+          "description": "The key label for the client-side certificate that is used when the system authenticates to the junctioned Web server."
+        },
+        "gso_resource_group": {
+          "type": "string",
+          "description": "The name of the GSO resource or resource group."
+        },
+        "junction_cookie_javascript_block": {
+          "type": "string",
+          "description": "Controls the junction cookie JavaScript block.",
+          "enum": ["trailer", "inhead", "onfocus", "xhtml10", "httpheader"]
+        },
+        "client_ip_http": {
+          "type": "string",
+          "description": "Specifies whether to insert the IP address of the incoming request into an HTTP header for transmission to the junctioned Web server.",
+          "enum": ["yes", "no"]
+        },
+        "version_two_cookies": {
+          "type": "string",
+          "description": "Specifies whether LTPA version 2 cookies (LtpaToken2) are used.",
+          "enum": ["yes", "no"]
+        },
+        "ltpa_keyfile": {
+          "type": "string",
+          "description": "Location of the key file that is used to encrypt the LTPA cookie data."
+        },
+        "ltpa_keyfile_password": {
+          "type": "string",
+          "description": "Password for the key file that is used to encrypt LTPA cookie data.",
+          "format": "password"
+        },
+        "authz_rules": {
+          "type": "string",
+          "description": "Specifies whether to allow denied requests and failure reason information from authorization rules to be sent in the Boolean Rule header (AM_AZN_FAILURE) across the junction.",
+          "enum": ["yes", "no"]
+        },
+        "fss_config_file": {
+          "type": "string",
+          "description": "The name of the configuration file that is used for forms based single sign-on."
+        },
+        "username": {
+          "type": "string",
+          "description": "The Reverse Proxy user name to send BA header information to the back-end server."
+        },
+        "password": {
+          "type": "string",
+          "description": "The Reverse Proxy password to send BA header information to the back-end server.",
+          "format": "password"
+        },
+        "server_uuid": {
+          "type": "string",
+          "description": "Specifies the UUID that will be used to identify the junctioned Web server."
+        },
+        "virtual_hostname": {
+          "type": "string",
+          "description": "Virtual host name that is used for the junctioned Web server."
+        },
+        "server_dn": {
+          "type": "string",
+          "description": "Specifies the distinguished name of the junctioned Web server."
+        },
+        "server_cn": {
+          "type": "string",
+          "description": "Specifies the common name, or subject alternative name, of the junctioned Web server."
+        },
+        "local_ip": {
+          "type": "string",
+          "description": "Specifies the local IP address that the Reverse Proxy uses when the system communicates with the target back-end server.",
+          "format": "ipv4"
+        },
+        "query_contents": {
+          "type": "string",
+          "description": "Provides the Reverse Proxy with the correct name of the query_contents program file and where to find the file."
+        },
+        "case_sensitive_url": {
+          "type": "string",
+          "description": "Specifies whether the Reverse Proxy server treats URLs as case sensitive.",
+          "enum": ["yes", "no"]
+        },
+        "windows_style_url": {
+          "type": "string",
+          "description": "Specifies whether Windows style URLs are supported.",
+          "enum": ["yes", "no"]
+        },
+        "proxy_hostname": {
+          "type": "string",
+          "description": "The TCP port of the proxy server."
+        },
+        "sms_environment": {
+          "type": "string",
+          "description": "Only applicable for virtual junctions. Specifies the replica set that sessions on the virtual junction are managed under."
+        },
+        "vhost_label": {
+          "type": "string",
+          "description": "Only applicable for virtual junctions. Causes a second virtual junction to share the protected object space with the initial virtual junction."
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Specifies whether to overwrite an existing junction of the same name."
+        },
+        "delegation_support": {
+          "type": "string",
+          "description": "This option is valid only with junctions that were created with the type of ssl or sslproxy.",
+          "enum": ["yes", "no"]
+        },
+        "scripting_support": {
+          "type": "string",
+          "description": "Supplies junction identification in a cookie to handle script-generated server-relative URLs.",
+          "enum": ["yes", "no"]
+        },
+        "junction_hard_limit": {
+          "type": "string",
+          "description": "Defines the hard limit percentage for consumption of worker threads."
+        },
+        "junction_soft_limit": {
+          "type": "string",
+          "description": "Defines the soft limit percentage for consumption of worker threads."
+        },
+        "https_port": {
+          "type": "string",
+          "description": "HTTPS port of the back-end third-party server."
+        },
+        "http_port": {
+          "type": "string",
+          "description": "HTTP port of the back-end third-party server."
+        },
+        "proxy_port": {
+          "type": "string",
+          "description": "The TCP port of the proxy server."
+        },
+        "remote_http_header": {
+          "type": "array",
+          "description": "Controls the insertion of Security Verify Identity Access specific client identity information in HTTP headers across the junction.",
+          "items": {
+            "type": "string",
+            "enum": ["iv-user", "iv-user-l", "iv-groups", "iv-creds", "all"]
+          }
+        }
+      },
+      "required": ["junction_type", "junction_point", "server_hostname", "server_port"]
+    },
+    "AAC_Configuration": {
+      "type": "object",
+      "description": "Advanced Access Control configuration wizard.",
+      "properties": {
+        "junction": {
+          "type": "string",
+          "description": "Junction to create."
+        },
+        "runtime": {
+          "$ref": "#/$defs/Liberty_Server",
+          "description": "Liberty runtime server properties."
+        },
+        "reuse_acls": {
+          "type": "boolean",
+          "description": "Re-use existing Policy Server ACL's"
+        },
+        "reuse_certs": {
+          "type": "boolean",
+          "description": "Re-use existing certificates in the SSL database."
+        }
+      },
+      "required": ["junction", "runtime", "reuse_acls", "reuse_certs"]
+    },
+    "MMFA_Configuration": {
+      "type": "object",
+      "description": "Mobile Multi-Factor Authentication configuration wizard.",
+      "properties": {
+        "channel": {
+          "type": "string",
+          "description": "MMFA channel to configure.",
+          "enum": ["mobile", "browser", "both"]
+        },
+        "runtime": {
+          "$ref": "#/$defs/Liberty_Server",
+          "description": "Liberty runtime server properties."
+        },
+        "lmi": {
+          "$ref": "#/$defs/Liberty_Server",
+          "description": "Liberty LMI server properties."
+        },
+        "reuse_acls": {
+          "type": "boolean",
+          "description": "Re-use existing Policy Server ACL's"
+        },
+        "reuse_certs": {
+          "type": "boolean",
+          "description": "Re-use existing certificates in the SSL database."
+        },
+        "reuse_pops": {
+          "type": "boolean",
+          "description": "Re-use existing Policy Server POP's"
+        }
+      },
+      "required": ["channel", "runtime", "lmi", "reuse_acls", "reuse_certs", "reuse_pops"]
+    },
+    "Federation_Configuration": {
+      "type": "object",
+      "description": "Federation runtime integration configuration wizard.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the Federation."
+        },
+        "runtime": {
+          "$ref": "#/$defs/Federation_Liberty_Server",
+          "description": "Liberty runtime server properties."
+        },
+        "reuse_acls": {
+          "type": "boolean",
+          "description": "Re-use existing Policy Server ACL's"
+        },
+        "reuse_certs": {
+          "type": "boolean",
+          "description": "Re-use existing certificates in the SSL database."
+        }
+      },
+      "required": ["name", "runtime", "reuse_acls", "reuse_certs"]
+    },
+    "ApiProtectionConfiguration": {
+      "type": "object",
+      "description": "API Protection configuration for OIDC clients.",
+      "properties": {
+        "junction": {
+          "type": "string",
+          "description": "Name of the API Protection Junction."
+        },
+        "runtime": {
+          "$ref": "#/$defs/Liberty_Server",
+          "description": "Liberty runtime server properties."
+        },
+        "reuse_acls": {
+          "type": "boolean",
+          "description": "Re-use existing Policy Server ACL's"
+        },
+        "reuse_certs": {
+          "type": "boolean",
+          "description": "Re-use existing certificates in the SSL database."
+        },
+        "api": {
+          "type": "boolean",
+          "description": "Should this reverse proxy be configured for API protection.",
+          "default": false
+        },
+        "browser": {
+          "type": "boolean",
+          "description": "Should this reverse proxy be configured for Browser interaction.",
+          "default": false
+        },
+        "auth_register": {
+          "type": "boolean",
+          "description": "Will the client registration endpoint require authentication.",
+          "default": false
+        },
+        "fapi_compliant": {
+          "type": "boolean",
+          "description": "Configures reverse proxy instance to be FAPI Compliant.",
+          "default": false
+        }
+      },
+      "required": ["junction", "runtime", "reuse_acls", "reuse_certs"]
+    },
+    "Stanza_Configuration": {
+      "type": "object",
+      "description": "Configuration file stanza modification.",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "description": "Operation to perform on configuration file.",
+          "enum": ["add", "delete", "update"]
+        },
+        "stanza": {
+          "type": "string",
+          "description": "Name of stanza to modify."
+        },
+        "entry_id": {
+          "type": "string",
+          "description": "Optional entry name to modify."
+        },
+        "value": {
+          "type": "string",
+          "description": "Optional entry value to modify."
+        }
+      },
+      "required": ["operation", "stanza"]
+    },
+    "Liberty_Server": {
+      "type": "object",
+      "description": "Liberty server connection properties.",
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "description": "Hostname or address of server."
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port server is listening on.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "username": {
+          "type": "string",
+          "description": "Username to use for basic authentication."
+        },
+        "password": {
+          "type": "string",
+          "description": "Password to use for basic authentication.",
+          "format": "password"
+        }
+      },
+      "required": ["hostname", "port", "username", "password"]
+    },
+    "Federation_Liberty_Server": {
+      "type": "object",
+      "description": "Federation Liberty server connection properties with extended options.",
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "description": "Hostname or address of server."
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port server is listening on.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "username": {
+          "type": "string",
+          "description": "Username to use for basic authentication."
+        },
+        "password": {
+          "type": "string",
+          "description": "Password to use for basic authentication.",
+          "format": "password"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of runtime. Valid values are 'local' for local runtimes (appliance) and 'remote' for external runtime (container).",
+          "enum": ["local", "remote"],
+          "default": "local"
+        },
+        "load_cert": {
+          "type": "string",
+          "description": "Read the X.509 Certificate from the runtime server's https endpoint.",
+          "enum": ["on", "off"],
+          "default": "on"
+        },
+        "enable_mtls": {
+          "type": "boolean",
+          "description": "Boolean option indicates if mutual TLS (client certificate) authentication should be performed with the runtime server.",
+          "default": false
+        }
+      },
+      "required": ["hostname", "port", "username", "password"]
+    }
+  },
+  "examples": [
+    {
+      "reverse_proxy": [
+        {
+          "name": "default",
+          "host": "ibmsec.verify.access",
+          "listening_port": 7234,
+          "domain": "Default",
+          "http": {
+            "enabled": "no"
+          },
+          "https": {
+            "enabled": "yes",
+            "port": 443
+          },
+          "junctions": [
+            {
+              "junction_point": "/app",
+              "description": "Backend Application",
+              "junction_type": "ssl",
+              "transparent_path_junction": true,
+              "server_hostname": "1.2.3.4",
+              "server_port": 443,
+              "remote_http_header": [
+                "iv-user",
+                "iv-groups",
+                "iv-creds"
+              ]
+            }
+          ],
+          "aac_configuration": {
+            "hostname": "localhost",
+            "port": 443,
+            "runtime": {
+              "user": "runtime_user",
+              "password": "runtime_password"
+            },
+            "junction": "/mga",
+            "reuse_acls": true,
+            "reuse_certs": true
+          }
+        }
+      ]
+    }
+  ]
+}

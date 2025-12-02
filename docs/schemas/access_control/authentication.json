@@ -1,0 +1,279 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "authentication.json",
+  "description": "Configuration for authentication mechanisms and policies used in the Authentication policy engine. Authentication policies can be used in risk-based access or context-based access policies to conditionally enforce additional authentication/authorization requirements. Authentication policies can also be attached to WebSEAL objects in the policy server.",
+  "type": "object",
+  "properties": {
+    "mechanisms": {
+      "type": "array",
+      "description": "List of authentication mechanism to create or update.",
+      "items": {
+        "$ref": "#/$defs/Mechanism"
+      }
+    },
+    "policies": {
+      "type": "array",
+      "description": "List of authentication policies to create or update.",
+      "items": {
+        "$ref": "#/$defs/Policy"
+      }
+    }
+  },
+  "$defs": {
+    "Mechanism": {
+      "type": "object",
+      "description": "An authentication mechanism configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A unique name for the authentication mechanism."
+        },
+        "description": {
+          "type": "string",
+          "description": "An optional description of the authentication mechanism."
+        },
+        "uri": {
+          "type": "string",
+          "description": "The unique resource identifier of the authentication mechanism.",
+          "format": "uri"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of mechanism to create.",
+          "enum": [
+            "HOTP One-time Password",
+            "MAC One-time Password",
+            "RSA One-time Password",
+            "TOTP One-time Password",
+            "Consent to device registration",
+            "One-time Password",
+            "HTTP Redirect",
+            "Username Password",
+            "End-User License Agreement",
+            "Knowledge Questions",
+            "Mobile User Approval",
+            "reCAPTCHA Verification",
+            "Info Map Authentication",
+            "Email Message",
+            "MMFA Authenticator",
+            "SCIM Config",
+            "FIDO Universal 2nd Factor",
+            "Cloud Identity JavaScript",
+            "QRCode Authenticator",
+            "FIDO2 WebAuthn Authenticator",
+            "Decision JavaScript",
+            "RSA SecurID",
+            "FIDO2 WebAuthn Registration",
+            "OTP Enrollment"
+          ]
+        },
+        "properties": {
+          "type": "object",
+          "description": "List of properties to configure for mechanism. The property names are different for each of the mechanism types."
+        },
+        "attributes": {
+          "type": "array",
+          "description": "List of attribute to add from the request context.",
+          "items": {
+            "$ref": "#/$defs/Attribute"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "uri",
+        "type",
+        "properties"
+      ]
+    },
+    "Attribute": {
+      "type": "object",
+      "description": "An attribute to retrieve from the authentication context.",
+      "properties": {
+        "selector": {
+          "type": "string",
+          "description": "Name of a registry attribute to obtain."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Authentication service namespace of name."
+        },
+        "name": {
+          "type": "string",
+          "description": "Authentication service context attribute."
+        }
+      },
+      "required": [
+        "selector",
+        "namespace",
+        "name"
+      ]
+    },
+    "Policy": {
+      "type": "object",
+      "description": "An authentication policy that defines the authentication flow.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Specify a unique name for the authentication policy."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the authentication policy."
+        },
+        "uri": {
+          "type": "string",
+          "description": "Specify a unique resource identifier for the authentication policy.",
+          "format": "uri"
+        },
+        "dialect": {
+          "type": "string",
+          "description": "Authentication policy specification used to format the authentication policy.",
+          "enum": [
+            "urn:ibm:security:authentication:policy:1.0:schema"
+          ],
+          "default": "urn:ibm:security:authentication:policy:1.0:schema"
+        },
+        "policy": {
+          "type": "string",
+          "description": "Configured policy content that uses the specified authentication policy dialect (XML format)."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "True if the policy is enabled and invocable at runtime. Set to false to disable the policy."
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "uri",
+        "policy",
+        "enabled"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "authentication": {
+        "mechanisms": [
+          {
+            "name": "Verify Demo - QR Code Initiate",
+            "uri": "urn:ibm:security:authentication:asf:mechanism:qr_code_initiate",
+            "description": "InfoMap to initiate the QR login",
+            "type": "InfoMapAuthenticationName",
+            "properties": {
+              "mapping_rule": "InfoMap_QRInitiate",
+              "template_file": ""
+            }
+          },
+          {
+            "name": "Verify Demo - QR Code Response",
+            "uri": "urn:ibm:security:authentication:asf:mechanism:qr_code_response",
+            "description": "InfoMap to use the LSI for QR login",
+            "type": "InfoMapAuthenticationName",
+            "properties": {
+              "mapping_rule": "InfoMap_QRResponse",
+              "template_file": ""
+            }
+          },
+          {
+            "name": "Username Password",
+            "uri": "urn:ibm:security:authentication:asf:mechanism:password",
+            "description": "Username password authentication",
+            "type": "Username Password",
+            "properties": {
+              "usernamePasswordAuthentication.ldapHostName": "openldap",
+              "usernamePasswordAuthentication.loginFailuresPersistent": "false",
+              "usernamePasswordAuthentication.ldapBindDN": "!secret default/isva-secrets:ldap_bind_dn",
+              "usernamePasswordAuthentication.maxServerConnections": "16",
+              "usernamePasswordAuthentication.mgmtDomain": "Default",
+              "usernamePasswordAuthentication.sslEnabled": "true",
+              "usernamePasswordAuthentication.ldapPort": "636",
+              "usernamePasswordAuthentication.sslTrustStore": "lmi_trust_store",
+              "usernamePasswordAuthentication.userSearchFilter": "usernamePasswordAuthentication.userSearchFilter",
+              "usernamePasswordAuthentication.ldapBindPwd": "!secret default/isva-secrets:ldap_bind_pwd",
+              "usernamePasswordAuthentication.useFederatedDirectoriesConfig": "false"
+            }
+          },
+          {
+            "name": "TOTP One-time Password",
+            "uri": "urn:ibm:security:authentication:asf:mechanism:totp",
+            "description": "Time-based one-time password authentication",
+            "type": "TOTP One-time Password",
+            "properties": {
+              "otp.totp.length": "6",
+              "otp.totp.macAlgorithm": "HmacSHA1",
+              "otp.totp.oneTimeUseEnabled": "true",
+              "otp.totp.secretKeyAttributeName": "otp.hmac.totp.secret.key",
+              "otp.totp.secretKeyAttributeNamespace": "urn:ibm:security:otp:hmac",
+              "otp.totp.secretKeyUrl": "otpauth://totp/Example:@USER_NAME@?secret=@SECRET_KEY@&issuer=Example",
+              "otp.totp.secretKeyLength": "32",
+              "otp.totp.timeStepSize": "30",
+              "otp.totp.timeStepSkew": "10"
+            }
+          },
+          {
+            "name": "reCAPTCHA Verification",
+            "uri": "urn:ibm:security:authentication:asf:mechanism:recaptcha",
+            "description": "Human user verification using reCAPTCHA Version 2.0.",
+            "type": "ReCAPTCHAAuthenticationName",
+            "properties": {
+              "reCAPTCHA.HTMLPage": "/authsvc/authenticator/recaptcha/standalone.html",
+              "reCAPTCHA.apiKey": "!secret default/isva-secrets:recaptcha_key"
+            }
+          },
+          {
+            "name": "End-User License Agreement",
+            "uri": "urn:ibm:security:authentication:asf:mechanism:eula",
+            "description": "End-user license agreement authentication",
+            "type": "End-User License Agreement",
+            "properties": {
+              "eulaAuthentication.acceptIfLastAcceptedBefore": "true",
+              "eulaAuthentication.alwaysShowLicense": "false",
+              "eulaAuthentication.licenseFile": "/authsvc/authenticator/eula/license.txt"
+            },
+            "eulaAuthentication.licenseRenewalTerm": "0"
+          },
+          {
+            "name": "FIDO Universal 2nd Factor",
+            "uri": "urn:ibm:security:authentication:asf:mechanism:u2f",
+            "description": "FIDO Universal 2nd Factor Token Registration and Authentication",
+            "type": "U2FName",
+            "properties": {
+              "U2F.attestationSource": "",
+              "U2F.attestationType": "None",
+              "U2F.appId": "www.myidp.ibm.com",
+              "U2F.attestationEnforcement": "Optional"
+            }
+          }
+        ],
+        "policies": [
+          {
+            "name": "Verify Demo - Initiate Generic Message Demo Policy",
+            "uri": "urn:ibm:security:authentication:asf:verify_generic_message",
+            "description": "IBM MFA generic message policy.",
+            "policy": "<Policy xmlns=\"urn:ibm:security:authentication:policy:1.0:schema\" PolicyId=\"urn:ibm:security:authentication:asf:verify_generic_message\"><Description>IBM MFA generic message policy.</Description><Step id=\"id15342210896710\" type=\"Authenticator\"><Authenticator id=\"id15342210896711\" AuthenticatorId=\"urn:ibm:security:authentication:asf:mechanism:generic_message\"/></Step><Step id=\"id15342211135160\" type=\"Authenticator\"><Authenticator id=\"id15342211135161\" AuthenticatorId=\"urn:ibm:security:authentication:asf:mechanism:mmfa\"><Parameters><AttributeAssignment AttributeId=\"contextMessage\"><AttributeDesignator AttributeId=\"message\" Namespace=\"urn:ibm:security:asf:response:token:attributes\" Source=\"urn:ibm:security:asf:scope:session\" DataType=\"String\"/></AttributeAssignment><AttributeAssignment AttributeId=\"mode\"><AttributeValue DataType=\"String\">Initiate</AttributeValue></AttributeAssignment><AttributeAssignment AttributeId=\"policyURI\"><AttributeValue DataType=\"URI\">urn:ibm:security:authentication:asf:verify_mmfa_response_fingerprint</AttributeValue></AttributeAssignment><AttributeAssignment AttributeId=\"username\"><AttributeDesignator AttributeId=\"username\" Namespace=\"urn:ibm:security:asf:response:token:attributes\" Source=\"urn:ibm:security:asf:scope:session\" DataType=\"String\"/></AttributeAssignment></Parameters></Authenticator></Step></Policy>"
+          },
+          {
+            "name": "Verify Demo - QR Code Initiate",
+            "uri": "urn:ibm:security:authentication:asf:qrlogin_initiate",
+            "description": "Login without a password - use your phone and scan a QR code!",
+            "policy": "<Policy xmlns=\"urn:ibm:security:authentication:policy:1.0:schema\" PolicyId=\"urn:ibm:security:authentication:asf:qrlogin_initiate\"><Description>Login without a password - use your phone and scan a QR code!</Description><Step id=\"id15033758674560\" type=\"Authenticator\"><Authenticator id=\"id15033758674561\" AuthenticatorId=\"urn:ibm:security:authentication:asf:mechanism:qr_code_initiate\"/></Step></Policy>"
+          },
+          {
+            "name": "Verify Demo - QR Code Response",
+            "uri": "urn:ibm:security:authentication:asf:qrlogin_response",
+            "description": "Login without a password - use your phone and scan a QR code!",
+            "policy": "<Policy xmlns=\"urn:ibm:security:authentication:policy:1.0:schema\" PolicyId=\"urn:ibm:security:authentication:asf:qrlogin_response\"><Description>qrlogin_response<\/Description><Step id=\"id15033758436320\" type=\"Authenticator\"><Authenticator id=\"id15033758436321\" AuthenticatorId=\"urn:ibm:security:authentication:asf:mechanism:qr_code_response\"\/><\/Step><\/Policy>"
+          },
+          {
+            "name": "FIDO U2F Authenticate",
+            "uri": "urn:ibm:security:authentication:asf:u2f_authenticate",
+            "description": "FIDO Universal 2nd Factor Token Authentication",
+            "policy": "<Policy xmlns=\"urn:ibm:security:authentication:policy:1.0:schema\" PolicyId=\"urn:ibm:security:authentication:asf:u2f_authenticate\"><Description>FIDO Universal 2nd Factor Token Authentication</Description><Step id=\"Step_1\" type=\"Authenticator\"><Authenticator id=\"Auth_1\" AuthenticatorId=\"urn:ibm:security:authentication:asf:mechanism:u2f\"><Parameters><AttributeAssignment AttributeId=\"mode\"><AttributeValue DataType=\"String\">Authenticate</AttributeValue></AttributeAssignment><AttributeAssignment AttributeId=\"username\"><AttributeDesignator AttributeId=\"username\" Namespace=\"urn:ibm:security:asf:request:parameter\" Source=\"urn:ibm:security:asf:scope:request\" DataType=\"String\"/></AttributeAssignment></Parameters></Authenticator></Step><Actions><Action On=\"null\" type=\"null\"><AttributeAssignments/></Action></Actions></Policy>"
+          }
+        ]
+      }
+    }
+  ]
+}

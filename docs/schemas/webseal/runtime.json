@@ -1,0 +1,195 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/runtime.json",
+  "description": "The WebSEAL runtime server is the Directory Server which contains the reverse proxy's user registry and policy server. This is typically a LDAP server external to the deployment, however an example LDAP server is made available to deployments for testing.\n\nThe Verify Identity Access specific LDAP schemas can be found in the System -> File Downloads section of an appliance/configuration container in the `isva` directory.\n\nAny PKI required to verify this connection should be imported into a SSL database before the runtime component is configured.",
+  "type": "object",
+  "properties": {
+    "policy_server": {
+      "type": "string",
+      "description": "The mode for the policy server.",
+      "enum": ["local", "remote"]
+    },
+    "user_registry": {
+      "type": "string",
+      "description": "Type of user registry to use.",
+      "enum": ["local", "ldap"]
+    },
+    "clean_ldap": {
+      "type": "boolean",
+      "description": "Remove any existing user data from registry. Only valid if user_registry is local."
+    },
+    "isam_domain": {
+      "type": "string",
+      "description": "The Security Verify Identity Access domain name."
+    },
+    "admin_password": {
+      "type": "string",
+      "description": "The password for the sec_master user.",
+      "format": "password"
+    },
+    "admin_cert_lifetime": {
+      "type": "integer",
+      "description": "The lifetime in days for the SSL server certificate.",
+      "minimum": 1
+    },
+    "ssl_compliance": {
+      "type": "string",
+      "description": "Specifies whether SSL is compliant with any additional computer security standard.",
+      "enum": ["fips", "sp800-131-transition", "sp800-131-strict", "suite-b-128", "suite-b-192"]
+    },
+    "ldap": {
+      "$ref": "#/$defs/LDAP",
+      "description": "LDAP server properties."
+    },
+    "isam": {
+      "$ref": "#/$defs/ISAM",
+      "description": "Verify Identity Access policy server properties."
+    },
+    "stanza_configuration": {
+      "type": "array",
+      "description": "Optional list of modifications to configuration files.",
+      "items": {
+        "$ref": "#/$defs/Stanza_Configuration"
+      }
+    },
+    "override_config": {
+      "type": "boolean",
+      "description": "Optional property to attempt to force a reconfiguration of the runtime component if it is already configured. This is not possible if there are reverse proxy objects.",
+      "default": false
+    }
+  },
+  "required": [
+    "policy_server",
+    "user_registry",
+    "clean_ldap",
+    "isam_domain",
+    "admin_password",
+    "admin_cert_lifetime",
+    "ssl_compliance",
+    "ldap"
+  ],
+  "$defs": {
+    "LDAP": {
+      "type": "object",
+      "description": "LDAP server connection properties.",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Hostname or address for LDAP server."
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port LDAP server is listening on.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "dn": {
+          "type": "string",
+          "description": "Distinguished name to bind to LDAP server for admin operations."
+        },
+        "dn_password": {
+          "type": "string",
+          "description": "Password to authenticate as dn.",
+          "format": "password"
+        },
+        "suffix": {
+          "type": "string",
+          "description": "SecAuthority suffix."
+        },
+        "key_file": {
+          "type": "string",
+          "description": "SSL Database to use to verify connections to LDAP server."
+        },
+        "cert_label": {
+          "type": "string",
+          "description": "SSL Certificate label to verify connections to LDAP server."
+        }
+      },
+      "required": ["host", "port", "dn", "dn_password", "suffix", "key_file", "cert_label"]
+    },
+    "ISAM": {
+      "type": "object",
+      "description": "Verify Identity Access policy server properties.",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Hostname or address of Verify Identity Access policy server."
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port that Verify Identity Access policy server is listening on.",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      },
+      "required": ["host", "port"]
+    },
+    "Stanza_Configuration": {
+      "type": "object",
+      "description": "Configuration file stanza modification.",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "description": "Operation to perform on configuration file.",
+          "enum": ["add", "delete", "update"]
+        },
+        "resource": {
+          "type": "string",
+          "description": "Filename to be modified.",
+          "enum": ["ldap.conf", "pd.conf", "instance.conf"]
+        },
+        "stanza": {
+          "type": "string",
+          "description": "Name of stanza to modify."
+        },
+        "entry": {
+          "type": "string",
+          "description": "Optional entry_id to modify."
+        },
+        "value": {
+          "type": "string",
+          "description": "Optional value to modify."
+        }
+      },
+      "required": ["operation", "resource", "stanza"]
+    }
+  },
+  "examples": [
+    {
+      "runtime": {
+        "policy_server": "remote",
+        "user_registry": "remote",
+        "ldap": {
+          "host": "openldap",
+          "port": 636,
+          "dn": "cn=root,secAuthority=Default",
+          "dn_password": "ldap-passwd",
+          "key_file": "lmi_trust_store"
+        },
+        "clean_ldap": true,
+        "domain": "Default",
+        "admin_password": "secmaster-passwd",
+        "admin_cert_lifetime": 1460,
+        "ssl_compliance": "FIPS 140-2",
+        "isam": {
+          "host": "isvaconfig",
+          "port": 443
+        },
+        "stanza_configuration": [
+          {
+            "operation": "update",
+            "resource": "ldap.conf",
+            "stanza": "bind-credentials",
+            "entry": "bind-dn",
+            "value": "cn=root,secAuthority=Default"
+          },
+          {
+            "operation": "delete",
+            "resource": "ldap.conf",
+            "stanza": "server:MyFederatedDirectory"
+          }
+        ]
+      }
+    }
+  ]
+}
