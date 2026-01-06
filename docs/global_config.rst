@@ -22,7 +22,7 @@ Attribute Sources
 
 |br|
 
-Advanced Configuration Parameters
+Advanced Configuration Properties
 =================================
 
 

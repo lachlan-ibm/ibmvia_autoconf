@@ -4,6 +4,10 @@
   "description": "Configuration for config and runtime database connections; and distributed session cache settings in container deployments.",
   "type": "object",
   "properties": {
+    "config_database": {
+      "$ref": "#/$defs/Database",
+      "description": "Configuration for the config database."
+    },
     "runtime_database": {
       "$ref": "#/$defs/Database",
       "description": "Configuration for the runtime (HVDB) database."
@@ -16,7 +20,7 @@
   "$defs": {
     "Database": {
       "type": "object",
-      "description": "External runtime database configuration.",
+      "description": "External database configuration.",
       "properties": {
         "type": {
           "type": "string",
@@ -174,6 +178,30 @@
           "user": "postgres",
           "password": "Passw0rd",
           "db_name": "isva"
+        }
+      }
+    },
+    {
+      "cluster": {
+        "config_database": {
+          "type": "postgresql",
+          "host": "postgresql",
+          "port": 5432,
+          "ssl": true,
+          "ssl_keystore": "rt_profile_keys",
+          "user": "postgres",
+          "password": "Passw0rd",
+          "db_name": "config"
+        },
+        "runtime_database": {
+          "type": "postgresql",
+          "host": "postgresql",
+          "port": 5432,
+          "ssl": true,
+          "ssl_keystore": "rt_profile_keys",
+          "user": "postgres",
+          "password": "Passw0rd",
+          "db_name": "hvdb"
         }
       }
     }

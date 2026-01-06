@@ -15,7 +15,7 @@ _logger = logging.getLogger(__name__)
 class Appliance_Configurator(object):
 
     config = Map()
-    appliance = None
+    #appliance = None
 
     def __init__(self, config, factory):
         self.config = config
@@ -149,7 +149,7 @@ class Appliance_Configurator(object):
                 _logger.error("Failed to {} host file config with entry:\n{}\n{}".format(
                                         verb, json.dumps(entry, indent=4), rsp.data))
 
-
+    """
     class Networking(typing.TypedDict):
         '''
         Example::
@@ -280,6 +280,7 @@ class Appliance_Configurator(object):
 
         host_file: typing.Optional[typing.List[HostEntry]]
         'Entries to add to an appliance\'s hosts file.'
+    """
 
     def update_network(self, config):
         if config.network != None:
@@ -332,7 +333,7 @@ class Appliance_Configurator(object):
                 _logger.error("Failed to update the Date/Time settings on the appliance with:\n{}\n{}".format(
                     json.dumps(config.date_time, indent=4), rsp.data))
 
-
+    """
     class Cluster_Configuration(typing.TypedDict):
         '''
         Example::
@@ -402,6 +403,7 @@ class Appliance_Configurator(object):
         'Configuration for the runtime (HVDB) database.'
         cluster: typing.Optional[Cluster]
         'Configuration for Verify Identity Access High Availability cluster nodes.'
+    """
 
     def cluster(self, config):
         if config.config_database != None:
@@ -530,7 +532,7 @@ class Appliance_Configurator(object):
                     _logger.error("Failed to {} managed container deployment:\n{}\n{}".format(
                                             verb, json.dumps(deployment, indent=4), rsp.data))
 
-
+    """
     class Managed_Containers(typing.TypedDict):
         '''
         Example::
@@ -647,6 +649,7 @@ class Appliance_Configurator(object):
         'List of container registry authentication/proxy configuration to apply.'
         deployments: typing.Optional[typing.List[Deployment]]
         'List of managed container deployments to create.'
+    """
 
     def container_management(self, config):
         if config.managed_containers != None:

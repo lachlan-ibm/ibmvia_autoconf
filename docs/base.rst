@@ -125,3 +125,11 @@ Remote Syslog
    :file: schema_html/base/remote_syslog.html
 
 |br|
+
+Managment Certificate
+=====================
+
+.. raw:: html
+   :file: schema_html/base/lmi_certificate.html
+
+|br|

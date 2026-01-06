@@ -2,10 +2,9 @@
 """
 @copyright: IBM
 """
-import os, kubernetes, logging, sys, yaml, pyivia, datetime, subprocess, shutil, time, json
+import os, logging, sys, yaml, pyivia, datetime, subprocess, shutil, time, json
 from . import constants as const
-from .data_util import Map, FileLoader, CustomLoader, KUBE_CLIENT, KUBE_CLIENT_SLEEP
-from kubernetes.stream import stream
+from .data_util import Map, FileLoader, CustomLoader, get_kube_client, KUBE_CLIENT_SLEEP
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 _logger = logging.getLogger(__name__)
@@ -114,6 +113,8 @@ def creds(cfg=None):
             user = str(cfg.get('mgmt_user')) # SSO requires username is null
         if secret == None and 'mgmt_pwd' in cfg:
             secret = str(cfg.get('mgmt_pwd', "admin"))
+    if not secret:
+        secret = "admin"
     return (user, secret)
 
 
@@ -139,10 +140,12 @@ def old_creds(cfg=None) -> tuple[str, str] | None:
 
 
 def _kube_reload_container(namespace, container):
+    KUBE_CLIENT = get_kube_client()
     if not KUBE_CLIENT:
         _logger.error("Unable to restart deployment as kube client is null")
         return
     exec_commands = ['isam_cli', '-c', 'reload', 'all']
+    from kubernetes.stream import stream
     response = stream(KUBE_CLIENT.CoreV1Api().connect_get_namespaced_pod_exec,
             container,
             namespace,
@@ -158,6 +161,7 @@ def _kube_reload_container(namespace, container):
 
 
 def _kube_rollout_restart(namespace, deployment):
+    KUBE_CLIENT = get_kube_client()
     if not KUBE_CLIENT:
         _logger.error("Unable to restart deployment as kube client is null")
         return
@@ -197,6 +201,8 @@ def _kube_rollout_restart(namespace, deployment):
 
 def _kube_wait_for_deployment(namespace, deployment):
     #Finally wait for the new pod list to be ready
+    KUBE_CLIENT = get_kube_client()
+    import kubernetes
     watcher = kubernetes.watch.Watch()
     if not KUBE_CLIENT:
         raise RuntimeError("Kubernetes client missing")

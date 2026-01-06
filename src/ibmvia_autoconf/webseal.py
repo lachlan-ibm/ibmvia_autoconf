@@ -17,8 +17,8 @@ _logger = logging.getLogger(__name__)
 
 class WEB_Configurator(object):
 
-    factory = None
-    web = None
+    #factory = None
+    #web = None
     config = Map()
 
     def __init__(self, config, factory):
@@ -751,7 +751,7 @@ class WEB_Configurator(object):
             for attr in obj.attributes:
                 pdadminCommands += ["object modify {} set attribute {} {}".format(pd_obj, attr.key, attr.value)]
         if len(pdadminCommands) == 0:
-            logger.error("did not find and attributes to attach to policy object {}".foramt(pd_obj))
+            _logger.error("did not find and attributes to attach to policy object {}".format(pd_obj))
             return
 
         rsp = self.web.policy_administration.execute(runtime.admin_user, runtime.admin_password, pdadminCommands)
@@ -1200,7 +1200,7 @@ class WEB_Configurator(object):
 
     def user_mapping(self, config):
         for user_mapping in config:
-            user_mapping_file = FILE_LOADER.read_file(user_mapping)
+            user_mapping_file = optional_list(FILE_LOADER.read_file(user_mapping))[0]
             if len(user_mapping_file) != 1:
                 _logger.error("Can only specify one user mapping file")
                 return
@@ -1226,7 +1226,7 @@ class WEB_Configurator(object):
 
     def form_single_sign_on(self, config):
         for fsso_config in config:
-            fsso_config_file = FILE_LOADER.read_file(fsso_config)
+            fsso_config_file = optional_list(FILE_LOADER.read_file(fsso_config))[0]
             if len(fsso_config_file) != 1:
                 _logger.error("Can only specify one FSSO configuration file")
                 return
@@ -1328,7 +1328,7 @@ class WEB_Configurator(object):
             for realm in config.realms:
                 self.__create_kerberos_property("realms", realm.name, None, None)
                 if realm.properties != None:
-                    for k, v in realm.properties: self.__create_property("realms/" + realm.name, None, k, v)
+                    for k, v in realm.properties: self.__create_kerberos_property("realms/" + realm.name, None, k, v)
         if config.domain_realms != None:
             for domain_realm in config.domain_realms: self.__create_kerberos_property("domain_realm", None,
                     domain_realm.name, domain_realm.dns)
@@ -1347,7 +1347,7 @@ class WEB_Configurator(object):
                     _logger.info("Successfully imported Kerberos Keytab file")
                 else:
                     _logger.error("Failed to import Kerberos Keytab file:\n{}\n{}".format(
-                                json.dumps(prop, indent=4), rsp.data))
+                                json.dumps(config.keytabs, indent=4), rsp.data))
 
 
     class Password_Strength(typing.TypedDict):
@@ -1362,7 +1362,7 @@ class WEB_Configurator(object):
         'List of XSLT file to be uploaded as password strength checks.'
 
     def password_strength(self, password_strength_rules):
-        pwd_config_file = FILE_LOADER.read_file(password_strength_rules)
+        pwd_config_file = optional_list(FILE_LOADER.read_file(password_strength_rules))[0]
         if len(pwd_config_file) != 1:
             _logger.error("Can only specify one password strength rule file")
             return
@@ -1389,10 +1389,10 @@ class WEB_Configurator(object):
         'The server configuration options file to upload.'
 
     def rsa(self, rsa_config):
-        server_config = FILE_LOADER.read_file(rsa_config.server_config)
+        server_config = optional_list(FILE_LOADER.read_file(rsa_config.server_config)[0])[0]
         methodArgs = { "server_config_file": server_config['path']}
         if rsa_config.optional_server_config:
-            opts_config = FILE_LOADER.read_file(rsa_config.optional_server_config)
+            opts_config = optional_list(FILE_LOADER.read_file(rsa_config.optional_server_config))[0]
             methodArgs.update({"server_options_file": opts_config['path']})
         rsp = self.web.rsa.create(**methodArgs)
         if rsp.success == True:
@@ -1507,10 +1507,10 @@ class WEB_Configurator(object):
                         })
             rsp = self.web.api_access_control.resource_server.create_server(resource_server.reverse_proxy, **methodArgs)
             if rsp.success == True:
-                _logger.info("Successfully created {} API AC Resource server".format(resource.server_hostname))
+                _logger.info("Successfully created {} API AC Resource server".format(resource_server.server_hostname))
             else:
                 _logger.error("Failed to create {} API AC Resource server with config:\n{}\n{}".format(
-                    resource.server_hostname, json.dumps(resource, indent=4), rsp.data))
+                    resource_server.server_hostname, json.dumps(resource_server, indent=4), rsp.data))
                 continue
             if resource_server.resources:
                 for resource in resource_server.resource:
@@ -1967,5 +1967,9 @@ class WEB_Configurator(object):
             self.api_access_control(websealConfig.runtime, websealConfig.api_access_control)
 
 if __name__ == "__main__":
-        w = WEB_Configurator()
-        w.configure()
+    import sys
+    from pyivia import Factory
+    from .util.configure_util import config_yaml
+    w = WEB_Configurator(
+            Factory(sys.argv[1], sys.argv[2], sys.argv[3]), config_yaml())
+    w.configure()

@@ -39,7 +39,6 @@ for module in base access_control federation appliance container webseal; do
     done
 done
 
-# Copy CSS and JS files to Sphinx _static directory
 echo "Copying CSS and JS files to _static directory..."
 if [ -f "$OUTPUT_DIR/base/schema_doc.css" ]; then
     cp "$OUTPUT_DIR/base/schema_doc.css" "$STATIC_DIR/"
@@ -50,24 +49,31 @@ if [ -f "$OUTPUT_DIR/base/schema_doc.min.js" ]; then
     echo "  Copied schema_doc.min.js"
 fi
 
-# Update HTML files to reference CSS/JS from _static
-echo "Updating HTML files to reference _static resources..."
+echo "Updating HTML files to reference _static resources and add scoped expand/collapse..."
 for html_file in "$OUTPUT_DIR"/*/*.html; do
     if [ -f "$html_file" ]; then
+        filename=$(basename "$html_file" .html)
         # Replace relative CSS/JS paths with _static paths (portable for Linux and macOS)
+        sed_pfx='sed -i'
         if [[ "$OSTYPE" == "darwin"* ]]; then
             # macOS
-            sed -i '' 's|href="schema_doc.css"|href="../_static/schema_doc.css"|g' "$html_file"
-            sed -i '' 's|src="schema_doc.min.js"|src="../_static/schema_doc.min.js"|g' "$html_file"
+            sed_pfx="sed -i ''"
         else
-            # Linux
-            sed -i 's|href="schema_doc.css"|href="../_static/schema_doc.css"|g' "$html_file"
-            sed -i 's|src="schema_doc.min.js"|src="../_static/schema_doc.min.js"|g' "$html_file"
+            echo "Linux is ok"
         fi
+        $sed_pfx 's|href="schema_doc.css"|href="../_static/schema_doc.css"|g' "$html_file"
+        $sed_pfx 's|src="schema_doc.min.js"|src="../_static/schema_doc.min.js"|g' "$html_file"
+        # Add unique container ID to body tag
+        $sed_pfx "s|<body onload=\"anchorOnLoad();\" id=\"root\">|<body onload=\"anchorOnLoad();\" id=\"root\"><div class=\"schema-container\" id=\"schema-${filename}\">|g" "$html_file"
+        # Close the container div before closing body tag
+        $sed_pfx 's|</body>|</div></body>|g' "$html_file"
+        # Update expand/collapse buttons to be scoped to their container
+        $sed_pfx "s|data-toggle=\"collapse\" data-target=\".collapse:not(.show)\"|onclick=\"expandAllInContainer('schema-${filename}')\"|g" "$html_file"
+        $sed_pfx "s|data-toggle=\"collapse\" data-target=\".collapse.show\"|onclick=\"collapseAllInContainer('schema-${filename}')\"|g" "$html_file"
+
     fi
 done
 
-# Remove "Generated using json-schema-for-humans" footer from all HTML files
 echo "Removing footer text from HTML files..."
 for html_file in "$OUTPUT_DIR"/*/*.html; do
     if [ -f "$html_file" ]; then
@@ -81,7 +87,6 @@ for html_file in "$OUTPUT_DIR"/*/*.html; do
     fi
 done
 
-# Replace h1 tags with h3 tags for proper heading hierarchy
 echo "Replacing h1 tags with h3 tags..."
 for html_file in "$OUTPUT_DIR"/*/*.html; do
     if [ -f "$html_file" ]; then
@@ -97,7 +102,6 @@ for html_file in "$OUTPUT_DIR"/*/*.html; do
     fi
 done
 
-# Inject custom CSS to reduce font sizes
 echo "Injecting custom CSS for font size reduction..."
 for html_file in "$OUTPUT_DIR"/*/*.html; do
     if [ -f "$html_file" ]; then

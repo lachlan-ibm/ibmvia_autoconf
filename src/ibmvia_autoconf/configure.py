@@ -1007,6 +1007,19 @@ class IVIA_Configurator(object):
                     _logger.error("Failed to update the remote syslog configuration with:\n{}\n{}".format(
                         json.dumps(server, indent=4) , rsp.data))
 
+
+    def import_lmi_certificate(self, config):
+        if config and config.lmi_certificate:
+            lmiP12 = optional_list(FILE_LOADER.read_file(config.lmi_certificate.p12))[0].get('path', 'INVALID')
+            rsp = self.factory.get_system_settings().mgmt_certificate.update_certificate(lmiP12, 
+                                                                            password=config.lmi_certificate.password)
+            if rsp.success == True:
+                _logger.info("Successfully updated the LMI certificate.")
+                self.needsRestart = True
+            else:
+                _logger.error("Failed to update the LMI certificate with PKCS12 file:: {}\n{}".format(
+                                                                                        lmiP12, rsp.data))
+
     def configure_base(self):
         base_config = None
         deployment = None
@@ -1037,6 +1050,7 @@ class IVIA_Configurator(object):
         self.install_extensions(base_config)
         if isinstance(d, APPLIANCE): # DC and OP extension require product activation...
             d.container_management(base_config)
+        self.import_lmi_certificate(base_config) #Update LMI cert after hostname changes are applied
         self._deploy_if_needed()
 
     def _check_aac_fed_licenses(self):
