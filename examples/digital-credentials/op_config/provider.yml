@@ -1,0 +1,182 @@
+version: 23.12
+server:
+  ssl:
+    key: ks:server_keys/server_key
+    certificate: ks:server_keys/server_cert
+    trust_certificates:
+      - "@ivia-ca.pem"
+definition:
+  id: 1
+  name: OIDC Definition
+  grant_types:
+    - authorization_code
+    - password
+    - client_credentials
+    - refresh_token
+    - urn:ietf:params:oauth:grant-type:pre-authorized_code
+  authorization_details_types_supported:
+    - type: openid_credential
+      strategy: sha512
+      script: null
+  ignore_unknown_authorization_details_type: false
+  base_url: https://www.myidp.ibm.com
+  token_settings:
+    issuer: https://isvaop.ibm.com
+    signing_alg: RS256
+    signing_keystore: isvaop_signing
+    signing_keylabel: rsakey
+    access_token_type: jwt
+  features:
+    consent_prompt: NEVER_PROMPT
+  ropc_mappingrule_id: ropc
+  pre_mappingrule_id: pretoken
+  pre_auth_settings:
+    pre_authorize_code_lifetime: 1800
+    require_transaction_code: true
+    transaction_code_charset: 123456789
+    transaction_code_length: 4
+logging:
+  level: debug
+
+authentication:
+  endpoint: "/mga/sps/authsvc/policy/password"
+  callback_param_name: ""
+  subject_attribute_name: ""
+  credentials_jwt:
+    signature_validation_enforcement: false
+  ssl:
+    certificate:
+      - "@ivia-ca.pem"
+    disable_hostname_verification: false
+
+jwks:
+  signing_keystore: isvaop_signing
+keystore:
+  - name: server_keys
+    type: pem
+    certificate:
+      - label: server_cert
+        content: "@ivia-op.pem"
+
+    key:
+      - label: server_key
+        content: "@ivia-op.key"
+
+  - name: isvaop_signing
+    type: pem
+    key:
+      - label: rsakey
+        content: "@ivia-op.key"
+
+runtime_db: hvdb
+session_cache:
+  type: in-memory
+
+server_connections:
+  - name: hvdb
+    type: postgresql
+    database_name: hvdb
+    hosts:
+      - hostname: 10.88.0.1
+        hostport: 2024
+    credential:
+      username: iviadc
+      password: passw0rd
+  - name: ldap_test
+    type: ldap
+    hosts:
+      - hostname: isam.myidp.ibm.com
+        hostport: 636
+        credential:
+          bind_dn: 'cn=root,secAuthority=Default'
+          bind_password: passw0rd
+        ssl:
+          certificate:
+          - "@ldap.pem"
+          disable_hostname_verification: True
+    conn_settings:
+      max_pool_size: 50
+
+ldapcfg:
+  - name: myldap
+    user_object_classes: top,person,organizationalPerson,inetOrgPerson
+    filter: (objectClass=*)
+    selector: objectClass,sn,cn
+    srv_conn: ldap_test
+    attribute: uid
+    baseDN: dc=iswga
+
+rules:
+  mapping:
+    - name: ropc
+      rule_type: javascript
+      content: "@ropc.js"
+    - name: pretoken
+      rule_type: javascript
+      content: "@pretoken.js"
+    - name: preauth_userauth
+      rule_type: javascript
+      content: "@preauth_userauth.js"
+    - name: preauth_notifytxcode
+      rule_type: javascript
+      content: "@preauth_notifytxcode.js"
+
+dynamic_registration:
+  registration_endpoint_authentication:
+    require_bearer_token: true
+    allow_custom_client_creds: true
+  management_endpoint_authentication:
+    require_bearer_token: true
+  registration_access_token:
+    generate: false
+    lifetime: 86400
+    scopes:
+      - cdr:registration
+
+clients:
+  - client_id: onpremise_vcholders
+    client_name: VC Holder
+    enabled: true
+    grant_types:
+      - password
+      - refresh_token
+  - client_id: rp_client
+    client_name: Relying Party Client
+    client_secret: secret
+    enabled: true
+    grant_types:
+      - authorization_code
+    response_types:
+      - code
+    redirect_uris:
+      - https://iviadcgw:8443/authenticate
+      - https://iviadc:9720/authenticate
+      - https://localhost:8443/authenticate
+      - https://127.0.0.1:8443/authenticate
+      - https://www.myidp.ibm.com/authenticate
+      - https://www.myidp.ibm.com:9720/authenticate
+      - https://127.0.0.1:9720/authenticate
+      - https://www.myidp.ibm.com/pkmsoidc
+  - client_id: admin
+    client_name: DC Admin
+    client_secret: secret
+    enabled: true
+    grant_types:
+      - client_credentials
+    scopes:
+      - cdr:registration
+  - client_id: default_oid4vci_wallet
+    client_name: OID4VCI Untrusted Wallets
+    enabled: true
+    grant_types:
+      - authorization_code
+      - urn:ietf:params:oauth:grant-type:pre-authorized_code
+    response_types:
+      - code
+    authorization_details_types:
+      - openid_credential
+    act_as_credential_issuer: true
+    redirect_uris:
+      - openid-credential-offer://
+      - openid-credential-wallet://
+
