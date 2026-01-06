@@ -3,6 +3,7 @@
 @copyright: IBM
 """
 import os, logging, sys, yaml, pyivia, datetime, subprocess, shutil, time, json
+from typing import Optional, Tuple
 from . import constants as const
 from .data_util import Map, FileLoader, CustomLoader, get_kube_client, KUBE_CLIENT_SLEEP
 
@@ -118,7 +119,7 @@ def creds(cfg=None):
     return (user, secret)
 
 
-def old_creds(cfg=None) -> tuple[str, str] | None:
+def old_creds(cfg=None) -> Optional[Tuple[str, str]]:
     user = 'admin'
     secret = None
     if const.MGMT_OLD_PASSWORD_ENV_VAR in os.environ.keys():

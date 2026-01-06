@@ -473,7 +473,7 @@ class FED_Configurator(object):
     def _chain_template_name_to_id(self, template_name, chain_templates):
         return optional_list(filter_list('name', template_name, chain_templates))[0].get('id', template_name)
 
-    def _remap_sts_chain_keys(self, chain, chain_templates, mapping_rules) -> dict[str, typing.Any]:
+    def _remap_sts_chain_keys(self, chain, chain_templates, mapping_rules) -> typing.Dict[str, typing.Any]:
         remap = {"issuer": "issuer_",
                     "validation_key": "validation_",
                     "signature": "sign_",
