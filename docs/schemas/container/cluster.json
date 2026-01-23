@@ -28,7 +28,8 @@
           "enum": [
             "postgresql",
             "db2",
-            "oracle"
+            "oracle",
+            "mssql"
           ]
         },
         "host": {

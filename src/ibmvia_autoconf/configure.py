@@ -1008,6 +1008,22 @@ class IVIA_Configurator(object):
                         json.dumps(server, indent=4) , rsp.data))
 
 
+    class Management_Certificate(typing.TypedDict):
+        '''
+
+        Example::
+
+            management_certificate:
+              p12: "/path/to/certificate.p12"
+              password: "passw0rd"
+
+        '''
+
+        p12: str
+        'The PKCS12 file containing the certificate and private key.'
+        password: typing.Optional[str]
+        'The password used to protect the PKCS12 file. IVIA requires the file to be password protected.'
+
     def import_lmi_certificate(self, config):
         if config and config.lmi_certificate:
             lmiP12 = optional_list(FILE_LOADER.read_file(config.lmi_certificate.p12))[0].get('path', 'INVALID')

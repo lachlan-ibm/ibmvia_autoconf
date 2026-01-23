@@ -1,2 +1,2 @@
--- Simply route the request to .well-known/openid-configuration
+-- Simply route the request to the OP's .well-known/openid-configuration
 HTTPRequest.setURL("/oauth2/.well-known/openid-configuration")
