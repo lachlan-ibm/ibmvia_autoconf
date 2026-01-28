@@ -20,7 +20,7 @@
   "$defs": {
     "Database": {
       "type": "object",
-      "description": "External database configuration.",
+      "description": "External database configuration. PKI required to connect to databases should be defined in the the `ssl_certificates` property.",
       "properties": {
         "type": {
           "type": "string",

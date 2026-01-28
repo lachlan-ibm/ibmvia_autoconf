@@ -582,9 +582,9 @@ class WEB_Configurator(object):
                 if entry.entry == None or entry.value == None:
                     _logger.error("Update operation for {} is missing entry or value property, skipping".format(entry))
                     continue
-                entries = [ [entry.entry, entry.value] ]
                 rsp = self.web.runtime_component.update_configuration_file_entry(resource=entry.resource,
-                                                                                stanza=entry.stanza, entries=entries)
+                                                                                stanza=entry.stanza, entry=entry.entry,
+                                                                                value=entry.value)
 
             elif entry.operation == "delete":
                 rsp = self.web.runtime_component.delete_configuration_file_entry(resource=entry.resource,

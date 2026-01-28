@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/extensions.json",
-  "description": "Extensions are used to install third party applications, such as platform monitoring tools, onto a Verify Identity Access appliance.\n\nAn extension consists of:\n- A signed installation package from IBM Security Verify Identity Access App-Xchange\n- Optional configuration properties\n- Additional binaries required by the extension\n\nThe specific properties required to install an extension will change based on the type of extension being installed. Administrators can use a Web Browser to inspect HTTP requests when uploading an extension to a Verify Identity Access appliance to determine which properties are required for their particular extension.",
+  "description": "Extensions are used to install third party applications, such as platform monitoring tools, on a Verify Identity Access deployment.\n\nAn extension consists of:\n- A signed installation package from IBM Security Verify Identity Access App-Xchange\n- Optional configuration properties\n- Additional binaries required by the extension\n\nThe specific properties required to install an extension will change based on the type of extension being installed. Administrators can use a Web Browser to inspect HTTP requests when uploading an extension to a Verify Identity Access appliance to determine which properties are required for their particular extension.",
   "type": "array",
   "items": {
     "$ref": "#/$defs/Extension"

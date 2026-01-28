@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "managed_containers.json",
-  "description": "The managed containers feature allows administrators to deploy IBM containerize products to IBM Verify Identity Access appliances. This is particularly useful for administrators with hardware based appliances, allowing them to deploy a greater range of IBM products with their existing hardware.",
+  "description": "The managed containers feature allows administrators to deploy IBM containerized products to IBM Verify Identity Access appliances. This is useful for administrators with hardware based appliances, allowing them to deploy a greater range of IBM products with their existing hardware.",
   "type": "object",
   "properties": {
     "volumes": {

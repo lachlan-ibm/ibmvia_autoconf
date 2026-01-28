@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/ssl_certificates.json",
-  "description": "X509 Certificates and PCKS12 key-files can be imported into Verify Identity Access SSL databases. Each entry in the list can have four keys: database name; personal certificates; certificates loaded from URL's; and signer certificates. Alternatively a SSL Certifiacte Datbase can be imported from a `.kdb` and corresponding `.sth` file. If a database does not exist on the appliance then it is created before files are imported.\n\nSSL certificates are imported into the appliance by reading files from the file system. Therefore any PKI which is to be imported into the appliance must specify the fully-qualified path or be a path relative to the `IVIA_CONFIG_BASE` environment variable.",
+  "description": "X509 Certificates and PCKS12 key-files to be imported into Verify Identity Access SSL databases. Each entry in the list can have four keys: database name; personal certificates; certificates loaded from URL's; and signer certificates. Alternatively a SSL Certifiacte Datbase can be imported from a `.kdb` and corresponding `.sth` file. If a database does not exist on the appliance then it is created before files are imported.\n\nSSL certificates are imported into the appliance by reading files from the file system. Therefore any PKI which is to be imported into the appliance must specify the fully-qualified path or be a path relative to the `IVIA_CONFIG_BASE` environment variable.",
   "type": "object",
   "properties": {
     "name": {

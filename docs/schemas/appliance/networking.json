@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "networking.json",
-  "description": "Configuration for network interfaces, routes, DNS, host file entries, and hostname on IBM Verify Access appliances.",
+  "description": "Configuration for network interfaces, routes, DNS, host file entries, and hostname on IBM Verify Access appliances. Care must be taken when configuring network interfaces to ensure that the interface used to configure the appliance is not changed (as this will result in the automation tool failing).",
   "type": "object",
   "properties": {
     "hostname": {

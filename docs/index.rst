@@ -113,7 +113,7 @@ these variables are set, they take priority over values set in configuration fil
                         ``IVIA_MGMT_PWD`` value is used as a bearer API access token.
 
 - ``IVIA_MGMT_PWD``
-                        The password or API access toekn required to authenticate.
+                        The password or API access token required to authenticate.
 
 - ``IVIA_MGMT_OLD_PWD``
                         If a password change is required then this variable defines the password for ``IVIA_MGMT_USER``
