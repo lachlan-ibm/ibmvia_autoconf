@@ -59,9 +59,6 @@ an external HVDB connection; and enabling the management authorization feature t
 configuration snapshots which can be subsequently fetched by other containers in` the deployment.
 
 
-.. include:: base.rst
-
-
 .. _managing-container-deployments:
 
 Managing Container Deployments
@@ -110,11 +107,17 @@ An example of a compose deployment configuration is::
 
 .. _runtime-database-configuration:
 
-Database Configuration
-======================
-The database configuration for container deployments can be done using the :ref:`cluster-configuration` entry.
+Database and Distribued Session Cache Configuration
+===================================================
 
-.. autoclass:: src.ibmvia_autoconf.container.Docker_Configurator.Cluster_Configuration
+
+.. raw:: html
+   :file: schema_html/container/cluster.html
+
+|br|
+
+
+.. include:: base.rst
 
 
 Global Configuration

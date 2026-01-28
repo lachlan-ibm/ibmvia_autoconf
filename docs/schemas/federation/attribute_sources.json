@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "attribute_sources.json",
+  "description": "Identity attribute sources for enriching and generating federated identities.",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/AttributeSource"
+  },
+  "$defs": {
+    "AttributeSource": {
+      "type": "object",
+      "description": "An attribute source defining where an attribute value originates.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The friendly name of the source attribute. It must be unique."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of the attribute source.",
+          "enum": [
+            "credential",
+            "value",
+            "ldap"
+          ],
+          "enumDescriptions": [
+            "credential: The attribute is from the authenticated context.",
+            "value: The attribute is plain text from the value parameter.",
+            "ldap: The attribute is retrieved from an LDAP server."
+          ]
+        },
+        "value": {
+          "type": "string",
+          "description": "The value of the source attribute. For credential type: The name of a credential attribute from the authenticated context which contains the value. For value type: The plain text to be used as the source attribute value. For LDAP type: The name of the LDAP attribute to be used."
+        },
+        "properties": {
+          "type": "array",
+          "description": "The properties associated with an attribute source.",
+          "items": {
+            "$ref": "#/$defs/Property"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "value"
+      ]
+    },
+    "Property": {
+      "type": "object",
+      "description": "A property for an attribute source.",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "The property key. Valid fields for LDAP include 'serverConnection', 'scope', 'selector', 'searchFilter', 'baseDN'."
+        },
+        "value": {
+          "type": "string",
+          "description": "The property value."
+        }
+      },
+      "required": [
+        "key",
+        "value"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "attribute_sources": [
+        {
+          "name": "username",
+          "type": "credential",
+          "value": "PrincipalName",
+          "properties": [
+            {
+              "key": "searchFilter",
+              "value": "(&(ObjectClass=inetOrgPerson)(memberOf=dc=ibm,dc=com))"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

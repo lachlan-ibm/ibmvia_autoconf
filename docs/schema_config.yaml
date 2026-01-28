@@ -1,0 +1,36 @@
+# Configuration for json-schema-for-humans
+# See: https://github.com/coveooss/json-schema-for-humans
+
+# Template to use for generation
+template_name: js
+
+# Treat descriptions as markdown
+description_is_markdown: true
+
+# Show expand/collapse buttons for nested objects
+expand_buttons: true
+
+# Copy CSS and JS files to output directory
+copy_css: true
+copy_js: true
+
+# Enable YAML rendering
+examples_as_yaml: true
+
+# Don't show breadcrumbs to save space
+show_breadcrumbs: false
+
+# Create links to referenced schemas
+link_to_reused_ref: true
+
+# Show examples in the documentation
+show_examples: true
+
+# Collapse long descriptions to save space
+collapse_long_descriptions: false
+
+# Collapse long examples to save space
+collapse_long_examples: false
+
+# Don't show the "with_footer" to remove "Generated using" text
+with_footer: false

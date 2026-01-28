@@ -1,0 +1,308 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "managed_containers.json",
+  "description": "The managed containers feature allows administrators to deploy IBM containerized products to IBM Verify Identity Access appliances. This is useful for administrators with hardware based appliances, allowing them to deploy a greater range of IBM products with their existing hardware.",
+  "type": "object",
+  "properties": {
+    "volumes": {
+      "type": "array",
+      "description": "List of volumes to be created or updated.",
+      "items": {
+        "$ref": "#/$defs/Volume"
+      }
+    },
+    "images": {
+      "type": "array",
+      "description": "List of image to be pulled. This should include registry and tag information, eg. 'icr.io/isva/verify-access-oidc-provider:23.03'",
+      "items": {
+        "type": "string"
+      }
+    },
+    "registries": {
+      "type": "array",
+      "description": "List of container registry authentication/proxy configuration to apply.",
+      "items": {
+        "$ref": "#/$defs/Registry"
+      }
+    },
+    "deployments": {
+      "type": "array",
+      "description": "List of managed container deployments to create.",
+      "items": {
+        "$ref": "#/$defs/Deployment"
+      }
+    }
+  },
+  "$defs": {
+    "Volume": {
+      "type": "object",
+      "description": "A container volume configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of volume to be created/updated."
+        },
+        "archive": {
+          "type": "string",
+          "description": "Zip archive of volume contents."
+        }
+      },
+      "required": [
+        "name",
+        "archive"
+      ]
+    },
+    "Registry": {
+      "type": "object",
+      "description": "Container registry configuration.",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Domain or IP address of container registry."
+        },
+        "user": {
+          "type": "string",
+          "description": "User to authenticate to container registry as."
+        },
+        "secret": {
+          "type": "string",
+          "description": "Secret to authenticate to the container registry as user.",
+          "format": "password"
+        },
+        "proxy": {
+          "$ref": "#/$defs/Proxy",
+          "description": "Proxy configuration for pulling images."
+        },
+        "ca": {
+          "type": "string",
+          "description": "Path to a X509 Certificate bundle to use as the Certificate Authority when pulling images from this registry."
+        }
+      },
+      "required": [
+        "host"
+      ]
+    },
+    "Proxy": {
+      "type": "object",
+      "description": "Proxy configuration for container registry access.",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Host name or address of proxy."
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port request should be proxied to.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "user": {
+          "type": "string",
+          "description": "Username to (basic) authenticate to the proxy with."
+        },
+        "secret": {
+          "type": "string",
+          "description": "Secret to (basic) authenticate to the proxy with.",
+          "format": "password"
+        },
+        "schema": {
+          "type": "string",
+          "description": "TCP schema to communicate with proxy. Default is 'http://'.",
+          "enum": [
+            "http://",
+            "https://"
+          ],
+          "default": "http://"
+        }
+      },
+      "required": [
+        "host",
+        "port"
+      ]
+    },
+    "Deployment": {
+      "type": "object",
+      "description": "A managed container deployment configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the container deployment."
+        },
+        "image": {
+          "type": "string",
+          "description": "Container image to use."
+        },
+        "type": {
+          "type": "string",
+          "description": "Container deployment metadata type."
+        },
+        "ports": {
+          "type": "array",
+          "description": "Mapping between container ports and host ports.",
+          "items": {
+            "$ref": "#/$defs/PortProperties"
+          }
+        },
+        "volumes": {
+          "type": "array",
+          "description": "Container volume mount properties.",
+          "items": {
+            "$ref": "#/$defs/VolumeProperties"
+          }
+        },
+        "env": {
+          "type": "array",
+          "description": "Container environment variable properties.",
+          "items": {
+            "$ref": "#/$defs/EnvProperties"
+          }
+        },
+        "logging": {
+          "$ref": "#/$defs/LoggingProperties",
+          "description": "Container logfile rollover properties."
+        },
+        "command": {
+          "type": "string",
+          "description": "An optional command from the metadata document to run instead of the container entrypoint."
+        },
+        "args": {
+          "type": "array",
+          "description": "An optional list of arguments to pass to the specified command.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "image",
+        "type",
+        "ports",
+        "volumes",
+        "env"
+      ]
+    },
+    "PortProperties": {
+      "type": "object",
+      "description": "Port mapping configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the Metadata port mapping being forwarded to the host appliance."
+        },
+        "value": {
+          "type": "string",
+          "description": "Host port to map to. This can optionally include an interface address, eg. '192.168.42.201:30443'."
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ]
+    },
+    "VolumeProperties": {
+      "type": "object",
+      "description": "Volume mount configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of Metadata volume mount point."
+        },
+        "value": {
+          "type": "string",
+          "description": "Name or ID of the volume being mounted."
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ]
+    },
+    "EnvProperties": {
+      "type": "object",
+      "description": "Environment variable configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of environment variable to create."
+        },
+        "value": {
+          "type": "string",
+          "description": "Value of environment variable."
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ]
+    },
+    "LoggingProperties": {
+      "type": "object",
+      "description": "Container logging configuration.",
+      "properties": {
+        "max_files": {
+          "type": "integer",
+          "description": "The maximum number of roll-over log files to keep. If a value is not specified, the default of 10 (10 files) will be used.",
+          "minimum": 1,
+          "default": 10
+        },
+        "max_size": {
+          "type": "integer",
+          "description": "The maximum size of a log file, in megabytes, before it will be rolled over. If a value is not specified, the default of 10 (10MB) will be used.",
+          "minimum": 1,
+          "default": 10
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "managed_containers": {
+        "volumes": [
+        {
+          "name": "iag-config",
+          "archive": "iag.zip"
+        }
+      ],
+      "images": [
+        "icr.io/isva/verify-access-oidc-provider:23.03",
+        "icr.io/ibmappgateway/ibm-application-gateway:22.07.0"
+      ],
+      "registries": [
+        {
+          "host": "icr.io",
+          "proxy": {
+            "host": "proxy.ibm.com",
+            "port": 3128
+          }
+        }
+      ],
+      "deployments": [
+        {
+          "name": "IAG Deployment",
+          "image": "icr.io/ibmappgateway/ibm-application-gateway:22.07.0",
+          "type": "ibm-application-gateway",
+          "ports": [
+            {
+              "name": "https",
+              "value": "192.168.42.102:30443"
+            }
+          ],
+          "volumes": [
+            {
+              "name": "config",
+              "value": "iag-config"
+            }
+          ],
+          "env": [
+            {
+              "name": "LOG_FORMAT",
+              "value": "JSON"
+            }
+          ]
+        }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,195 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "point_of_contact_profiles.json",
+  "title": "Point of Contact Profiles Configuration",
+  "description": "Configuration for Point of Contact (PoC) profiles that define callback modules for federation authentication flows.",
+  "type": "object",
+  "properties": {
+    "profiles": {
+      "type": "array",
+      "description": "List of point of contact profiles to configure.",
+      "items": {
+        "$ref": "#/$defs/PointOfContactProfile"
+      }
+    },
+    "active_profile": {
+      "type": "string",
+      "description": "The name of the Point of Contact profile which should be the active profile. Only one profile can be active at a time."
+    }
+  },
+  "required": [
+    "profiles",
+    "active_profile"
+  ],
+  "$defs": {
+    "PointOfContactProfile": {
+      "type": "object",
+      "description": "A Point of Contact profile defining callback modules for federation flows.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A meaningful name to identify this point of contact profile."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the point of contact profile."
+        },
+        "authenticate_callbacks": {
+          "type": "array",
+          "description": "An array of callbacks for authentication.",
+          "items": {
+            "$ref": "#/$defs/PointOfContactCallback"
+          }
+        },
+        "sign_in_callbacks": {
+          "type": "array",
+          "description": "An array of callbacks for sign in.",
+          "items": {
+            "$ref": "#/$defs/PointOfContactCallback"
+          }
+        },
+        "local_id_callbacks": {
+          "type": "array",
+          "description": "An array of callbacks for local identity.",
+          "items": {
+            "$ref": "#/$defs/PointOfContactCallback"
+          }
+        },
+        "sign_out_callbacks": {
+          "type": "array",
+          "description": "An array of callbacks for sign out.",
+          "items": {
+            "$ref": "#/$defs/PointOfContactCallback"
+          }
+        },
+        "authn_policy_callbacks": {
+          "type": "array",
+          "description": "An array of callbacks for authentication policy.",
+          "items": {
+            "$ref": "#/$defs/PointOfContactCallback"
+          }
+        }
+      },
+      "required": [
+        "name"
+      ]
+    },
+    "PointOfContactCallback": {
+      "type": "object",
+      "description": "A callback module configuration for a specific federation flow step.",
+      "properties": {
+        "index": {
+          "type": "integer",
+          "description": "A number reflects the position in the callbacks array.",
+          "minimum": 0
+        },
+        "module_reference_id": {
+          "type": "string",
+          "description": "The module ID referenced in the callback. It must be one of the supported module IDs."
+        },
+        "parameters": {
+          "type": "array",
+          "description": "The parameters used by the callback.",
+          "items": {
+            "$ref": "#/$defs/PointOfContactParameter"
+          }
+        }
+      },
+      "required": [
+        "index",
+        "module_reference_id"
+      ]
+    },
+    "PointOfContactParameter": {
+      "type": "object",
+      "description": "A parameter for a Point of Contact callback.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the parameter."
+        },
+        "value": {
+          "type": "string",
+          "description": "The value of the parameter."
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "point_of_contact": {
+        "active_profile" : "MyPoCProfile",
+        "profiles": [
+          {
+            "name": "MyPoCProfile",
+            "description": "MyPoCProfile description",
+            "authenticate_callbacks": [
+              {
+                "index": 0,
+                "module_reference_id": "websealPocAuthenticateCallback",
+                "parameters": [
+                  {
+                    "name": "authentication.level",
+                    "value": "1"
+                  }
+                ]
+              }
+            ],
+            "sign_in_callbacks": [
+              {
+                "index": 0,
+                "module_reference_id": "websealPocSignInCallback",
+                "parameters": [
+                  {
+                    "name": "fim.user.response.header.name",
+                    "value": "am-fim-eai-user-id"
+                  }
+                ]
+              }
+            ],
+            "local_id_callbacks": [
+              {
+                "index": 0,
+                "module_reference_id": "websealPocLocalIdentityCallback",
+                "parameters": [
+                  {
+                    "name": "fim.cred.request.header.name",
+                    "value": "iv-creds"
+                  }
+                ]
+              }
+            ],
+            "sign_out_callbacks": [
+              {
+                "index": 0,
+                "module_reference_id": "websealPocSignOutCallback",
+                "parameters": [
+                  {
+                    "name": "fim.user.session.id.request.header.name",
+                    "value": "user_session_id"
+                  }
+                ]
+              }
+            ],
+            "authn_policy_callbacks": [
+              {
+                "index": 0,
+                "module_reference_id": "genericPocAuthnPolicyCallback",
+                "parameters": [
+                  {
+                    "name": "authentication.level",
+                    "value": "1"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

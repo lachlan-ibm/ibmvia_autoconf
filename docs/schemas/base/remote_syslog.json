@@ -1,0 +1,161 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/remote_syslog.json",
+  "description": "The remote system logging capabilities of Verify Identity Access deployments. Administrators are able to define external servers where logs for Verify Identity Access sub-components should be forwarded to.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "server": {
+        "type": "string",
+        "description": "The hostname or IP address of the remote syslog server.",
+        "format": "hostname"
+      },
+      "port": {
+        "type": "integer",
+        "description": "The port number on which the remote syslog server is listening.",
+        "minimum": 1,
+        "maximum": 65535,
+        "default": 514
+      },
+      "debug": {
+        "type": "boolean",
+        "description": "Enable debug logging for the syslog forwarder.",
+        "default": false
+      },
+      "protocol": {
+        "type": "string",
+        "description": "The protocol to use for forwarding logs.",
+        "enum": [
+          "tcp",
+          "udp",
+          "tls"
+        ],
+        "default": "udp"
+      },
+      "format": {
+        "type": "string",
+        "description": "The format of the syslog messages.",
+        "enum": [
+          "rfc3164",
+          "rfc5424"
+        ],
+        "default": "rfc5424"
+      },
+      "keyfile": {
+        "type": "string",
+        "description": "The name of the key file which contains the SSL certificates used when communicating with the remote syslog server (e.g. pdsrv). This option is required if the protocol is 'tls'."
+      },
+      "ca_certificate": {
+        "type": "string",
+        "description": "The label which is used to identify within the SSL key file the CA certificate of the remote syslog server. This option is required if the protocol is 'tls'."
+      },
+      "client_certificate": {
+        "type": "string",
+        "description": "The label which is used to identify within the SSL key file the client certificate which will be used during mutual authentication with the remote syslog server."
+      },
+      "permitted_peers": {
+        "type": "array",
+        "description": "List of permitted peer names for TLS certificate validation.",
+        "items": {
+          "type": "string"
+        }
+      },
+      "sources": {
+        "type": "array",
+        "description": "List of log sources (forwarders) to configure for this syslog server.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Name of the log source/forwarder."
+            },
+            "tag": {
+              "type": "string",
+              "description": "Tag to identify the source in syslog messages."
+            },
+            "facility": {
+              "type": "string",
+              "description": "Syslog facility level.",
+              "enum": [
+                "kern",
+                "user",
+                "mail",
+                "daemon",
+                "auth",
+                "syslog",
+                "lpr",
+                "news",
+                "uucp",
+                "cron",
+                "authpriv",
+                "ftp",
+                "local0",
+                "local1",
+                "local2",
+                "local3",
+                "local4",
+                "local5",
+                "local6",
+                "local7"
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "description": "Minimum severity level to forward.",
+              "enum": [
+                "emerg",
+                "alert",
+                "crit",
+                "err",
+                "warning",
+                "notice",
+                "info",
+                "debug"
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "tag",
+            "facility",
+            "severity"
+          ]
+        }
+      }
+    },
+    "required": [
+      "server",
+      "port",
+      "protocol",
+      "sources"
+    ]
+  },
+  "examples": [
+    {
+      "remote_syslog": [
+        {
+          "server": "127.12.7.1",
+          "port": 514,
+          "debug": false,
+          "protocol": "udp",
+          "sources": [
+            {
+              "name": "WebSEAL:ISAM:request.log",
+              "tag": "isva-dev",
+              "facility": "local0",
+              "severity": "debug"
+            },
+            {
+              "name": "Runtime Messages",
+              "tag": "isva-dev",
+              "facility": "syslog",
+              "severity": "info"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

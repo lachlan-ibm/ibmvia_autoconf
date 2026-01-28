@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "mmfa.json",
+  "description": "Configuration for IBM Verify mobile multi-factor authentication (MMFA) integration. These properties are used as a discovery mechanism for mobile devices which have been registered for a user; and is capable of initiating or completing an \"out of band\" authentication or authorization challenge.",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "The OAuth client ID required for the MMFA service."
+    },
+    "hostname": {
+      "type": "string",
+      "description": "The hostname of the MMFA endpoint URI. Protocol used will be https. Must be configured if 'endpoints' is not included.",
+      "format": "hostname"
+    },
+    "port": {
+      "type": "integer",
+      "description": "The port of the MMFA endpoint URI. Must be configured if 'endpoints' is not included.",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "junction": {
+      "type": "string",
+      "description": "The junction of the MMFA endpoint URI. Must be configured if 'endpoints' is not included.",
+      "pattern": "^/"
+    },
+    "options": {
+      "type": "string",
+      "description": "A list of configurable key-value pairs to be presented in the QR code. Recommended formatting: key=value,key=value."
+    },
+    "endpoints": {
+      "$ref": "#/$defs/Endpoints",
+      "description": "An object containing the endpoints returned from the registration QR code or the discovery endpoint. If configured, overwrites 'hostname', 'port', and 'junction' configuration."
+    },
+    "discovery_mechanisms": {
+      "type": "array",
+      "description": "A list of authentication mechanism URIs to be included in the discovery endpoint response.",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      }
+    }
+  },
+  "required": [
+    "client_id"
+  ],
+  "$defs": {
+    "Endpoints": {
+      "type": "object",
+      "description": "MMFA service endpoints configuration.",
+      "properties": {
+        "details_url": {
+          "type": "string",
+          "description": "The discovery endpoint included in the registration QR code.",
+          "format": "uri"
+        },
+        "enrollment_endpoint": {
+          "type": "string",
+          "description": "The enrollment endpoint returned from the discovery endpoint.",
+          "format": "uri"
+        },
+        "hotp_shared_secret_endpoint": {
+          "type": "string",
+          "description": "The HOTP shared secret endpoint returned from the discovery endpoint.",
+          "format": "uri"
+        },
+        "totp_shared_secret_endpoint": {
+          "type": "string",
+          "description": "The TOTP shared secret endpoint returned from the discovery endpoint.",
+          "format": "uri"
+        },
+        "qrlogin_endpoint": {
+          "type": "string",
+          "description": "The QR Code login endpoint returned from the discovery endpoint.",
+          "format": "uri"
+        },
+        "token_endpoint": {
+          "type": "string",
+          "description": "The OAuth token endpoint returned from the discovery endpoint.",
+          "format": "uri"
+        },
+        "authntrxn_endpoint": {
+          "type": "string",
+          "description": "The SCIM Transaction endpoint returned from the discovery endpoint.",
+          "format": "uri"
+        },
+        "mobile_endpoint_prefix": {
+          "type": "string",
+          "description": "The prefix of the runtime endpoint that is constructed and saved as the requestUrl of a transaction."
+        }
+      },
+      "required": [
+        "details_url",
+        "enrollment_endpoint",
+        "hotp_shared_secret_endpoint",
+        "totp_shared_secret_endpoint",
+        "qrlogin_endpoint",
+        "token_endpoint",
+        "authntrxn_endpoint",
+        "mobile_endpoint_prefix"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "mmfa": {
+        "client_id": "IBMVerify",
+        "hostname": "https://www.myidp.ibm.com",
+        "port": 444,
+        "options": "ignoreSslCerts=true",
+        "junction": "/mga",
+        "discovery_mechanisms": [
+          "urn:ibm:security:authentication:asf:mechanism:totp",
+          "urn:ibm:security:authentication:asf:mechanism:mobile_user_approval:user_presence",
+          "urn:ibm:security:authentication:asf:mechanism:mobile_user_approval:fingerprint"
+        ]
+      }
+    }
+  ]
+}

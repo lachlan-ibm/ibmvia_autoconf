@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/admin_config.json",
+  "description": "System wide settings such as LMI log file configuration, account management and tuning parameters for the LMI JVM.",
+  "type": "object",
+  "properties": {
+    "min_heap_size": {
+      "type": "integer",
+      "description": "The minimum heap size, in megabytes, for the JVM.",
+      "minimum": 1
+    },
+    "max_heap_size": {
+      "type": "integer",
+      "description": "The minimum heap size, in megabytes, for the JVM.",
+      "minimum": 1
+    },
+    "session_timeout": {
+      "type": "integer",
+      "description": "The length of time, in minutes, that a session can remain idle before it is deleted (valid values0 - 720). A default value of 120 is used.",
+      "minimum": 0,
+      "maximum": 720,
+      "default": 120
+    },
+    "session_inactive_timeout": {
+      "type": "integer",
+      "description": "The length of time, in minutes, that a session can remain idle before it is deleted (valid values = -1 - 720). A default value of 30 is used. A value of -1 disables the inactivity timeout.",
+      "minimum": -1,
+      "maximum": 720,
+      "default": 30
+    },
+    "http_port": {
+      "type": "integer",
+      "description": "The TCP port on which the LMI will listen.",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "https_port": {
+      "type": "integer",
+      "description": "The SSL port on which the LMI will listen. A default value of 443 is used.",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 443
+    },
+    "sshd_port": {
+      "type": "integer",
+      "description": "The port on which the SSH daemon will listen. A default value of 22 is used. Please note that if using the appliance clustering capability all nodes in the cluster must be configured to use the same port for the SSH daemon.",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 22
+    },
+    "sshd_client_alive": {
+      "type": "integer",
+      "description": "The number of seconds that the server will wait before sending a null packet to the client. A value of -1 means using the default timeout settings.",
+      "minimum": -1
+    },
+    "swap_size": {
+      "type": "integer",
+      "description": "The amount of allocated swap space, in Megabytes. There must be enough disk space on the active partition to store the swap file, otherwise an error will be logged in the system log file and the default amount of swap space will be used. (only present in the response if a value has been set).",
+      "minimum": 0
+    },
+    "min_threads": {
+      "type": "integer",
+      "description": "The minimum number of threads which will handle LMI requests. A default value of 6 is used.",
+      "minimum": 1,
+      "default": 6
+    },
+    "max_threads": {
+      "type": "integer",
+      "description": "The maximum number of threads which will handle LMI requests. A default value of 6 is used.",
+      "minimum": 1,
+      "default": 6
+    },
+    "max_pool_size": {
+      "type": "integer",
+      "description": "The maximum number of connections for the connection pool. The default value is 100.",
+      "minimum": 1,
+      "default": 100
+    },
+    "lmi_debugging_enabled": {
+      "type": "boolean",
+      "description": "A boolean value which is used to control whether LMI debugging is enabled or not. By default debugging is disabled.",
+      "default": false
+    },
+    "validate_client_cert_identity": {
+      "type": "boolean",
+      "description": "The console messaging level of the LMI (valid values include INFO, AUDIT, WARNING, ERROR and OFF). A default value of OFF is used."
+    },
+    "exclude_csrf_checking": {
+      "type": "string",
+      "description": "A comma-separated string which lists the users for which CSRF checking should be disabled. Regular expressions are accepted, and any embedded commas should be escaped with the \" character. This option is required if you wish to access a Web service, using client certificates for authentication, from a non-browser based client. An example might be cn=scott,o=ibm,c=us,cn=admin,o=dummyCorp,c=*."
+    },
+    "enabled_server_protocols": {
+      "type": "string",
+      "description": "Specifies which secure protocols will be accepted when connecting to the LMI. The supported options include: TLS, TLSv1, TLSv1.1 and TLSv1.2."
+    },
+    "enabled_tls": {
+      "type": "array",
+      "description": "List of Enabled TLS protocols for the local management interface. Valid values include TLSv1, TLSv1.1 and TLSv1.2.",
+      "items": {
+        "type": "string",
+        "enum": ["TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"]
+      }
+    },
+    "console_log_level": {
+      "type": "string",
+      "description": "The console messaging level of the LMI (valid values include INFO, AUDIT, WARNING, ERROR and OFF). A default value of OFF is used.",
+      "enum": ["INFO", "AUDIT", "WARNING", "ERROR", "OFF"],
+      "default": "OFF"
+    },
+    "accept_client_certs": {
+      "type": "boolean",
+      "description": "A boolean value which is used to control whether SSL client certificates are accepted by the local management interface. By default SSL client certificates are accepted.",
+      "default": true
+    },
+    "log_max_files": {
+      "type": "integer",
+      "description": "The maximum number of log files that are retained. The default value is 2.",
+      "minimum": 1,
+      "default": 2
+    },
+    "log_max_size": {
+      "type": "integer",
+      "description": "The maximum size (in MB) that a log file can grow to before it is rolled over. The default value is 20",
+      "minimum": 1,
+      "default": 20
+    },
+    "http_proxy": {
+      "type": "string",
+      "description": "The proxy <host>:<port> to be used for HTTP communication from the LMI. The port component is optional and will default to 80.",
+      "pattern": "^[^:]+(:d+)?$"
+    },
+    "https_proxy": {
+      "type": "string",
+      "description": "The proxy <host>:<port> to be used for HTTPS communication from the LMI. The port component is optional and will default to 443.",
+      "pattern": "^[^:]+(:d+)?$"
+    },
+    "login_header": {
+      "type": "string",
+      "description": "This is a customizable header that is displayed when accessing the login page in a web browser and after logging in via SSH. Multiple lines of text can be specified by using the sequence \"n\", which will be interpreted as a line break."
+    },
+    "login_msg": {
+      "type": "string",
+      "description": "This is a customizable message that is displayed when accessing the login page in a web browser and after logging in via SSH. Multiple lines of text can be specified by using the sequence \"n\", which will be interpreted as a line break."
+    },
+    "access_log_fmt": {
+      "type": "string",
+      "description": "The template string to use for the LMI access.log file. If not set the access log is disabled (default)."
+    },
+    "lmi_msg_timeout": {
+      "type": "integer",
+      "description": "This is a timeout (in seconds) for notification messages that appear in the LMI. A value of 0 indicates that the messages should not timeout. The default value is 5 seconds.",
+      "minimum": 0,
+      "default": 5
+    },
+    "valid_verify_domains": {
+      "type": "string",
+      "description": "This is a space separated list of valid domains for IBM Security Verify. These domains are used by the IBM Security Verify wizard to ensure that only valid hostnames are used."
+    }
+  },
+  "examples": [
+    {
+      "admin_cfg": {
+        "session_timeout": 7200,
+        "sshd_client_alive": 300,
+        "console_log_level": "AUDIT",
+        "accept_client_certs": true
+      }
+    }
+  ]
+}

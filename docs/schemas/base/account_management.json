@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/account_management.json",
+  "description": "Administrator accounts, groups for the local management interface. Groups are created before users; therefore if a user is being created and added to a group then this should be done in the user configuration entry.",
+  "type": "object",
+  "properties": {
+    "users": {
+      "type": "array",
+      "description": "Optional list of management users to configure",
+      "items": {
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation to perform with user. add | update | delete.",
+            "enum": ["add", "update", "delete"]
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the user to create, remove or update."
+          },
+          "password": {
+            "type": "string",
+            "description": "Password to authenticate as user. Required if creating user.",
+            "format": "password"
+          },
+          "groups": {
+            "type": "array",
+            "description": "Optional list of groups to add user to.",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["operation", "name"]
+      }
+    },
+    "groups": {
+      "type": "array",
+      "description": "Optional list of management groups to configure.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "description": "Operation to perform with group. add | update | delete.",
+            "enum": ["add", "update", "delete"]
+          },
+          "id": {
+            "type": "string",
+            "description": "Name of group to create."
+          },
+          "users": {
+            "type": "array",
+            "description": "Optional list of users to add to group.",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["operation", "id"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "account_management": {
+        "users": [
+          {
+            "name": "cfgsvc",
+            "operation": "update",
+            "password": "StrongPassword",
+            "groups": [
+              "aGroup",
+              "anotherGroup"
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "name": "adminGroup",
+            "operation": "update",
+            "users": [
+              "admin",
+              "anotherUser"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

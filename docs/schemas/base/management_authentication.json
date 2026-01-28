@@ -1,0 +1,188 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/management_authentication.json",
+  "description": "Configure how users authenticate to the Verify Identity Access management interface. By default the management interface uses a local user registry, but administrators can configure a LDAP server or integrate a third party identity provider using the OIDC specification.",
+  "type": "object",
+  "properties": {
+    "auth_type": {
+      "type": "string",
+      "description": "Specifies whether the local user database or the remote LDAP user registry is used for authentication. If set to 'local', then all other fields are ignored.",
+      "enum": [
+        "local",
+        "federation",
+        "remote"
+      ]
+    },
+    "ldap": {
+      "type": "object",
+      "description": "LDAP specific configuration properties. Only one of LDAP or OIDC should be defined.",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "Specifies the name of the LDAP server.",
+          "format": "hostname"
+        },
+        "port": {
+          "type": "string",
+          "description": "Specifies the port over which to communicate with the LDAP server."
+        },
+        "ssl": {
+          "type": "boolean",
+          "description": "Specifies whether SSL is used when the system communicates with the LDAP server."
+        },
+        "key_database": {
+          "type": "string",
+          "description": "Specifies the name of the key database file (without any path information). This parameter is required if 'ssl' is 'true'"
+        },
+        "cert_label": {
+          "type": "string",
+          "description": "Specifies the name of the certificate within the Key database that is used if client authentication is requested by the LDAP server."
+        },
+        "user_attribute": {
+          "type": "string",
+          "description": "Specifies the name of the LDAP attribute which holds the supplied authentication user name of the user."
+        },
+        "group_member_attribute": {
+          "type": "string",
+          "description": "Specifies the name of the LDAP attribute which is used to hold the members of a group."
+        },
+        "base_dn": {
+          "type": "string",
+          "description": "Specifies the base DN which is used to house all administrative users."
+        },
+        "admin_group_dn": {
+          "type": "string",
+          "description": "Specifies the DN of the group to which all administrative users must belong."
+        },
+        "anon_bind": {
+          "type": "boolean",
+          "description": "Specifies whether the LDAP user registry supports anonymous bind. If set to false, 'bind_dn' and 'bind_password' are required."
+        },
+        "bind_dn": {
+          "type": "string",
+          "description": "Specifies the DN of the user which will be used to bind to the registry. This user must have read access to the directory. This parameter is required if anon_bind is 'false'"
+        },
+        "bind_password": {
+          "type": "string",
+          "description": "Specifies the password which is associated with the bind_dn. This parameter is required if anon_bind is 'false'.",
+          "format": "password"
+        },
+        "debug": {
+          "type": "boolean",
+          "description": "Specifies whether the capturing of LDAP debugging information is enabled or not."
+        },
+        "enable_usermapping": {
+          "type": "boolean",
+          "description": "Specifies whether mapping of the incoming client certificate DN is enabled."
+        },
+        "usermapping_script": {
+          "type": "string",
+          "description": "Specifies the javascript script that will map the incoming client certificate DN. Only valid if 'enable_usermapping' is true."
+        },
+        "enable_ssh_pubkey_auth": {
+          "type": "boolean",
+          "description": "Specifies whether or not users in the LDAP server can log in via SSH using SSH public key authentication. Defaults to false.",
+          "default": false
+        },
+        "ssh_pubkey_auth_attribute": {
+          "type": "string",
+          "description": "Specifies the name of the LDAP attribute which contains a user's public key data. This field is required if SSH public key authentication is enabled."
+        }
+      },
+      "required": [
+        "host",
+        "port",
+        "ssl",
+        "user_attribute",
+        "group_member_attribute",
+        "base_dn",
+        "admin_group_dn",
+        "anon_bind",
+        "debug",
+        "enable_usermapping"
+      ]
+    },
+    "oidc": {
+      "type": "object",
+      "description": "OIDC specific configuration properties. Only one of LDAP or OIDC should be defined.",
+      "properties": {
+        "client_id": {
+          "type": "string",
+          "description": "The OIDC Client Identifier."
+        },
+        "client_secret": {
+          "type": "string",
+          "description": "The OIDC Client Secret.",
+          "format": "password"
+        },
+        "discovery_endpoint": {
+          "type": "string",
+          "description": "The OIDC Discovery (well-known) endpoint.",
+          "format": "uri"
+        },
+        "enable_pkce": {
+          "type": "boolean",
+          "description": "Specifies whether the Public key Code Exchange extension is enforced."
+        },
+        "enable_admin_group": {
+          "type": "boolean",
+          "description": "Specifies whether a user must be a member of a particular group to be considered an administrator user."
+        },
+        "group_claim": {
+          "type": "string",
+          "description": "The OIDC token claim to use as group membership. This claim can either be a String, or a list of Strings.",
+          "default": "groupIds"
+        },
+        "admin_group": {
+          "type": "string",
+          "description": "The name of the group which a user must be a member of to be considered an administrator user.",
+          "default": "adminGroup"
+        },
+        "user_claim": {
+          "type": "string",
+          "description": "Specifies the OIDC token claim to use as the username.",
+          "default": "sub"
+        },
+        "keystore": {
+          "type": "string",
+          "description": "The SSL Truststore to verify connections to the OIDC OP.",
+          "default": "lmi_trust_store"
+        },
+        "enable_tokenmapping": {
+          "type": "boolean",
+          "description": "Specifies whether custom claim to identity mapping is performed using a JavaScript code fragment."
+        },
+        "tokenmapping_script": {
+          "type": "string",
+          "description": "The custom JavaScript code fragment to map an identity token to a username/group membership. Only valid if 'enable_tokenmapping' is 'true'."
+        }
+      },
+      "required": [
+        "client_id",
+        "client_secret",
+        "discovery_endpoint",
+        "enable_pkce",
+        "enable_admin_group",
+        "enable_tokenmapping"
+      ]
+    }
+  },
+  "required": [
+    "auth_type"
+  ],
+  "examples": [
+    {
+      "management_authentication": {
+        "auth_type": "federation",
+        "oidc": {
+          "client_id": "27d55f1c-285a-11ef-81ec-14755ba358db",
+          "client_secret": "SDFGc3ffFSD3m4Xtg1",
+          "discovery_endpoint": "https://verify.ibm.com/.well-known/openid-configuration",
+          "require_pkce": true,
+          "enable_admin_group": false,
+          "enable_tokenmapping": false
+        }
+      }
+    }
+  ]
+}

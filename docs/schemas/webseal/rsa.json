@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/rsa.json",
+  "description": "The RSA integration module can be used to allow users who are authenticating to WebSEAL's user registry to use a RSA OTP as a second factor. More information about configuring this mechanism and the correcsponding configuration to integrate with WebSEAL login can be found [here](https://www.ibm.com/docs/en/sva/latest?topic=methods-token-authentication).",
+  "type": "object",
+  "properties": {
+    "server_config": {
+      "type": "string",
+      "description": "The server configuration file to upload."
+    },
+    "optional_server_config": {
+      "type": "string",
+      "description": "The server configuration options file to upload."
+    }
+  },
+  "required": ["server_config", "optional_server_config"],
+  "examples": [
+    {
+      "rsa_config": {
+        "server_config": "server.conf",
+        "optional_server_config": "optional_server.conf"
+      }
+    }
+  ]
+}

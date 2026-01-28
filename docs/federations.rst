@@ -155,14 +155,12 @@ To configure Point of Contact profiles, see the entry in the `Appliance <applian
 
 Alias Service
 =============
-The alias service stores and retrieves aliases that are related to a federated identity. Persistent name identifier format allows 
-you to link a user at the identity provider with a user at the service provider. Verify Identity Access stores these account linkages in 
-a high-volume database or an LDAP database. 
 
 
-.. autoclass:: src.ibmvia_autoconf.federation.FED_Configurator.Alias_Service
-    :members:
+.. raw:: html
+   :file: schema_html/federation/alias_service.html
 
+|br|
 
 Attribute Sources
 =================
@@ -181,20 +179,19 @@ Security Token Service
 ======================
 
 
-.. autoclass:: src.ibmvia_autoconf.federation.FED_Configurator.Security_Token_Service
-    :members:
+.. raw:: html
+   :file: schema_html/federation/security_token_service.html
 
+|br|
 
 Federations
 ===========
 
 
-.. autoclass:: src.ibmvia_autoconf.federation.FED_Configurator.Federations
-    :members:
+.. raw:: html
+   :file: schema_html/federation/federations.html
 
-.. autoclass:: src.ibmvia_autoconf.federation.Federation_Common
-    :members:
-
+|br|
 
 Advanced Configuration Parameters
 =================================

@@ -12,3 +12,5 @@ pyenv
 *.p12
 *.env
 *.whl
+docs/schema_html
+docs/_build/*

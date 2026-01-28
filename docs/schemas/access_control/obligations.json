@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "obligations.json",
+  "description": "Configuration for access control obligations that define actions to be performed before access is granted. For example a user must consent to registering a device (device fingerprinting) to be permitted access.",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/Obligation"
+  },
+  "$defs": {
+    "Obligation": {
+      "type": "object",
+      "description": "An obligation that defines actions to be performed based on policy decisions.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A unique name for the obligation."
+        },
+        "description": {
+          "type": "string",
+          "description": "An optional description of the obligation."
+        },
+        "uri": {
+          "type": "string",
+          "description": "The identifier of the obligation that is used in generated XACML.",
+          "format": "uri"
+        },
+        "type": {
+          "type": "string",
+          "description": "Should be set to Obligation.",
+          "enum": [
+            "Obligation"
+          ],
+          "default": "Obligation"
+        },
+        "type_id": {
+          "type": "string",
+          "description": "The obligation type id. If not provided, the value will be set to 1, which is the Enforcement Point type.",
+          "default": "1"
+        },
+        "parameters": {
+          "type": "array",
+          "description": "Array of parameters associated with the obligation.",
+          "items": {
+            "$ref": "#/$defs/Parameter"
+          }
+        },
+        "properties": {
+          "type": "array",
+          "description": "Array of properties associated with the obligations.",
+          "items": {
+            "$ref": "#/$defs/Property"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "uri",
+        "parameters"
+      ]
+    },
+    "Parameter": {
+      "type": "object",
+      "description": "A parameter for an obligation.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A unique name for the parameter."
+        },
+        "label": {
+          "type": "string",
+          "description": "Label for the parameter. Set it to the value of the name."
+        },
+        "datatype": {
+          "type": "string",
+          "description": "Data type for the parameter.",
+          "enum": [
+            "Boolean",
+            "Date",
+            "Double",
+            "Integer",
+            "String",
+            "Time",
+            "X500Name"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "datatype"
+      ]
+    },
+    "Property": {
+      "type": "object",
+      "description": "A property for an obligation.",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "A unique key for the property."
+        },
+        "value": {
+          "type": "string",
+          "description": "The value for the property."
+        }
+      },
+      "required": [
+        "key",
+        "value"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "obligations": [
+        {
+          "name": "myObligation",
+          "description": "Test obligation",
+          "type": "Obligation",
+          "uri": "urn:ibm:security:obligation:myObligation",
+          "parameters": [
+            {
+              "name": "userid",
+              "label": "userid",
+              "datatype": "String"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

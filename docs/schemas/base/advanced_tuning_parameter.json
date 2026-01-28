@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/advanced_tuning_parameter.json",
+  "description": "Advanced Tuning Parameters can be set on an appliance to configure additional settings not exposed by the LMI. Any required advanced tuning parameters for your deployment will be communicated to you via IBM support.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "Name of the Advanced Tuning Parameter."
+      },
+      "value": {
+        "type": "string",
+        "description": "Value of the Advanced Tuning Parameter."
+      },
+      "description": {
+        "type": "string",
+        "description": "Optional description of the Advanced Tuning Parameter."
+      },
+      "operation": {
+        "type": "string",
+        "description": "Operation which should be performed on advanced tuning parameter.",
+        "enum": ["add", "delete", "update"]
+      }
+    },
+    "required": ["name", "value", "operation"]
+  },
+  "examples": [
+    {
+      "advanced_tuning_parameters": [
+        {
+          "name": "wga.rte.embedded.ldap.ssl.port",
+          "value": "636"
+        },
+        {
+          "name": "password.policy",
+          "value": "minlen=8 dcredit=1 ucredit=1 lcredit=1",
+          "description": "Enforced PAM password quality for management accounts."
+        }
+      ]
+    }
+  ]
+}

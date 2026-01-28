@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "oidc_relying_party.json",
+  "title": "OIDC Relying Party Configuration",
+  "description": "Configuration for an OpenID Connect Relying Party federation.",
+  "type": "object",
+  "properties": {
+    "redirect_uri_prefix": {
+      "type": "string",
+      "description": "The reverse proxy address to prepend to the redirect URI sent to the provider to communicate with this instance. An example is 'https://www.reverse.proxy.com/mga'. For the value 'https://www.reverse.proxy.com/mga', the kickoff uri would be 'https://www.reverse.proxy.com/mga/sps/oidc/rp/<FEDERATION_NAME>/kickoff/<PARTNER_NAME>' and the redirect uri 'https://www.reverse.proxy.com/mga/sps/oidc/rp/<FEDERATION_NAME>/redirect/<PARTNER_NAME>'",
+      "format": "uri"
+    },
+    "response_types": {
+      "type": "array",
+      "description": "List of response types which determine the flow to be executed. Valid values to be included are 'code', 'token', 'id_token'. This selects the default flow to run when a metadata URL is specified in the partner configuration.",
+      "items": {
+        "type": "string",
+        "enum": ["code", "token", "id_token"]
+      },
+      "minItems": 1
+    },
+    "attribute_mappings": {
+      "$ref": "common_definitions.json#/$defs/AttributeMapping",
+      "description": "The attribute mapping data."
+    },
+    "identity_mapping": {
+      "$ref": "common_definitions.json#/$defs/IdentityMapping",
+      "description": "The identity mapping data."
+    },
+    "advanced_configuration": {
+      "$ref": "common_definitions.json#/$defs/AdvancedConfiguration",
+      "description": "The advanced configuration data."
+    }
+  },
+  "required": ["redirect_uri_prefix", "response_types", "identity_mapping", "advanced_configuration"]
+}

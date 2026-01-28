@@ -181,7 +181,7 @@ successfully. The required files include:
 - X.509 Certificates: `postgresql.pem`, `ldap.pem`, `idp.pem` and `sp.pem`
 - Environments secrets: `fed.env`
 
-The mapping rule files can be downloaded from the [federation demo] (https://www.github.com/lachlan-ibm) 
+The mapping rule files can be downloaded from the [federation demo](https://www.github.com/lachlan-ibm/ibmvia_autoconf/blob/stable/examples/federation_demo/mapping_rules.zip)
 directory. The X.509 certificates (and corresponding keys) and `fed.env` should be generated and deployed to
 the appropriate Kubernetes objects with the above commands.
 

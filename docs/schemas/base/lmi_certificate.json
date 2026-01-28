@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/lmi_certificate.json",
+  "title": "Management Interface Certificate Configuration",
+  "description": "Update the Local Management Interface (LMI) SSL certificate and key. This certificate is used to secure HTTPS connections to the management interface.",
+  "type": "object",
+  "properties": {
+    "p12": {
+      "type": "string",
+      "description": "Path to the PKCS12 file containing the LMI certificate and private key.",
+      "pattern": ".*\\.p12$"
+    },
+    "password": {
+      "type": "string",
+      "description": "Password to decrypt the PKCS12 file.",
+      "format": "password"
+    }
+  },
+  "required": ["p12", "password"],
+  "examples": [
+    {
+      "lmi_certificate": {
+        "p12": "ssl/lmi_certificate.p12",
+        "password": "S3cr37Pa55w0rd!"
+      }
+    }
+  ]
+}

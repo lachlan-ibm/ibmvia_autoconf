@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "date_time.json",
+  "description": "Configuration for date, time, timezone, and NTP settings on IBM Verify Access appliances. The date and time settings can be synchronized to a external NTP server, or set to a time-zone using canonical names.",
+  "type": "object",
+  "properties": {
+    "enable_ntp": {
+      "type": "boolean",
+      "description": "Enable Network Time Protocol synchronization."
+    },
+    "ntp_servers": {
+      "type": "array",
+      "description": "List of hostnames or addresses to use as NTP servers.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "time_zone": {
+      "type": "string",
+      "description": "The id of the timezone the appliance is operating in."
+    },
+    "date_time": {
+      "type": "string",
+      "description": "The current date and time, in the format 'YYYY-MM-DD HH:mm:ss'.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$"
+    }
+  },
+  "required": [
+    "enable_ntp",
+    "time_zone"
+  ],
+  "examples": [
+    {
+      "date_time": {
+                      "enable_ntp": true,
+                      "ntp_servers": ["time.ibm.com", "192.168.0.1"],
+                      "time_zone": "Australia/Brisbane"
+      }
+    }
+  ]
+}

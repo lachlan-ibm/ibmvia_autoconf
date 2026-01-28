@@ -6,7 +6,6 @@
 import logging
 import json
 import os
-import typing
 import copy
 
 from .util.configure_util import config_base_dir, deploy_pending_changes
@@ -17,8 +16,8 @@ _logger = logging.getLogger(__name__)
 class AAC_Configurator(object):
 
     config = Map()
-    aac = None
-    factory = None
+    #aac = None
+    #factory = None
     needsRestart = True
 
     def __init__(self, config, factory):
@@ -50,6 +49,7 @@ class AAC_Configurator(object):
         else:
             return None
 
+    """
     class Push_Notification_Provider(typing.TypedDict):
         '''
         Example::
@@ -94,6 +94,8 @@ class AAC_Configurator(object):
         'The IBM Marketing Cloud issued Oauth refresh token.'
         imc_app_key: typing.Optional[str]
         'The app key issued by IBM Marketing Cloud for the associated application.'
+    """
+
 
     def push_notifications(self, config):
         if config.push_notification_providers:
@@ -116,7 +118,7 @@ class AAC_Configurator(object):
 
 
 
-
+    """
     class Policy_Information_Points(typing.TypedDict):
         '''
         Example::
@@ -177,6 +179,8 @@ class AAC_Configurator(object):
 
         pips: typing.List[Policy_Information_Point]
         'List of policy information points to configure.'
+    """
+
 
     def pip_configuration(self, config):
         if config.pips:
@@ -306,7 +310,7 @@ class AAC_Configurator(object):
                 _logger.error("Failed to {} risk profile:\n{}\n{}".format(
                                         verb, json.dumps(profile, indent=4), rsp.data))
 
-
+    """
     class Access_Control(typing.TypedDict):
         '''
         Example::
@@ -407,6 +411,8 @@ class AAC_Configurator(object):
         'List of Risk Based Access policies to create.'
         resources: typing.Optional[typing.List[Resource]]
         'List of resources to be created and corresponding policies which should be attached to each resource.'
+    """
+
 
     def access_control(self, aac_config):
 
@@ -441,6 +447,7 @@ class AAC_Configurator(object):
                 self._cba_publish_resources(cba.resources)
 
 
+    """
     class Advanced_Configuration(typing.TypedDict):
         '''
         Example::
@@ -458,6 +465,8 @@ class AAC_Configurator(object):
         'The name of the advanced configuration property. Either the property ID or name must be defined.'
         value: str
         'The updated value of the advanced configuration property.'
+    """
+
 
     def advanced_config(self, aac_config):
         if aac_config.advanced_configuration != None:
@@ -492,6 +501,7 @@ class AAC_Configurator(object):
                                 schema, json.dumps(attr_mode, indent=4), rsp.data))
 
 
+    """
     class System_CrossDomain_Identity_Management(typing.TypedDict):
         '''
         Example::
@@ -643,6 +653,7 @@ class AAC_Configurator(object):
         'The customized attribute modes.'
         max_user_response: typing.Optional[int]
         'The maximum number of entries that can be returned from a single call to the ``/User`` endpoint.'
+    """
 
 
     def scim_configuration(self, aac_config):
@@ -756,7 +767,7 @@ class AAC_Configurator(object):
         return True
 
 
-
+    """
     class Server_Connections(typing.TypedDict):
         '''
         Example::
@@ -1005,6 +1016,8 @@ class AAC_Configurator(object):
 
         connections: typing.List[Server_Connection]
         'List of server connections to create or update. Properties of individual connections are described in the ``_Connection`` subclasses.'
+    """
+
 
     def server_connections(self, config):
         if config.server_connections:
@@ -1034,6 +1047,7 @@ class AAC_Configurator(object):
                             connection.name, connection))
 
 
+    """
     class Template_Files(typing.TypedDict):
         '''
         Example::
@@ -1046,6 +1060,7 @@ class AAC_Configurator(object):
         '''
         template_files: typing.List[str]
         'List of files or zip-files to upload as HTML template pages. Path to files can be relative to the ``IVIA_CONFIG_BASE`` property or fully-qualified file paths.'
+    """
 
     def _strip_base_dir(self, path):
         return path.lstrip(config_base_dir())
@@ -1069,6 +1084,7 @@ class AAC_Configurator(object):
                 _logger.error("Failed to {} template file {}".format(verb, file_pointer['path']))
 
 
+    """
     class Mapping_Rules(typing.TypedDict):
         '''
         Examples::
@@ -1097,6 +1113,8 @@ class AAC_Configurator(object):
 
         mapping_rules: typing.List[Mapping_Rule]
         'List of mapping rule types/files to upload.'
+    """
+
 
     def upload_mapping_rules(self, _type, mapping_rules):
         old_rules = self.aac.mapping_rules.list_rules().json
@@ -1126,7 +1144,7 @@ class AAC_Configurator(object):
             for entry in config.template_files:
                 #Convert list of files/directories to flattened list of files
                 #include directories if we are a directory
-                incDirs = os.path.isdir(os.path.join(config_base_dir(), entry))
+                incDirs = os.path.isdir(os.path.join(str(config_base_dir()), entry))
                 parsed_files = FILE_LOADER.read_files(entry, include_directories=incDirs)
                 self.upload_template_files(parsed_files)
         if config.mapping_rules != None:
@@ -1137,6 +1155,7 @@ class AAC_Configurator(object):
                 self.upload_mapping_rules(entry.type, parsed_files)
 
 
+    """
     class Obligations(typing.TypedDict):
         '''
         Example::
@@ -1185,6 +1204,8 @@ class AAC_Configurator(object):
         
         obligations: typing.List[Obligation]
         'List of access control obligations to create.'
+    """
+
 
     def obligation_configuration(self, aac_config):
         if aac_config.obligations != None:
@@ -1215,6 +1236,7 @@ class AAC_Configurator(object):
                 return
 
 
+    """
     class Attributes(typing.TypedDict):
         '''
         Example::
@@ -1269,6 +1291,8 @@ class AAC_Configurator(object):
         'ID of the attribute matcher that is used to compare the value of this attribute in an incoming device fingerprint with an existing device fingerprint of the user. '
         storage: Storage
         'Define where the attribute is stored.'
+    """
+
 
     def attributes_configuration(self, aac_config):
         if aac_config.attributes != None:
@@ -1366,6 +1390,8 @@ class AAC_Configurator(object):
             _logger.error("Failed to create {} API Protection client with config:\n{}\n{}".format(
                 client.name, json.dumps(client, indent=4), rsp.data))
 
+
+    """
     class API_Protection(typing.TypedDict):
         '''
         Example::
@@ -1541,6 +1567,8 @@ class AAC_Configurator(object):
         'List of OIDC defintions to create.'
         clients: typing.Optional[typing.List[Client]]
         'List of OIDC clients to create.'
+    """
+
 
     def api_protection_configuration(self, aac_config):
         if aac_config.api_protection != None and aac_config.api_protection.definitions != None:
@@ -1601,6 +1629,8 @@ class AAC_Configurator(object):
             _logger.error("Failed to set configuration for {} policy with:\n{}\n{}".format(
                 policy.name, json.dumps(policy, indent=4), rsp.data))
 
+
+    """
     class Authentication(typing.TypedDict):
         '''
         Example::
@@ -1738,6 +1768,7 @@ class AAC_Configurator(object):
         'List of authentication mechanism to create or update.'
         policies: typing.Optional[typing.List[Policy]]
         'List of authentication policies to create or update.'
+    """
 
 
     def authentication_configuration(self, aac_config):
@@ -1763,6 +1794,8 @@ class AAC_Configurator(object):
                     self._configure_policy(existing_policies, policy)
 
 
+
+    """
     class Mobile_Multi_Factor_Authentication(typing.TypedDict):
         '''
         Example::
@@ -1811,6 +1844,8 @@ class AAC_Configurator(object):
         'An object containing the endpoints returned from the registration QR code or the discovery endpoint. If configured, overwrites hostname, port, and junction configuration.'
         discovery_mechanisms: typing.Optional[typing.List[str]]
         'A list of authentication mechanism URIs to be included in the discovery endpoint response.'
+    """
+
 
     def mmfa_configuration(self, aac_config):
         if aac_config.mmfa != None:
@@ -1834,12 +1869,12 @@ class AAC_Configurator(object):
 
 
     def _upload_metadata(self, metadata):
-        metadata_list = FILE_LOADER.read_files(metadata)
+        metadata_list = optional_list(FILE_LOADER.read_files(metadata))[0]
         for metadata_file in metadata_list:
             rsp = self.aac.fido2_config.create_metadata(filename=metadata_list['path'])
             if rsp.success == True:
                 self.needsRestart = True
-                _logger.info("Successfully created {} FIDO metadata".foramt(metadata_file['name']))
+                _logger.info("Successfully created {} FIDO metadata".format(metadata_file['name']))
             else:
                 _logger.error("Failed to create {} FIDO metadata".format(metadata_file["name"]))
 
@@ -1848,7 +1883,7 @@ class AAC_Configurator(object):
         rsp = self.aac.fido2_config.create_metadata_service(**mds)
         if rsp.success == True:
             self.needsRestart = True
-            _logger.info("Successfully created {} FIDO metadata service".foramt(mds.url))
+            _logger.info("Successfully created {} FIDO metadata service".format(mds.url))
         else:
             _logger.error("Failed to create FIDO metadata service:\n{}\n{}".format(
                                                                 json.dumps(mds, indent=4), rsp.data))
@@ -1926,6 +1961,7 @@ class AAC_Configurator(object):
                 json.dumps(rp, indent=4), rsp.data))
 
 
+    """
     class Fast_Identity_Online2(typing.TypedDict):
         '''
         Example::
@@ -1940,9 +1976,7 @@ class AAC_Configurator(object):
                     use_all_metadata: true
                     metadata_soft_fail: false
                     metadata_services:
-                    - url: "https://mds3.fidoalliance.org"
-                      truststore: "rt_profile_keys"
-                      jws_truststore: "fido_mds_certs"
+                    - "https://mds3.fidoalliance.org"
                     mediator: "fido2_mediator_verifysecuritypoc.js"
                     attestation:
                       statement_types:
@@ -2054,6 +2088,7 @@ class AAC_Configurator(object):
         'Files to upload as static FIDO2 metadata documents.'
         relying_parties: typing.Optional[typing.List[Relying_Party]]
         'List of relying parties to configure.'
+    """
 
 
     def fido2_configuration(self, aac_config):
@@ -2072,6 +2107,7 @@ class AAC_Configurator(object):
                     self._create_relying_party(rp)
 
 
+    """
     class Runtime_Configuration(typing.TypedDict):
         '''
         Example::
@@ -2145,6 +2181,8 @@ class AAC_Configurator(object):
         'List of http(s) endpoints that the AAC/Federation runtime is listenting on.'
         trace: typing.Optional[str]
         'Set the runtime trace specification in Liberty.'
+    """
+
 
     def runtime_configuration(self, aac_config):
         if aac_config.runtime_properties:
@@ -2187,7 +2225,7 @@ class AAC_Configurator(object):
                                                 iface_address_uuids, port=endpoint.port, secure=endpoint.ssl)
                     if rsp.success == True:
                         self.needsRestart = True
-                        _logger.info("Successfully added runtime endpoint at {}:{}".format(address, endpoint.port))
+                        _logger.info("Successfully added runtime endpoint at {}:{}".format(endpoint.address, endpoint.port))
                     else:
                         _logger.error("Failed to create endpoint:\n:{}\n{}".format(
                                                                         json.dumps(endpoint, indent=4), rsp.data))
@@ -2211,7 +2249,7 @@ class AAC_Configurator(object):
                             self.needsRestart = True
                             _logger.info("Successfully added {} to the runtime user registry".format(group.name))
                         else:
-                            _logger.error("Failed to create group:\n{}\n{}".format(json.dumps(user, indent=4), rsp.data))
+                            _logger.error("Failed to create group:\n{}\n{}".format(json.dumps(group, indent=4), rsp.data))
 
             if aac_config.runtime_properties.users:
                 old_users = optional_list(self.aac.user_registry.list_users().json)

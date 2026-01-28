@@ -9,7 +9,7 @@ import typing
 import copy
 
 from .util.configure_util import deploy_pending_changes, config_base_dir
-from .util.data_util import prefix_keys, Map, FILE_LOADER, optional_list, filter_list, KUBE_CLIENT_SLEEP
+from .util.data_util import prefix_keys, Map, FILE_LOADER, optional_list, filter_list
 
 
 _logger = logging.getLogger(__name__)
@@ -17,8 +17,8 @@ _logger = logging.getLogger(__name__)
 
 class WEB_Configurator(object):
 
-    factory = None
-    web = None
+    #factory = None
+    #web = None
     config = Map()
 
     def __init__(self, config, factory):
@@ -212,15 +212,15 @@ class WEB_Configurator(object):
                     listening_port: 7234
                     domain: "Default"
                     http:
-                    - enabled: "no"
+                      enabled: "no"
                     https:
-                    - enabled: "yes"
+                      enabled: "yes"
                       port: 443
                     junctions:
                     - junction_point: "/app"
                       description: "Backend Application"
                       junction_type: "ssl"
-                      transparent_path: true
+                      transparent_path_junction: true
                       server_hostname: "1.2.3.4"
                       server_port: 443
                       remote_http_header:
@@ -240,7 +240,7 @@ class WEB_Configurator(object):
         '''
 
         class AAC_Configuration(typing.TypedDict):
-            class Liberty_Server(typing.TypedDict):
+            class Liberty_Server(typing.TypedDict): #type: ignore
                 hostname: str
                 'Hostname or address of server.'
                 port: int
@@ -260,7 +260,7 @@ class WEB_Configurator(object):
             'Re-use existing certificates in the SSL database.'
 
         class MMFA_Configuration(typing.TypedDict):
-            class Liberty_Server(typing.TypedDict):
+            class Liberty_Server(typing.TypedDict): #type: ignore
                 hostname: str
                 'Hostname or address of server.'
                 port: int
@@ -284,7 +284,7 @@ class WEB_Configurator(object):
             'Re-use existing Policy Server POP\'s'
 
         class Federation_Configuration(typing.TypedDict):
-            class Liberty_Server(typing.TypedDict):
+            class Liberty_Server(typing.TypedDict): #type: ignore
                 hostname: str
                 'Hostname or address of server.'
                 port: int
@@ -310,7 +310,7 @@ class WEB_Configurator(object):
             'Re-use existing certificates in the SSL database.'
 
         class ApiProtectionConfiguration(typing.TypedDict):
-            class Liberty_Server(typing.TypedDict):
+            class Liberty_Server(typing.TypedDict): #type: ignore
                 hostname: str
                 'Hostname or address of server.'
                 port: int
@@ -337,7 +337,7 @@ class WEB_Configurator(object):
             fapi_compliant: typing.Optional[bool]
             'Configures reverse proxy instance to be FAPI Compliant. Default is ``false``.'
             
-        class Stanza_Configuration(typing.TypedDict):
+        class Stanza_Configuration(typing.TypedDict): #type: ignore
             operation:str
             'Operation to perform on configuration file. Valid values include ``add``, ``delete`` and ``update``.'
             stanza: str
@@ -347,7 +347,7 @@ class WEB_Configurator(object):
             value: typing.Optional[str]
             'Optional entry value to modify.'
 
-        class Junction(typing.TypedDict):
+        class Junction(typing.TypedDict): #type: ignore
             junction_type: str
             'Type of junction.'
             junction_point: str
@@ -444,13 +444,13 @@ class WEB_Configurator(object):
             'Controls the insertion of Security Verify Identity Access specific client identity information in HTTP headers across the junction.'
 
 
-        class Endpoint(typing.TypedDict):
+        class Endpoint(typing.TypedDict): #type: ignore
             enabled: bool
             'Enable traffic on this endpoint.'
             port: typing.Optional[int]
             'Network port that endpoint should listen on.'
 
-        class LDAP(typing.TypedDict):
+        class LDAP(typing.TypedDict): #type: ignore
             ssl: str
             'Enable SSL Verification of connections. ``yes`` or ``no``'
             key_file: typing.Optional[str]
@@ -507,8 +507,8 @@ class WEB_Configurator(object):
         methodArgs = {
                         "inst_name":proxy.name,
                         "host": proxy.host,
-                        "admin_id": runtime.admin_user if runtime.admin_user else "sec_master",
-                        "admin_pwd": runtime.admin_password,
+                        "admin_id": runtime.admin_user if runtime and 'admin_user' in runtime else "sec_master",
+                        "admin_pwd": runtime.admin_password if runtime and 'admin_password' in runtime else 'MISSING',
                         "nw_interface_yn":  proxy.nw_interface_yn,
                         "ip_address": proxy.ip_address,
                         "listening_port": proxy.listening_port,
@@ -531,7 +531,7 @@ class WEB_Configurator(object):
                                 "cert_label": proxy.ldap.cert_file,
                                 "ssl_port": proxy.ldap.port,
                         })
-        _logger.debug("Configuring WRP with config {}".format(methodArgs))
+        #_logger.debug("Configuring WRP with config {}".format(methodArgs))
         rsp = self.web.reverse_proxy.create_instance(**methodArgs)
         if rsp.success == True:
             _logger.info("Successfully configured proxy {}".format(proxy.name))
@@ -582,9 +582,9 @@ class WEB_Configurator(object):
                 if entry.entry == None or entry.value == None:
                     _logger.error("Update operation for {} is missing entry or value property, skipping".format(entry))
                     continue
-                entries = [ [entry.entry, entry.value] ]
                 rsp = self.web.runtime_component.update_configuration_file_entry(resource=entry.resource,
-                                                                                stanza=entry.stanza, entries=entries)
+                                                                                stanza=entry.stanza, entry=entry.entry,
+                                                                                value=entry.value)
 
             elif entry.operation == "delete":
                 rsp = self.web.runtime_component.delete_configuration_file_entry(resource=entry.resource,
@@ -634,7 +634,7 @@ class WEB_Configurator(object):
                        stanza: "server:MyFederatedDirectory"
 
         '''
-        class LDAP(typing.TypedDict):
+        class LDAP(typing.TypedDict): #type: ignore
             host: str
             'Hostname or address for LDAP server.'
             port: int
@@ -650,13 +650,13 @@ class WEB_Configurator(object):
             cert_label: str
             'SSL Certificate label to verify connections to LDAP server.'
 
-        class ISAM(typing.TypedDict):
+        class ISAM(typing.TypedDict): #type: ignore
             host: str
             'Hostname or address of Verify Identity Access policy server.'
             port: int
             'Port that Verify Identity Access policy server is listening on.'
 
-        class Stanza_Configuration(typing.TypedDict):
+        class Stanza_Configuration(typing.TypedDict): #type: ignore
             operation: str
             'Operation to perform on configuration file. ``add`` | ``delete`` | ``update``.'
             resource: str
@@ -751,7 +751,7 @@ class WEB_Configurator(object):
             for attr in obj.attributes:
                 pdadminCommands += ["object modify {} set attribute {} {}".format(pd_obj, attr.key, attr.value)]
         if len(pdadminCommands) == 0:
-            logger.error("did not find and attributes to attach to policy object {}".foramt(pd_obj))
+            _logger.error("did not find and attributes to attach to policy object {}".format(pd_obj))
             return
 
         rsp = self.web.policy_administration.execute(runtime.admin_user, runtime.admin_password, pdadminCommands)
@@ -934,7 +934,7 @@ class WEB_Configurator(object):
 
         '''
 
-        class User(typing.TypedDict):
+        class User(typing.TypedDict): #type: ignore
             username: str
             'The name the user will authenticate as. By default this is the UID LDAP attribute.'
             first_name: typing.Optional[str]
@@ -946,7 +946,7 @@ class WEB_Configurator(object):
             dn: str
             'The DN LDAP attribute for this user.'
 
-        class Group(typing.TypedDict):
+        class Group(typing.TypedDict): #type: ignore
             name: str
             'The CN LDAP attribute for this group.'
             dn: str
@@ -958,13 +958,13 @@ class WEB_Configurator(object):
 
         class Access_Control_List(typing.TypedDict):
 
-            class Attribute(typing.TypedDict):
+            class Attribute(typing.TypedDict): #type: ignore
                 name: str
                 'Name of the ACL attribute'
                 value: str
                 'Value of the ACL attribute.'
 
-            class Entity(typing.TypedDict):
+            class Entity(typing.TypedDict): #type: ignore
                 name: str
                 'User or Group entity to set permissions for.'
                 permissions: str
@@ -988,14 +988,14 @@ class WEB_Configurator(object):
 
         class Protected_Object_Policy(typing.TypedDict):
 
-            class Attribute(typing.TypedDict):
+            class Attribute(typing.TypedDict): #type: ignore
                 name: str
                 'Name of the POP attribute.'
                 value: str
                 'value of the POP attribute.'
 
             class IP_Authorization(typing.TypedDict):
-                class Network(typing.TypedDict):
+                class Network(typing.TypedDict): #type: ignore
                     network: str
                     'TCP/IP address to apply to this POP.'
                     netmask: str
@@ -1022,13 +1022,13 @@ class WEB_Configurator(object):
             'Sets the IP endpoint authentication settings in the specified POP.'
 
         class Reverse_Proxy(typing.TypedDict):
-            class Reverse_Proxy_ACL(typing.TypedDict):
+            class Reverse_Proxy_ACL(typing.TypedDict): #type: ignore
                 name: str
                 'Name of the ACL to attach to resources.'
                 junctions: typing.List[str]
                 'List of junction paths which use the specified ACL.'
 
-            class Reverse_Proxy_POP(typing.TypedDict):
+            class Reverse_Proxy_POP(typing.TypedDict): #type: ignore
                 name: str
                 'Name of the POP to attach to resources.'
                 junction: str
@@ -1044,7 +1044,7 @@ class WEB_Configurator(object):
             'List of POP\'s to attach to reverse proxy instance.'
         
         class WebSEALObject(typing.TypedDict):
-            class Attribute(typing.TypedDict):
+            class Attribute(typing.TypedDict): #type: ignore
                 key: str
                 'Name of the attribute to attach to the junction object.'
                 value: str
@@ -1200,7 +1200,7 @@ class WEB_Configurator(object):
 
     def user_mapping(self, config):
         for user_mapping in config:
-            user_mapping_file = FILE_LOADER.read_file(user_mapping)
+            user_mapping_file = optional_list(FILE_LOADER.read_file(user_mapping))[0]
             if len(user_mapping_file) != 1:
                 _logger.error("Can only specify one user mapping file")
                 return
@@ -1226,7 +1226,7 @@ class WEB_Configurator(object):
 
     def form_single_sign_on(self, config):
         for fsso_config in config:
-            fsso_config_file = FILE_LOADER.read_file(fsso_config)
+            fsso_config_file = optional_list(FILE_LOADER.read_file(fsso_config))[0]
             if len(fsso_config_file) != 1:
                 _logger.error("Can only specify one FSSO configuration file")
                 return
@@ -1262,8 +1262,8 @@ class WEB_Configurator(object):
             for http_transform_file_pointer in rules:
                 http_transform_files = FILE_LOADER.read_files(http_transform_file_pointer)
                 for http_transform_file in http_transform_files:
-                    rsp = self.web.http_transform.create(name=http_transform_file['name'], template=key.rstrip('s'),
-                            contents=http_transform_file['contents'])
+                    rsp = self.web.http_transform.create(name=http_transform_file['name'], 
+                                                     contents=http_transform_file['contents'].decode())
                     if rsp.success == True:
                         _logger.info("Successfully created {} HTTP transform rule".format(http_transform_file['name']))
                     else:
@@ -1298,13 +1298,13 @@ class WEB_Configurator(object):
                      - user.keytab
 
         '''
-        class Realm(typing.TypedDict):
+        class Realm(typing.TypedDict): #type: ignore
             name: str
             'Name of the Kerberos realm.'
             properties: typing.Optional[typing.List[typing.Dict]]
             'List of key / value properties to configure for realm.'
 
-        class Domain_Realm(typing.TypedDict):
+        class Domain_Realm(typing.TypedDict): #type: ignore
             name: str
             'Name of the Domain Realm.'
             dns: str
@@ -1328,7 +1328,7 @@ class WEB_Configurator(object):
             for realm in config.realms:
                 self.__create_kerberos_property("realms", realm.name, None, None)
                 if realm.properties != None:
-                    for k, v in realm.properties: self.__create_property("realms/" + realm.name, None, k, v)
+                    for k, v in realm.properties: self.__create_kerberos_property("realms/" + realm.name, None, k, v)
         if config.domain_realms != None:
             for domain_realm in config.domain_realms: self.__create_kerberos_property("domain_realm", None,
                     domain_realm.name, domain_realm.dns)
@@ -1347,7 +1347,7 @@ class WEB_Configurator(object):
                     _logger.info("Successfully imported Kerberos Keytab file")
                 else:
                     _logger.error("Failed to import Kerberos Keytab file:\n{}\n{}".format(
-                                json.dumps(prop, indent=4), rsp.data))
+                                json.dumps(config.keytabs, indent=4), rsp.data))
 
 
     class Password_Strength(typing.TypedDict):
@@ -1362,7 +1362,7 @@ class WEB_Configurator(object):
         'List of XSLT file to be uploaded as password strength checks.'
 
     def password_strength(self, password_strength_rules):
-        pwd_config_file = FILE_LOADER.read_file(password_strength_rules)
+        pwd_config_file = optional_list(FILE_LOADER.read_file(password_strength_rules))[0]
         if len(pwd_config_file) != 1:
             _logger.error("Can only specify one password strength rule file")
             return
@@ -1389,10 +1389,10 @@ class WEB_Configurator(object):
         'The server configuration options file to upload.'
 
     def rsa(self, rsa_config):
-        server_config = FILE_LOADER.read_file(rsa_config.server_config)
+        server_config = optional_list(FILE_LOADER.read_file(rsa_config.server_config)[0])[0]
         methodArgs = { "server_config_file": server_config['path']}
         if rsa_config.optional_server_config:
-            opts_config = FILE_LOADER.read_file(rsa_config.optional_server_config)
+            opts_config = optional_list(FILE_LOADER.read_file(rsa_config.optional_server_config))[0]
             methodArgs.update({"server_options_file": opts_config['path']})
         rsp = self.web.rsa.create(**methodArgs)
         if rsp.success == True:
@@ -1507,10 +1507,10 @@ class WEB_Configurator(object):
                         })
             rsp = self.web.api_access_control.resource_server.create_server(resource_server.reverse_proxy, **methodArgs)
             if rsp.success == True:
-                _logger.info("Successfully created {} API AC Resource server".format(resource.server_hostname))
+                _logger.info("Successfully created {} API AC Resource server".format(resource_server.server_hostname))
             else:
                 _logger.error("Failed to create {} API AC Resource server with config:\n{}\n{}".format(
-                    resource.server_hostname, json.dumps(resource, indent=4), rsp.data))
+                    resource_server.server_hostname, json.dumps(resource_server, indent=4), rsp.data))
                 continue
             if resource_server.resources:
                 for resource in resource_server.resource:
@@ -1646,7 +1646,7 @@ class WEB_Configurator(object):
 
             class Resource(typing.TypedDict):
 
-                class Response_Header(typing.TypedDict):
+                class Response_Header(typing.TypedDict): #type: ignore
                     name: str
                     'The name of the response header.'
                     value: str
@@ -1673,13 +1673,13 @@ class WEB_Configurator(object):
                 doc_file: str
                 'The name and path of the documentation file to respond with, relative to the junction root.'
 
-            class Response_Header(typing.TypedDict):
+            class Response_Header(typing.TypedDict): #type: ignore
                 name: str
                 'The name of the response header.'
                 value: str
                 'The value of the response header'
 
-            class Attribute(typing.TypedDict):
+            class Attribute(typing.TypedDict): #type: ignore
                 pos: str
                 'The position of this attribute in the ordered list of all attributes.'
                 action: str
@@ -1687,13 +1687,13 @@ class WEB_Configurator(object):
                 attribute: str
                 'The name of the attribute.'
 
-            class Policy(typing.TypedDict):
+            class Policy(typing.TypedDict): #type: ignore
                 type: str
                 'The type of Policy. The valid values are ``unauthenticated``, ``anyauthenticated``, ``none``, ``default`` or ``custom``.'
                 name: typing.Optional[str]
                 'The name of the custom policy if the type is custom.'
 
-            class Claim(typing.TypedDict):
+            class Claim(typing.TypedDict): #type: ignore
                 type: str
                 'The type of claim to add to the JWT. Valid values are either ``text`` for a literal text claim or ``attr`` for a credential attribute claim.'
                 value: str
@@ -1840,7 +1840,7 @@ class WEB_Configurator(object):
             document_root: typing.Optional[typing.List[str]]
             'List of documents to upload to the document root.'
 
-        class Authorization_Server(typing.TypedDict):
+        class Authorization_Server(typing.TypedDict): #type: ignore
 
             name: str
             'This is the new instance name, which is a unique name that identifies the instance.'
@@ -1863,7 +1863,7 @@ class WEB_Configurator(object):
             key_label: str
             'The label of the certificate within the keyfile to use.'
 
-        class Policy(typing.TypedDict):
+        class Policy(typing.TypedDict): #type: ignore
             name: str
             'The name of the policy.'
             groups: typing.Optional[typing.List[str]]
@@ -1871,7 +1871,7 @@ class WEB_Configurator(object):
             attributes: typing.Optional[typing.List[str]]
             'The attribute matches referenced by this policy. Each attribute must be matched for this policy to be authorised. The default is no attributes if not specified.'
 
-        class Cross_Origin_Resource_Sharing(typing.TypedDict):
+        class Cross_Origin_Resource_Sharing(typing.TypedDict): #type: ignore
             name: str
             'The name of the CORS policy.'
             allowed_origin: typing.Optional[typing.List[str]]
@@ -1967,5 +1967,9 @@ class WEB_Configurator(object):
             self.api_access_control(websealConfig.runtime, websealConfig.api_access_control)
 
 if __name__ == "__main__":
-        w = WEB_Configurator()
-        w.configure()
+    import sys
+    from pyivia import Factory
+    from .util.configure_util import config_yaml
+    w = WEB_Configurator(
+            Factory(sys.argv[1], sys.argv[2], sys.argv[3]), config_yaml())
+    w.configure()

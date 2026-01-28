@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/module_activations.json",
+  "description": "License files to activate the Advanced Access Control, Federation and WebSEAL Reverse Proxy modules are imported in this step. Subsequent module configuration is dependant on one or more of these licenses being applied to a deployment.",
+  "type": "object",
+  "properties": {
+    "trial_license": {
+      "type": "string",
+      "description": "Trial license file issued from https://isva-trial.verify.ibm.com/",
+      "pattern": ".*\\.pem$"
+    },
+    "webseal": {
+      "type": "string",
+      "description": "License code for the WebSEAL Reverse Proxy module."
+    },
+    "access_control": {
+      "type": "string",
+      "description": "License code for the Advanced Access Control module."
+    },
+    "federation": {
+      "type": "string",
+      "description": "License for the Federations module."
+    }
+  },
+  "examples": [
+    {
+      "activation": {
+        "webseal": "base_activation_code",
+        "access_control": "aac_activation_code",
+        "federation": "fed_activation_code"
+      }
+    },
+    {
+      "activation": {
+        "trial_license": "issued/trial.pem"
+      }
+    }
+  ]
+}

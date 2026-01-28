@@ -1,0 +1,444 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "api_protection.json",
+  "description": "Configuration for OAuth 2.0 and OpenID Connect (OIDC) API protection definitions and clients.",
+  "type": "object",
+  "properties": {
+    "definitions": {
+      "type": "array",
+      "description": "List of OIDC definitions to create.",
+      "items": {
+        "$ref": "#/$defs/Definition"
+      }
+    },
+    "clients": {
+      "type": "array",
+      "description": "List of OIDC clients to create.",
+      "items": {
+        "$ref": "#/$defs/Client"
+      }
+    }
+  },
+  "$defs": {
+    "Definition": {
+      "type": "object",
+      "description": "An API protection definition that defines OAuth/OIDC behavior.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A unique name for the API protection definition."
+        },
+        "description": {
+          "type": "string",
+          "description": "An optional description of the API protection definition."
+        },
+        "grant_types": {
+          "type": "array",
+          "description": "A list of supported authorization grant types. At least one must be specified.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "AUTHORIZATION_CODE",
+              "RESOURCE_OWNER_PASSWORD_CREDENTIALS",
+              "CLIENT_CREDENTIALS",
+              "IMPLICIT_GRANT",
+              "SAML_BEARER",
+              "JWT_BEARER",
+              "DEVICE"
+            ]
+          },
+          "minItems": 1
+        },
+        "tcm_behavior": {
+          "type": "string",
+          "description": "Identifies the Trusted Client Manager behavior concerning trusted clients and consent.",
+          "enum": [
+            "ALWAYS_PROMPT",
+            "NEVER_PROMPT",
+            "PROMPT_ONCE_AND_REMEMBER"
+          ]
+        },
+        "access_token_lifetime": {
+          "type": "integer",
+          "description": "Validity of the access token, in seconds.",
+          "default": 3600,
+          "minimum": 1
+        },
+        "access_token_length": {
+          "type": "integer",
+          "description": "Length (characters) of an access token.",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 500
+        },
+        "enforce_single_use_grant": {
+          "type": "boolean",
+          "description": "True if all tokens of the authorization grant should be revoked after an access token is validated.",
+          "default": false
+        },
+        "authorization_code_lifetime": {
+          "type": "integer",
+          "description": "Validity period, in seconds, of the authorization code.",
+          "default": 300,
+          "minimum": 1
+        },
+        "authorization_code_length": {
+          "type": "integer",
+          "description": "Length of an authorization code.",
+          "default": 30,
+          "minimum": 1,
+          "maximum": 500
+        },
+        "issue_refresh_token": {
+          "type": "boolean",
+          "description": "True if a refresh token should be issued to the client.",
+          "default": true
+        },
+        "refresh_token_length": {
+          "type": "integer",
+          "description": "Length of a refresh token.",
+          "default": 40,
+          "minimum": 1,
+          "maximum": 500
+        },
+        "max_authorization_grant_lifetime": {
+          "type": "integer",
+          "description": "The maximum duration of a grant, in seconds.",
+          "default": 604800,
+          "minimum": 1,
+          "maximum": 604800
+        },
+        "single_token_per_grant": {
+          "type": "boolean",
+          "description": "True if previously granted access tokens should be revoked after a new access token is generated.",
+          "default": true
+        },
+        "multiple_refresh_tokens": {
+          "type": "boolean",
+          "description": "True if multiple refresh tokens are stored.",
+          "default": false
+        },
+        "pin_policy": {
+          "type": "boolean",
+          "description": "True if the refresh token will be further protected with a PIN.",
+          "default": false
+        },
+        "pin_length": {
+          "type": "integer",
+          "description": "The length of a PIN.",
+          "default": 4,
+          "minimum": 3,
+          "maximum": 12
+        },
+        "token_char_set": {
+          "type": "string",
+          "description": "String of characters that can be used to generate tokens.",
+          "default": "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+          "maxLength": 200
+        },
+        "oidc": {
+          "$ref": "#/$defs/OIDC",
+          "description": "The OIDC configuration for this API protection definition."
+        },
+        "access_policy": {
+          "type": "string",
+          "description": "The name of access policy assigned to this definition."
+        },
+        "attribute_sources": {
+          "type": "array",
+          "description": "Array of configured attribute sources to use in id_token generation and userinfo requests.",
+          "items": {
+            "$ref": "#/$defs/AttributeSource"
+          }
+        },
+        "pre_token_mapping_rule": {
+          "type": "string",
+          "description": "Path to file to upload as JavaScript pre-token rule."
+        },
+        "post_token_mapping_rule": {
+          "type": "string",
+          "description": "Path to file to upload as JavaScript post-token rule."
+        }
+      },
+      "required": [
+        "name",
+        "grant_types",
+        "tcm_behavior"
+      ]
+    },
+    "OIDC": {
+      "type": "object",
+      "description": "OpenID Connect configuration for an API protection definition.",
+      "properties": {
+        "iss": {
+          "type": "string",
+          "description": "The issuer identifier of this definition. Should have the prefix https://.",
+          "format": "uri"
+        },
+        "poc": {
+          "type": "string",
+          "description": "The Point of Contact URL for this definition, must be a valid URL.",
+          "format": "uri"
+        },
+        "lifetime": {
+          "type": "integer",
+          "description": "The lifetime of the id_tokens issued.",
+          "minimum": 1
+        },
+        "alg": {
+          "type": "string",
+          "description": "The signing algorithm for the JWT.",
+          "enum": [
+            "HS256",
+            "HS384",
+            "HS512",
+            "RS256",
+            "RS384",
+            "RS512",
+            "ES256",
+            "ES384",
+            "ES512"
+          ],
+          "default": "RS256"
+        },
+        "db": {
+          "type": "string",
+          "description": "The database containing the signing key for RS/ES signing methods."
+        },
+        "cert": {
+          "type": "string",
+          "description": "The certificate label of the signing key for RS/ES signing methods."
+        },
+        "enc": {
+          "$ref": "#/$defs/OIDCEncoding",
+          "description": "JWT encryption config."
+        },
+        "dynamic_clients": {
+          "type": "boolean",
+          "description": "Whether or not the client registration endpoint will be enabled for this definition.",
+          "default": false
+        },
+        "issue_secret": {
+          "type": "boolean",
+          "description": "Whether or not a client secret will be issued to dynamic clients.",
+          "default": false
+        },
+        "oidc_compliant": {
+          "type": "boolean",
+          "description": "Whether or not the definition should be strictly OIDC Compliant."
+        },
+        "fapi_compliant": {
+          "type": "boolean",
+          "description": "Whether or not the definition should be strictly FAPI Compliant. Setting this to true will automatically set OIDC Compliant to true."
+        }
+      },
+      "required": [
+        "iss",
+        "poc",
+        "lifetime",
+        "alg"
+      ]
+    },
+    "OIDCEncoding": {
+      "type": "object",
+      "description": "JWT encryption configuration.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Is encryption enabled for this definition."
+        },
+        "alg": {
+          "type": "string",
+          "description": "The key agreement algorithm for encryption.",
+          "default": "RSA-OAEP-256"
+        },
+        "enc": {
+          "type": "string",
+          "description": "The encryption algorithm.",
+          "default": "A128CBC-HS256"
+        }
+      },
+      "required": [
+        "enabled"
+      ]
+    },
+    "AttributeSource": {
+      "type": "object",
+      "description": "An attribute source mapping for token generation.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name the attribute should be exposed as."
+        },
+        "source": {
+          "type": "string",
+          "description": "Reference to the attribute source which should be used to retrieve the value."
+        }
+      },
+      "required": [
+        "name",
+        "source"
+      ]
+    },
+    "Client": {
+      "type": "object",
+      "description": "An OAuth/OIDC client registration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A meaningful name to identify this API protection client."
+        },
+        "definition": {
+          "type": "string",
+          "description": "The name of the related API protection definition which owns and defines this client."
+        },
+        "redirect_uri": {
+          "type": "array",
+          "description": "The redirect URIs to use for this client.",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "company_name": {
+          "type": "string",
+          "description": "Name of the company associated with this client."
+        },
+        "company_url": {
+          "type": "string",
+          "description": "URL for the company associated with this client.",
+          "format": "uri"
+        },
+        "contact_person": {
+          "type": "string",
+          "description": "Name of the contact person for this client."
+        },
+        "contact_type": {
+          "type": "string",
+          "description": "Further describes the contact.",
+          "enum": [
+            "TECHNICAL",
+            "SUPPORT",
+            "ADMINISTRATIVE",
+            "BILLING",
+            "OTHER"
+          ]
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the contact person for this client.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "The telephone number of the contact person for this client. Input must be completely numeric.",
+          "pattern": "^[0-9]+$"
+        },
+        "other_info": {
+          "type": "string",
+          "description": "Other information about the client contact."
+        },
+        "client_id": {
+          "type": "string",
+          "description": "A unique OAUTH client identifier to identify this client to the authorization server."
+        },
+        "client_secret": {
+          "type": "string",
+          "description": "A string that identifies this client as confidential and serves as this client's secret."
+        },
+        "require_pkce": {
+          "type": "boolean",
+          "description": "Whether or not this client must perform proof of key exchange when performing an authorization code flow.",
+          "default": false
+        },
+        "encryption_db": {
+          "type": "string",
+          "description": "The database containing the JWT encryption key."
+        },
+        "encryption_cert": {
+          "type": "string",
+          "description": "The certificate label of the JWT encryption key."
+        },
+        "jwks_uri": {
+          "type": "string",
+          "description": "URI which is the location that a clients published JWK set.",
+          "format": "uri"
+        },
+        "introspect_with_secret": {
+          "type": "boolean",
+          "description": "Does this client require a client secret when introspecting.",
+          "default": true
+        },
+        "ext_properties": {
+          "type": "object",
+          "description": "Dynamic Client information. This is free form JSON."
+        }
+      },
+      "required": [
+        "name",
+        "definition"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "api_protection": {
+        "definitions": [
+          {
+            "name": "Verify Demo - Open Banking",
+            "description": "The Open Banking Definition.",
+            "tcm_behavior": "NEVER_PROMPT",
+            "grant_types": [
+              "AUTHORIZATION_CODE"
+            ],
+            "multiple_refresh_tokens": true,
+            "access_policy": "Open_Banking",
+            "oidc": {
+              "poc": "https://my.ibmsec.idp.com",
+              "iss": "https://my.ibmsec.idp.com",
+              "lifetime": 20,
+              "alg": "RS256",
+              "db": "rt_profile_keys",
+              "cert": "server"
+            },
+            "pre_token_mapping_rule": "Verify Demo - Open Banking_pre_token_generation.js",
+            "post_token_mapping_rule": "Verify Demo - Open Banking_post_token_generation.js"
+          },
+          {
+            "name": "Verify Demo - Client Credentials Authorization Code Consent PSD2",
+            "description": "For Fintechs, this is Client Credentials and Authorization Code with consent.",
+            "tcm_behavior": "NEVER_PROMPT",
+            "grant_types": [
+              "AUTHORIZATION_CODE",
+              "CLIENT_CREDENTIALS"
+            ],
+            "max_authorization_grant_lifetime": 7200
+          },
+          {
+            "name": "Verify Demo - Client Credentials AaaS",
+            "description": "This is for the AaaS mock server access.",
+            "tcm_behavior": "NEVER_PROMPT",
+            "grant_types": [
+              "CLIENT_CREDENTIALS"
+            ],
+            "access_token_lifetime": 999999999
+          }
+        ],
+        "clients": [
+          {
+            "name": "J.P. Norvill",
+            "client_id": "ob_client",
+            "client_secret": "hunter2",
+            "redirect_uri": [
+              "https://jpnorvill.com/auth",
+              "http://my.ibmsec.spa.com:19080/auth"
+            ],
+            "company_name": "JPNorvill",
+            "contact_type": "TECHNICAL",
+            "definition": "Verify Demo - Open Banking"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,644 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/federation/common_definitions.json",
+  "title": "Federation Common Definitions",
+  "description": "Reusable schema components shared across different federation types (SAML 2.0, OIDC, WS-Federation). These definitions can be referenced from other federation schemas using $ref.",
+  "$defs": {
+    "KeyIdentifier": {
+      "type": "object",
+      "description": "SSL certificate database and label reference.",
+      "properties": {
+        "store": {
+          "type": "string",
+          "description": "The certificate database name."
+        },
+        "label": {
+          "type": "string",
+          "description": "The certificate or key label."
+        }
+      },
+      "required": ["store", "label"]
+    },
+    "BasicConfiguration": {
+      "type": "object",
+      "description": "Basic OIDC provider configuration using metadata endpoint or manual configuration.",
+      "properties": {
+        "active_delegate_id": {
+          "type": "string",
+          "description": "The active module instance.",
+          "enum": ["noMetadata", "metadataEndpointUrl"]
+        },
+        "metadata_endpoint_url": {
+          "type": "string",
+          "description": "The /metadata endpoint URL of the provider. Only valid if active_delegate_id is 'metadataEndpointUrl'.",
+          "format": "uri"
+        },
+        "issuer_identifier": {
+          "type": "string",
+          "description": "The issuer 'iss' value of the provider. Only valid if active_delegate_id is 'noMetadata'."
+        },
+        "response_types": {
+          "type": "array",
+          "description": "List of response types which determines which flow to be executed. Only valid if active_delegate_id is 'noMetadata'.",
+          "items": {
+            "type": "string",
+            "enum": ["code", "token", "id_token"]
+          }
+        },
+        "authorization_endpoint_url": {
+          "type": "string",
+          "description": "The /authorize endpoint URL of the provider. Only valid if active_delegate_id is 'noMetadata'.",
+          "format": "uri"
+        },
+        "token_endpoint_url": {
+          "type": "string",
+          "description": "The /token endpoint URL of the provider. Required if 'code' response type is selected. Only valid if active_delegate_id is 'noMetadata'.",
+          "format": "uri"
+        },
+        "user_info_endpoint_url": {
+          "type": "string",
+          "description": "The /userinfo endpoint URL of the provider. Only valid if active_delegate_id is 'noMetadata'.",
+          "format": "uri"
+        }
+      },
+      "required": ["active_delegate_id"]
+    },
+    "AdvancedConfiguration": {
+      "type": "object",
+      "description": "Advanced configuration mapping rules.",
+      "properties": {
+        "active_delegate_id": {
+          "type": "string",
+          "description": "The active module instance.",
+          "enum": ["skip-advance-map", "default-map"]
+        },
+        "mapping_rule": {
+          "type": "string",
+          "description": "A reference to an ID or name of an advance configuration mapping rule."
+        },
+        "rule_type": {
+          "type": "string",
+          "description": "The type of the mapping rule.",
+          "enum": ["JAVASCRIPT"]
+        }
+      },
+      "required": ["active_delegate_id", "mapping_rule", "rule_type"]
+    },
+    "AssertionSettings": {
+      "type": "object",
+      "description": "SAML assertion configuration settings.",
+      "properties": {
+        "attribute_types": {
+          "type": "array",
+          "description": "Types of attributes to include in the assertion. An asterisk (*) indicates all attribute types. Default is ['*'].",
+          "items": {
+            "type": "string"
+          },
+          "default": ["*"]
+        },
+        "session_not_on_or_after": {
+          "type": "integer",
+          "description": "Number of seconds that the security context should be discarded by the service provider.",
+          "minimum": 1,
+          "default": 3600
+        },
+        "create_multiple_attribute_statements": {
+          "type": "boolean",
+          "description": "Whether to keep multiple attribute statements in the groups in which they were received."
+        },
+        "valid_before": {
+          "type": "integer",
+          "description": "Number of seconds before the issue date that an assertion is considered valid.",
+          "minimum": 0,
+          "default": 60
+        },
+        "valid_after": {
+          "type": "integer",
+          "description": "Number of seconds the assertion is valid after being issued.",
+          "minimum": 1,
+          "default": 60
+        }
+      }
+    },
+    "AssertionConsumerService": {
+      "type": "object",
+      "description": "SAML Assertion Consumer Service endpoint configuration.",
+      "properties": {
+        "binding": {
+          "type": "string",
+          "description": "Communication method used to transport SAML messages.",
+          "enum": ["artifact", "post", "redirect"]
+        },
+        "default": {
+          "type": "boolean",
+          "description": "Whether this is the default endpoint."
+        },
+        "index": {
+          "type": "integer",
+          "description": "Reference to a particular endpoint.",
+          "minimum": 0
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL of the endpoint.",
+          "format": "uri"
+        }
+      },
+      "required": ["binding", "default", "index", "url"]
+    },
+    "ArtifactResolutionService": {
+      "type": "object",
+      "description": "SAML Artifact Resolution Service endpoint configuration.",
+      "properties": {
+        "binding": {
+          "type": "string",
+          "description": "Communication method used to transport SAML messages.",
+          "enum": ["soap"]
+        },
+        "default": {
+          "type": "boolean",
+          "description": "Whether this is the default endpoint.",
+          "default": false
+        },
+        "index": {
+          "type": "integer",
+          "description": "Reference to a particular endpoint.",
+          "minimum": 0,
+          "default": 0
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL of the endpoint. If not provided, automatically generated from point of contact URL.",
+          "format": "uri"
+        }
+      },
+      "required": ["binding"]
+    },
+    "AttributeMapping": {
+      "type": "object",
+      "description": "Attribute mapping configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the source."
+        },
+        "source": {
+          "type": "string",
+          "description": "Attribute Source ID."
+        }
+      },
+      "required": ["name", "source"]
+    },
+    "EncryptionSettings": {
+      "type": "object",
+      "description": "Encryption settings for SAML messages and assertions.",
+      "properties": {
+        "block_algorithm": {
+          "type": "string",
+          "description": "Block encryption algorithm used to encrypt and decrypt SAML messages.",
+          "enum": ["AES-128", "AES-192", "AES-256", "TRIPLEDES"],
+          "default": "AES-128"
+        },
+        "key_transport_algorithm": {
+          "type": "string",
+          "description": "Key transport algorithm used to encrypt and decrypt keys.",
+          "enum": ["RSA-v1.5", "RSA-OAEP"],
+          "default": "RSA-OAEP"
+        },
+        "key_identifier": {
+          "$ref": "#/$defs/KeyIdentifier",
+          "description": "The certificate for encryption of outgoing SAML messages."
+        },
+        "decryption_key_identifier": {
+          "$ref": "#/$defs/KeyIdentifier",
+          "description": "A public/private key pair for decrypting incoming messages."
+        },
+        "key_store": {
+          "type": "string",
+          "description": "The certificate database name."
+        },
+        "key_alias": {
+          "type": "string",
+          "description": "The certificate or key label."
+        },
+        "encrypt_name_id": {
+          "type": "boolean",
+          "description": "Whether the name identifiers should be encrypted."
+        },
+        "encrypt_assertion": {
+          "type": "boolean",
+          "description": "Whether to encrypt assertions."
+        },
+        "encrypt_assertion_attributes": {
+          "type": "boolean",
+          "description": "Whether to encrypt assertion attributes."
+        }
+      },
+      "required": ["key_store", "key_alias", "encrypt_name_id", "encrypt_assertion", "encrypt_assertion_attributes"]
+    },
+    "IdentityMapping": {
+      "type": "object",
+      "description": "Identity mapping configuration for transforming identities between federation partners.",
+      "properties": {
+        "active_delegate_id": {
+          "type": "string",
+          "description": "The active mapping module instance. Valid values are ``skip-identity-map``, ``default-map`` and ``default-http-custom-map``.",
+          "enum": ["skip-identity-map", "default-map", "default-http-custom-map"]
+        },
+        "properties": {
+          "type": "object",
+          "description": "The mapping module specific properties. Use Default_Mapping_Properties (rule_type, mapping_rule) when active_delegate_id is 'default-map'. Use Custom_Mapping_Properties (applies_to, auth_type, basic_auth_username, basic_auth_password, client_key_store, client_key_alias, issuer_uri, message_format, ssl_key_store, uri) when active_delegate_id is 'default-http-custom-map'.",
+          "properties": {
+            "rule_type": {
+              "type": "string",
+              "description": "The type of the mapping rule. The only supported type currently is ``JAVASCRIPT``.",
+              "enum": ["JAVASCRIPT"]
+            },
+            "mapping_rule": {
+              "type": "string",
+              "description": "A reference to an ID or name of a mapping rule."
+            },
+            "applies_to": {
+              "type": "string",
+              "description": "Refers to STS chain that consumes call-out response. Required if ``WSTRUST`` ``message_format`` is specified, invalid otherwise."
+            },
+            "auth_type": {
+              "type": "string",
+              "description": "Authentication method used when contacting external service. Supported values are ``NONE``, ``BASIC`` or ``CERTIFICATE``",
+              "enum": ["NONE", "BASIC", "CERTIFICATE"]
+            },
+            "basic_auth_username": {
+              "type": "string",
+              "description": "Username for authentication to external service. Required if ``BASIC`` ``auth_type`` is specified, invalid otherwise."
+            },
+            "basic_auth_password": {
+              "type": "string",
+              "description": "Password for authentication to external service. Required if ``BASIC`` ``auth_type`` is specified, invalid otherwise.",
+              "format": "password"
+            },
+            "client_key_store": {
+              "type": "string",
+              "description": "Contains key for HTTPS client authentication. Required if ``CERTIFICATE`` ``auth_type`` is specified, invalid otherwise."
+            },
+            "client_key_alias": {
+              "type": "string",
+              "description": "Alias of the key for HTTPS client authentication. Required if ``CERTIFICATE`` ``auth_type`` is specified, invalid otherwise."
+            },
+            "issuer_uri": {
+              "type": "string",
+              "description": "Refers to STS chain that provides input for call-out request. Required if ``WSTRUST`` ``message_format`` is specified, invalid otherwise."
+            },
+            "message_format": {
+              "type": "string",
+              "description": "Message format of call-out request. Supported values are ``XML`` or ``WSTRUST``.",
+              "enum": ["XML", "WSTRUST"]
+            },
+            "ssl_key_store": {
+              "type": "string",
+              "description": "SSL certificate trust store to use when validating SSL certificate of external service."
+            },
+            "uri": {
+              "type": "string",
+              "description": "Address of destination server to call out to.",
+              "format": "uri"
+            }
+          }
+        }
+      },
+      "required": ["active_delegate_id", "properties"]
+    },
+    "ExtensionMapping": {
+      "type": "object",
+      "description": "Extension mapping configuration.",
+      "properties": {
+        "active_delegate_id": {
+          "type": "string",
+          "description": "The active mapping module instance.",
+          "enum": ["skip-extension-map", "default-map", "federation-config"]
+        },
+        "mapping_rule": {
+          "type": "string",
+          "description": "A reference to an ID or name of an extension mapping rule."
+        }
+      },
+      "required": ["active_delegate_id", "mapping_rule"]
+    },
+    "AuthnReqMapping": {
+      "type": "object",
+      "description": "Authentication request mapping configuration.",
+      "properties": {
+        "active_delegate_id": {
+          "type": "string",
+          "description": "The active mapping module instance.",
+          "enum": ["skip-authn-request-map", "default-map", "federation-config"]
+        },
+        "mapping_rule": {
+          "type": "string",
+          "description": "A reference to an ID or name of an authentication request mapping rule."
+        }
+      },
+      "required": ["active_delegate_id", "mapping_rule"]
+    },
+    "ServiceData": {
+      "type": "object",
+      "description": "Generic service endpoint configuration.",
+      "properties": {
+        "binding": {
+          "type": "string",
+          "description": "Communication method used to transport SAML messages.",
+          "enum": ["artifact", "post", "redirect", "soap"]
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL of the endpoint. For non-SOAP bindings, automatically generated from point of contact URL.",
+          "format": "uri"
+        }
+      },
+      "required": ["binding"]
+    },
+    "NameIdFormat": {
+      "type": "object",
+      "description": "Name identifier format configuration.",
+      "properties": {
+        "default": {
+          "type": "string",
+          "description": "The name identifier format to use when format attribute is not set or is unspecified."
+        },
+        "supported": {
+          "type": "array",
+          "description": "List of supported name identifier formats.",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "default": [
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+          ]
+        }
+      }
+    },
+    "SignatureSettings": {
+      "type": "object",
+      "description": "Digital signature settings for SAML messages and assertions.",
+      "properties": {
+        "signature_algorithm": {
+          "type": "string",
+          "description": "The signature algorithm to sign and validate SAML messages and assertions.",
+          "enum": ["RSA-SHA1", "RSA-SHA256", "RSA-SHA512"],
+          "default": "RSA-SHA256"
+        },
+        "digest_algorithm": {
+          "type": "string",
+          "description": "The hash algorithm to apply to the transformed resources.",
+          "enum": ["SHA1", "SHA256", "SHA512"]
+        },
+        "signing_options": {
+          "type": "object",
+          "description": "Options for what to sign.",
+          "properties": {
+            "sign_assertion": {
+              "type": "boolean",
+              "description": "Whether to sign the assertion.",
+              "default": false
+            },
+            "sign_authn_response": {
+              "type": "boolean",
+              "description": "Whether to sign the authentication responses.",
+              "default": false
+            },
+            "sign_artifact_request": {
+              "type": "boolean",
+              "description": "Whether to sign the artifact request.",
+              "default": false
+            },
+            "sign_artifact_response": {
+              "type": "boolean",
+              "description": "Whether to sign the artifact response.",
+              "default": false
+            },
+            "sign_logout_request": {
+              "type": "boolean",
+              "description": "Whether to sign the logout request.",
+              "default": false
+            },
+            "sign_logout_response": {
+              "type": "boolean",
+              "description": "Whether to sign the logout response.",
+              "default": false
+            },
+            "sign_name_id_management_request": {
+              "type": "boolean",
+              "description": "Whether to sign the name ID management request.",
+              "default": false
+            },
+            "sign_name_id_management_response": {
+              "type": "boolean",
+              "description": "Whether to sign the name ID management response.",
+              "default": false
+            }
+          }
+        },
+        "validation_options": {
+          "type": "object",
+          "description": "Options for what to validate.",
+          "properties": {
+            "validate_authn_request": {
+              "type": "boolean",
+              "description": "Whether to validate the digital signature of an authentication request.",
+              "default": false
+            },
+            "validate_assertion": {
+              "type": "boolean",
+              "description": "Whether to validate the digital signature of an assertion.",
+              "default": false
+            },
+            "validate_artifact_request": {
+              "type": "boolean",
+              "description": "Whether to validate the digital signature of an artifact request."
+            },
+            "validate_artifact_response": {
+              "type": "boolean",
+              "description": "Whether to validate the digital signature of an artifact response."
+            },
+            "validate_logout_request": {
+              "type": "boolean",
+              "description": "Whether to validate the digital signature of a logout request."
+            },
+            "validate_logout_response": {
+              "type": "boolean",
+              "description": "Whether to validate the digital signature of a logout response."
+            },
+            "validate_name_id_management_request": {
+              "type": "boolean",
+              "description": "Whether to validate the digital signature of a name ID management request."
+            },
+            "validate_name_id_management_response": {
+              "type": "boolean",
+              "description": "Whether to validate the digital signature of a name ID management response."
+            }
+          }
+        },
+        "include_inclusive_namespaces": {
+          "type": "boolean",
+          "description": "Whether to include the InclusiveNamespaces element in the digital signature."
+        },
+        "key_info_elements": {
+          "type": "object",
+          "description": "KeyInfo elements to include in the digital signature.",
+          "properties": {
+            "include_public_key": {
+              "type": "boolean",
+              "description": "Whether to include the public key in the KeyInfo element.",
+              "default": false
+            },
+            "include_x509_certificate_data": {
+              "type": "boolean",
+              "description": "Whether to include the base64 encoded certificate data in the KeyInfo element.",
+              "default": true
+            },
+            "include_x509_issuer_details": {
+              "type": "boolean",
+              "description": "Whether to include the issuer name and certificate serial number in the KeyInfo element.",
+              "default": false
+            },
+            "include_x509_subject_key_identifier": {
+              "type": "boolean",
+              "description": "Whether to include the X.509 subject key identifier in the KeyInfo element.",
+              "default": false
+            },
+            "include_x509_subject_name": {
+              "type": "boolean",
+              "description": "Whether to include the subject name in the KeyInfo element.",
+              "default": false
+            }
+          }
+        },
+        "signing_key_identifier": {
+          "$ref": "#/$defs/KeyIdentifier",
+          "description": "A public/private key pair for signing the SAML messages and assertions."
+        },
+        "validation_key_identifier": {
+          "$ref": "#/$defs/KeyIdentifier",
+          "description": "The certificate to use to validate the signatures on incoming SAML assertions and messages."
+        }
+      },
+      "required": ["signature_algorithm", "digest_algorithm"]
+    },
+    "SingleSignOnService": {
+      "type": "object",
+      "description": "Single Sign-On service endpoint configuration.",
+      "properties": {
+        "binding": {
+          "type": "string",
+          "description": "Communication method used to transport SAML messages.",
+          "enum": ["artifact", "post", "redirect"]
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL of the endpoint.",
+          "format": "uri"
+        }
+      },
+      "required": ["binding", "url"]
+    },
+    "AliasServiceSettings": {
+      "type": "object",
+      "description": "Alias service configuration for storing user aliases.",
+      "properties": {
+        "db_type": {
+          "type": "string",
+          "description": "Whether the user's alias is stored in JDBC or LDAP.",
+          "enum": ["jdbc", "ldap"]
+        },
+        "ldap_connection": {
+          "type": "string",
+          "description": "The LDAP Connection to store the alias."
+        },
+        "ldap_base_dn": {
+          "type": "string",
+          "description": "The LDAP BaseDN to search for the user."
+        }
+      },
+      "required": ["db_type"]
+    },
+    "SOAPSettings": {
+      "type": "object",
+      "description": "SOAP communication settings for artifact resolution and other SOAP-based services.",
+      "properties": {
+        "server_cert_validation": {
+          "type": "object",
+          "description": "Server certificate validation configuration.",
+          "properties": {
+            "store": {
+              "type": "string",
+              "description": "The certificate database name."
+            },
+            "label": {
+              "type": "string",
+              "description": "The certificate label. If not provided, all certificates in the database will be trusted."
+            }
+          },
+          "required": ["store"]
+        },
+        "client_auth_data": {
+          "type": "object",
+          "description": "Client authentication configuration.",
+          "properties": {
+            "method": {
+              "type": "string",
+              "description": "The authentication method.",
+              "enum": ["ba", "cert", "none"]
+            },
+            "basic_auth_username": {
+              "type": "string",
+              "description": "The basic authentication username."
+            },
+            "basic_auth_password": {
+              "type": "string",
+              "description": "The basic authentication password.",
+              "format": "password"
+            },
+            "client_key_store": {
+              "type": "string",
+              "description": "The certificate database name."
+            },
+            "client_key_alias": {
+              "type": "string",
+              "description": "The personal certificate label."
+            }
+          },
+          "required": ["method"]
+        }
+      },
+      "required": ["server_cert_validation", "client_auth_data"]
+    },
+    "Runtime": {
+      "type": "object",
+      "description": "Runtime connection details for WebSEAL or other runtime components.",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "The username used to authenticate with the runtime."
+        },
+        "password": {
+          "type": "string",
+          "description": "The password used to authenticate with the runtime.",
+          "format": "password"
+        },
+        "hostname": {
+          "type": "string",
+          "description": "The hostname of the runtime.",
+          "format": "hostname"
+        },
+        "port": {
+          "type": "string",
+          "description": "The port of the runtime. Must be the SSL port."
+        }
+      },
+      "required": ["username", "password", "hostname", "port"]
+    }
+  }
+}

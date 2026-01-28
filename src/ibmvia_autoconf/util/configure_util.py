@@ -2,10 +2,10 @@
 """
 @copyright: IBM
 """
-import os, kubernetes, logging, sys, yaml, pyivia, datetime, subprocess, shutil, time, json
+import os, logging, sys, yaml, pyivia, datetime, subprocess, shutil, time, json
+from typing import Optional, Tuple
 from . import constants as const
-from .data_util import Map, FileLoader, CustomLoader, KUBE_CLIENT, KUBE_CLIENT_SLEEP
-from kubernetes.stream import stream
+from .data_util import Map, FileLoader, CustomLoader, get_kube_client, KUBE_CLIENT_SLEEP
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 _logger = logging.getLogger(__name__)
@@ -24,23 +24,22 @@ def config_yaml(config_file=None):
     if config_file:
         _logger.info("Reading file from provided path {}".format(config_file))
         return Map(yaml.load(open(config_file, 'r'), Loader=CustomLoader))
-    cfg_file_var = const.CONFIG_YAML
-    if const.LEGACY_CONFIG_YAML_ENV_VAR in os.environ.keys():
+    cfg_file_var = None
+    if const.CONFIG_YAML_ENV_VAR in os.environ.keys():
+        cfg_file_var = const.CONFIG_YAML_ENV_VAR
+    elif const.LEGACY_CONFIG_YAML_ENV_VAR in os.environ.keys():
         cfg_file_var = const.LEGACY_CONFIG_YAML_ENV_VAR
         _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd "
                      "properties instead".format(const.LEGACY_CONFIG_YAML_ENV_VAR))
-    if cfg_file_var in os.environ.keys():
-        cfg_file = os.environ.get(cfg_file_var)
-        if not cfg_file.startswith("/"):
-            cfg_file = config_base_dir() + '/' + cfg_file
-        _logger.info("Reading file from env var {} = {}".format(cfg_file_var, cfg_file))
+    base_dir = config_base_dir()
+    cfg_file = const.CONFIG_YAML
+    if cfg_file_var: #you have told me the name of the file
+        cfg_file = os.environ.get(cfg_file_var, cfg_file)
+    if base_dir and not os.path.isabs(cfg_file): #Do I need to add the base_dir to the file path?
+        cfg_file = os.path.join(base_dir, cfg_file)
+    _logger.info(f"Trying to read file from env var {cfg_file_var} [{cfg_file}]")
+    if os.path.exists(cfg_file):
         return Map(yaml.load(open(cfg_file, 'r'), Loader=CustomLoader))
-    elif config_base_dir() and cfg_file_var in os.listdir(config_base_dir()):
-        base_dir = config_base_dir()
-        _logger.info("Reading config file from {} env var: {}/config.yaml".format(
-            const.CONFIG_BASE_DIR, base_dir))
-        return Map(yaml.load(open(
-            os.path.join(base_dir, cfg_file_var), 'r'), Loader=CustomLoader))
     else:
         raise RuntimeError("Failed to find a YAML configuration file, help!")
 
@@ -63,15 +62,15 @@ def read_file(fp):
     return contents
 
 
-def mgmt_base_url(cfg=None):
+def mgmt_base_url(cfg=None) -> str:
     if cfg == None:
         cfg = config_yaml()
     if const.LEGACY_MGMT_URL_ENV_VAR in os.environ.keys():
         _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd "
                      "properties instead".format(const.LEGACY_MGMT_URL_ENV_VAR))
-        return os.environ.get(const.LEGACY_MGMT_URL_ENV_VAR, cfg.mgmt_base_url)
+        return str(os.environ.get(const.LEGACY_MGMT_URL_ENV_VAR, cfg.mgmt_base_url))
     else:
-        return os.environ.get(const.MGMT_URL_ENV_VAR, cfg.mgmt_base_url)
+        return str(os.environ.get(const.MGMT_URL_ENV_VAR, cfg.mgmt_base_url))
 
 
 def ext_user_creds(cfg=None):
@@ -118,13 +117,13 @@ def creds(cfg=None):
     return (user, secret)
 
 
-def old_creds(cfg=None):
-    user = None
+def old_creds(cfg=None) -> Optional[Tuple[str, str]]:
+    user = 'admin'
     secret = None
     if const.MGMT_OLD_PASSWORD_ENV_VAR in os.environ.keys():
-        user = os.environ.get(const.MGMT_USER_ENV_VAR)
+        user = str(os.environ.get(const.MGMT_USER_ENV_VAR))
     elif const.LEGACY_MGMT_OLD_PASSWORD_ENV_VAR in os.environ.keys():
-        user = os.environ.get(const.LEGACY_MGMT_USER_ENV_VAR)
+        user = str(os.environ.get(const.LEGACY_MGMT_USER_ENV_VAR))
     if const.MGMT_OLD_PASSWORD_ENV_VAR in os.environ.keys():
         secret = os.environ.get(const.MGMT_OLD_PASSWORD_ENV_VAR)
     elif const.LEGACY_MGMT_OLD_PASSWORD_ENV_VAR in os.environ.keys():
@@ -132,17 +131,20 @@ def old_creds(cfg=None):
                      "properties instead".format(const.LEGACY_MGMT_PWD_ENV_VAR))
         secret = os.environ.get(const.LEGACY_MGMT_OLD_PASSWORD_ENV_VAR)
     if user == None and cfg != None:
-        user = cfg.get('mgmt_user', "admin")
-    if secret == None and cfg != None:
-        secret = cfg.get('mgmt_old_pwd', None)
-    return (user, secret)
+        user = str(cfg.get('mgmt_user', "admin"))
+    if secret == None and cfg != None and 'mgmt_old_pwd' in cfg:
+        secret = str(cfg.get('mgmt_old_pwd', None))
+    if secret:
+        return (user, secret)
 
 
 def _kube_reload_container(namespace, container):
+    KUBE_CLIENT = get_kube_client()
     if not KUBE_CLIENT:
         _logger.error("Unable to restart deployment as kube client is null")
         return
     exec_commands = ['isam_cli', '-c', 'reload', 'all']
+    from kubernetes.stream import stream
     response = stream(KUBE_CLIENT.CoreV1Api().connect_get_namespaced_pod_exec,
             container,
             namespace,
@@ -158,6 +160,7 @@ def _kube_reload_container(namespace, container):
 
 
 def _kube_rollout_restart(namespace, deployment):
+    KUBE_CLIENT = get_kube_client()
     if not KUBE_CLIENT:
         _logger.error("Unable to restart deployment as kube client is null")
         return
@@ -172,9 +175,10 @@ def _kube_rollout_restart(namespace, deployment):
                         'kubectl.kubernetes.io/restartedAt': str(datetime.datetime.utcnow().isoformat("T") + "Z") 
                 } } }
         } }
+    from kubernetes.client import rest
     try:
         KUBE_CLIENT.AppsV1Api().patch_namespaced_deployment(deployment, namespace, body, pretty='true')
-    except kubernetes.client.rest.ApiException as e:
+    except rest.ApiException as e:
         _logger.error("Exception when calling AppsV1Api->patch_namespaced_deployment: %s" % e)
         sys.exit(1)
 
@@ -184,8 +188,8 @@ def _kube_rollout_restart(namespace, deployment):
         while count < 10:
             try:
                 KUBE_CLIENT.CoreV1Api().delete_namespaced_pod(name=pod, namespace=namespace)
-            except kubernetes.client.rest.ApiException as e:
-                if json.loads(e.body).get('code', -1) == 404:
+            except rest.ApiException as e:
+                if e.body and json.loads(e.body).get('code', -1) == 404:
                     break
             time.sleep(count * 10)
             count += 1
@@ -196,16 +200,22 @@ def _kube_rollout_restart(namespace, deployment):
 
 def _kube_wait_for_deployment(namespace, deployment):
     #Finally wait for the new pod list to be ready
+    KUBE_CLIENT = get_kube_client()
+    import kubernetes
     watcher = kubernetes.watch.Watch()
+    if not KUBE_CLIENT:
+        raise RuntimeError("Kubernetes client missing")
     for event in watcher.stream(func=KUBE_CLIENT.CoreV1Api().list_namespaced_pod,
                                 namespace=namespace,
                                 label_selector="app=" + deployment,
                                 timeout_seconds=30):
-        if event['object'].status.phase == "Running":
+        if not event or not isinstance(event, dict):
+            continue
+        if 'object' in event and event['object'].status.phase == "Running":
             watcher.stop()
             _logger.info("{} deployment is running".format(deployment))
             return
-        elif event['type'] == "DELETED":
+        elif event.get('type', '') == "DELETED":
             watcher.stop()
             _logger.error("{} deployment was deleted while waiting to be restarted".format(deployment))
     _logger.error("{} deployment did not return to a running state".format(deployment))
@@ -217,18 +227,19 @@ def _compose_restart_service(service, config):
         sys.exit(1)
     composeYaml = None
     if const.DOCKER_COMPOSE_CONFIG in os.environ.keys():
-        composeYaml = os.environ.get(const.DOCKER_COMPOSE_CONFIG)
+        composeYaml = os.environ.get(const.DOCKER_COMPOSE_CONFIG, 'docker-compose.yaml')
     elif const.LEGACY_DOCKER_COMPOSE_CONFIG in os.environ.keys():
         _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd "
                      "properties instead".format(const.LEGACY_DOCKER_COMPOSE_CONFIG))
-        composeYaml = os.environ.get(const.DOCKER_COMPOSE_CONFIG)
+        composeYaml = os.environ.get(const.DOCKER_COMPOSE_CONFIG, 'docker-compose.yaml')
     elif config.container.docker_compose_yaml is not None:
         composeYaml = config.container.docker_compose_yaml
-    else:
+    if not composeYaml:
         _logger.error("Unable to find docker-compose YAML configuration")
         sys.exit(1)
-    if not composeYaml.startswith('/'):
-        composeYaml = config_base_dir() + '/' + composeYaml
+    base_dir = config_base_dir()
+    if base_dir and not os.path.isabs(composeYaml):
+        composeYaml = os.path.join(base_dir, composeYaml)
     ps = subprocess.run(['docker-compose', '-f' , composeYaml, 'restart', service])
     if ps.returncode != 0:
         _logger.error("Error restarting docker-compose container:\nstdout: {}\nstderr: {}".format(ps.stdout, ps.stderr))

@@ -518,8 +518,4 @@ Test the Federated authentication scenario's (assumes you have above default hos
 
 * `SP initiated OIDC Login <https://www.mysp.ibm.com/isam/sps/oidc/rp/isvarp/kickoff/isva_op_partner?Target=/isam/mobile-demo/diag>`_
 
-.. |br| raw:: html
-
-      <br>
-
 .. _trial-site: https://isva-trial.verify.ibm.com/

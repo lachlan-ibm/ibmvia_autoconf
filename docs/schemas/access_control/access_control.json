@@ -1,0 +1,263 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "access_control.json",
+  "description": "Configuration for the Context Based Access (CBA) policy engine of a Verify Identity Access deployment including risk profiles, policies, and resource protection. Context Based Access policies are capable of defining conditional authentication requirements based on administrator defined logic (such as device registration status, ip reputation, authentication method enrollment for a user).",
+  "type": "object",
+  "properties": {
+    "risk_profiles": {
+      "type": "array",
+      "description": "List of Risk Profiles to create.",
+      "items": {
+        "$ref": "#/$defs/RiskProfile"
+      }
+    },
+    "policies": {
+      "type": "array",
+      "description": "List of Risk Based Access policies to create.",
+      "items": {
+        "$ref": "#/$defs/Policy"
+      }
+    },
+    "resources": {
+      "type": "array",
+      "description": "List of resources to be created and corresponding policies which should be attached to each resource.",
+      "items": {
+        "$ref": "#/$defs/Resource"
+      }
+    }
+  },
+  "$defs": {
+    "RiskProfile": {
+      "type": "object",
+      "description": "A risk profile defines attributes and their weights used to calculate risk scores.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A unique name for the risk profile."
+        },
+        "description": {
+          "type": "string",
+          "description": "An optional brief description of the risk profile."
+        },
+        "active": {
+          "type": "boolean",
+          "description": "True indicates this risk profile is the currently active risk profile. Only one profile can be active at a time."
+        },
+        "attributes": {
+          "type": "array",
+          "description": "Array of attributes comprising this risk profile and the weight value of each attribute which is used in determining the risk score.",
+          "items": {
+            "$ref": "#/$defs/RiskAttribute"
+          }
+        },
+        "predefined": {
+          "type": "boolean",
+          "description": "False to indicate this risk profile is custom defined.",
+          "default": false
+        }
+      },
+      "required": [
+        "name",
+        "active"
+      ]
+    },
+    "RiskAttribute": {
+      "type": "object",
+      "description": "An attribute used in risk calculation with its associated weight.",
+      "properties": {
+        "weight": {
+          "type": "integer",
+          "description": "Determines the importance of this attribute within the associated risk profile. A higher weight value indicates the attribute has more importance within the risk profile. The weight values of the attributes are used in determining the risk score or the level of risk associated with permitting a request to access a resource.",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "id": {
+          "type": "string",
+          "description": "Internally assigned ID value of the attribute. The attribute must have a type field value of true for risk. Either the name or id of the attribute must be defined."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the attribute. The attribute must have a type field value of true for risk. Either the name or id of the attribute must be defined."
+        }
+      },
+      "required": [
+        "weight"
+      ]
+    },
+    "Policy": {
+      "type": "object",
+      "description": "An XACML policy for access control decisions.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the policy."
+        },
+        "description": {
+          "type": "string",
+          "description": "An optional description of the policy."
+        },
+        "dialect": {
+          "type": "string",
+          "description": "The XACML specification used within the policy. Only valid value is XACML Version 2.",
+          "enum": [
+            "urn:oasis:names:tc:xacml:2.0:policy:schema:os"
+          ],
+          "default": "urn:oasis:names:tc:xacml:2.0:policy:schema:os"
+        },
+        "policy": {
+          "type": "string",
+          "description": "The configured policy in XACML 2.0 format."
+        },
+        "attributes_required": {
+          "type": "boolean",
+          "description": "If true all the policy attributes must be present in the request for the policy to be evaluated.",
+          "default": false
+        }
+      },
+      "required": [
+        "name",
+        "policy",
+        "attributes_required"
+      ]
+    },
+    "Resource": {
+      "type": "object",
+      "description": "A protected resource with attached policies.",
+      "properties": {
+        "server": {
+          "type": "string",
+          "description": "The web container that contains the protected object space for a server instance."
+        },
+        "resource_uri": {
+          "type": "string",
+          "description": "The resource URI of the resource in the protected object space.",
+          "pattern": "^/"
+        },
+        "policies": {
+          "type": "array",
+          "description": "Array of attachments (policy, policy sets, and API protection definitions) that define the access protection for this resource.",
+          "items": {
+            "$ref": "#/$defs/PolicyAttachment"
+          },
+          "minItems": 1
+        },
+        "policy_combining_algorithm": {
+          "type": "string",
+          "description": "permitOverrides to allow access to the resource if any of the attachments return permit; denyOverrides to deny access to the resource if any of the attachments return deny.",
+          "enum": [
+            "permitOverrides",
+            "denyOverrides"
+          ],
+          "default": "denyOverrides"
+        },
+        "cache": {
+          "type": "integer",
+          "description": "0 to disable the cache for this resource, -1 to cache the decision for the lifetime of the session or any number greater than 1 to set a specific timeout (in seconds) for the cached decision.",
+          "default": 0
+        }
+      },
+      "required": [
+        "server",
+        "resource_uri",
+        "policies"
+      ]
+    },
+    "PolicyAttachment": {
+      "type": "object",
+      "description": "A policy, policy set, or API protection definition attached to a resource.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the policy, policy set, or API protection definition."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of attachment.",
+          "enum": [
+            "policy",
+            "policyset",
+            "definition"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "access_control": {
+        "risk_profiles": [
+          {
+            "name": "myLocation",
+            "active": true,
+            "attributes": [
+              {
+                "weight": 50,
+                "id": "28"
+              },
+              {
+                "weight": 10,
+                "name": "geoCountryCode"
+              },
+              {
+                "weight": 10,
+                "name": "geoRegionCode"
+              },
+              {
+                "weight": 10,
+                "name": "geoCity"
+              }
+            ],
+            "predefined": false
+          }
+        ],
+        "policies": [
+          {
+            "name": "Verify Demo - MFA Login Policy",
+            "policy": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!-- PolicyTag=urn:ibm:security:isam:8.0:xacml:2.0:config-policy --><!-- PolicyName='Verify Demo - MFA Login Policy' --><PolicySet xmlns=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os\" xmlns:xacml-context=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os http://docs.oasis-open.org/xacml/access_control-xacml-2.0-policy-schema-os.xsd\" PolicySetId=\"urn:ibm:security:config-policy\" PolicyCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:policy-combining-algorithm:deny-overrides\"><Description>Example CBA Policy for the MFA Banking Demo password-less login</Description><Target/><Policy PolicyId=\"urn:ibm:security:rule-container:0\" RuleCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:first-applicable\"><Target/><Rule RuleId=\"urn:ibm:security:rule:0\" Effect=\"Permit\"></Rule><Obligations><Obligation ObligationId=\"urn:ibm:security:authentication:asf:verify_mmfa_request_fingerprint\" FulfillOn=\"Permit\"/></Obligations></Policy></PolicySet>"
+          },
+          {
+            "name": "Verify Demo - EULA",
+            "policy": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!-- PolicyTag=urn:ibm:security:isam:8.0:xacml:2.0:config-policy --><!-- PolicyName='Verify Demo - EULA' --><PolicySet xmlns=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os\" xmlns:xacml-context=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\" xmlns:xsi=\"http:\/\/www.w3.org\/2001\/XMLSchema-instance\" xsi:schemaLocation=\"urn:oasis:names:tc:xacml:2.0:policy:schema:os http:\/\/docs.oasis-open.org\/xacml\/access_control-xacml-2.0-policy-schema-os.xsd\" PolicySetId=\"urn:ibm:security:config-policy\" PolicyCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:policy-combining-algorithm:first-applicable\"><Description>GDPR Compliance (Acceptance of ToS)<\/Description><Target\/><Policy PolicyId=\"urn:ibm:security:rule-container:0\" RuleCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:first-applicable\"><Target\/><Rule RuleId=\"urn:ibm:security:rule:0\" Effect=\"Permit\"><Condition><Apply FunctionId=\"urn:oasis:names:tc:xacml:1.0:function:and\"><Apply FunctionId=\"urn:oasis:names:tc:xacml:1.0:function:string-at-least-one-member-of\"><Apply FunctionId=\"urn:oasis:names:tc:xacml:1.0:function:string-bag\"><AttributeValue DataType=\"http:\/\/www.w3.org\/2001\/XMLSchema#string\">urn:ibm:security:authentication:asf:mechanism:eula<\/AttributeValue><\/Apply><SubjectAttributeDesignator AttributeId=\"urn:ibm:security:subject:authenticationMechanismTypes\" DataType=\"http:\/\/www.w3.org\/2001\/XMLSchema#string\" MustBePresent=\"false\"\/><\/Apply><\/Apply><\/Condition><\/Rule><\/Policy><Policy PolicyId=\"urn:ibm:security:rule-container:1\" RuleCombiningAlgId=\"urn:oasis:names:tc:xacml:1.0:rule-combining-algorithm:first-applicable\"><Target\/><Rule RuleId=\"urn:ibm:security:rule:1\" Effect=\"Permit\"><\/Rule><Obligations><Obligation ObligationId=\"urn:ibm:security:authentication:asf:eula\" FulfillOn=\"Permit\"\/><\/Obligations><\/Policy><\/PolicySet>",
+            "description": "GDPR Compliance (Acceptance of ToS)"
+          }
+        ],
+        "resources": [
+          {
+            "server": "my.ibmsec.idp",
+            "resource_uri": "/login",
+            "policies": [
+              {
+                "name": "Verify Demo - MFA Login Policy",
+                "type": "policy"
+              }
+            ]
+          },
+          {
+            "server": "my.ibmsec.idp",
+            "resource_uri": "/protected/transfer",
+            "policies": [
+              {
+                "name": "Verify Demo - MFA Transaction Policy",
+                "type": "policy"
+              }
+            ]
+          },
+          {
+            "server": "my.ibmsec.idp",
+            "resource_uri": "/isam/sps/SP-SAML-QC/saml20/login",
+            "policies": [
+              {
+                "name": "Verify Demo - MFA Office 365 Login",
+                "type": "policy"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

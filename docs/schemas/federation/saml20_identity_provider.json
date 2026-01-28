@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "saml20_identity_provider.json",
+  "title": "SAML 2.0 Identity Provider Configuration",
+  "description": "Configuration for a SAML 2.0 Identity Provider federation.",
+  "type": "object",
+  "properties": {
+    "access_policy": {
+      "type": "string",
+      "description": "The access policy that should be applied during single sign-on."
+    },
+    "artifact_lifetime": {
+      "type": "integer",
+      "description": "The number of seconds that an artifact is valid. The default value is 120. This setting is enabled only when HTTP artifact binding has been enabled.",
+      "default": 120,
+      "minimum": 1
+    },
+    "assertion_settings": {
+      "$ref": "common_definitions.json#/$defs/AssertionSettings",
+      "description": "The assertion settings."
+    },
+    "artifact_resolution_services": {
+      "type": "array",
+      "description": "Endpoints where artifacts are exchanged for actual SAML messages. Required if artifact binding is enabled.",
+      "items": {
+        "$ref": "common_definitions.json#/$defs/ArtifactResolutionService"
+      }
+    },
+    "attribute_mappings": {
+      "$ref": "common_definitions.json#/$defs/AttributeMapping",
+      "description": "The attribute mapping data."
+    },
+    "company_name": {
+      "type": "string",
+      "description": "The name of the company that creates the identity provider or service provider."
+    },
+    "encryption_settings": {
+      "$ref": "common_definitions.json#/$defs/EncryptionSettings",
+      "description": "The encryption and decryption configurations for SAML messages."
+    },
+    "identity_mapping": {
+      "$ref": "common_definitions.json#/$defs/IdentityMapping",
+      "description": "The identity mapping data."
+    },
+    "extension_mapping": {
+      "$ref": "common_definitions.json#/$defs/ExtensionMapping",
+      "description": "The extension mapping data."
+    },
+    "manage_name_id_services": {
+      "type": "array",
+      "description": "Endpoints that accept SAML name ID management requests or responses.",
+      "items": {
+        "$ref": "common_definitions.json#/$defs/ServiceData"
+      }
+    },
+    "message_valid_time": {
+      "type": "integer",
+      "description": "The number of seconds that a message is valid. The default value is 300.",
+      "default": 300,
+      "minimum": 1
+    },
+    "message_issuer_format": {
+      "type": "string",
+      "description": "The format of the issuer of SAML message. The default value is 'urn:oasis:names:tc:SAML:2.0:nameid-format:entity'.",
+      "default": "urn:oasis:names:tc:SAML:2.0:nameid-format:entity",
+      "format": "uri"
+    },
+    "message_issuer_name_qualifier": {
+      "type": "string",
+      "description": "The name qualifier of the issuer of SAML messaged."
+    },
+    "name_id_format": {
+      "$ref": "common_definitions.json#/$defs/NameIdFormat",
+      "description": "The name identifier format configurations."
+    },
+    "need_consent_to_federate": {
+      "type": "boolean",
+      "description": "A setting that specifies whether to ask user's consent before linking the account. The default value is true.",
+      "default": true
+    },
+    "exclude_session_index_in_single_logout_request": {
+      "type": "boolean",
+      "description": "A setting that specifies whether the LogoutRequest messages sent out from this entity will exclude SessionIndex during IP init SLO flow. The default value is false.",
+      "default": false
+    },
+    "point_of_contact_url": {
+      "type": "string",
+      "description": "The endpoint URL of the point of contact server. The point of contact server is a reverse proxy server that is configured in front of the runtime listening interfaces. The format is http[s]://hostname[:portnumber]/[junction]/sps.",
+      "format": "uri"
+    },
+    "provider_id": {
+      "type": "string",
+      "description": "A unique identifier that identifies the provider to its partner provider. If not provided or an empty string is provided, the default value is <point of contact URL>/<federation name>/saml20."
+    },
+    "session_timeout": {
+      "type": "integer",
+      "description": "The number of seconds that the SAML session remains valid. The default value is 7200.",
+      "default": 7200,
+      "minimum": 1
+    },
+    "signature_settings": {
+      "$ref": "common_definitions.json#/$defs/SignatureSettings",
+      "description": "The signing and validation configurations for SAML messages and assertions."
+    },
+    "single_sign_on_service": {
+      "type": "array",
+      "description": "Endpoints at an Identity Provider that accept SAML authentication requests.",
+      "items": {
+        "$ref": "common_definitions.json#/$defs/SingleSignOnService"
+      }
+    },
+    "single_logout_service": {
+      "type": "array",
+      "description": "Endpoints that accept SAML logout requests or responses.",
+      "items": {
+        "$ref": "common_definitions.json#/$defs/ServiceData"
+      }
+    },
+    "alias_service_settings": {
+      "$ref": "common_definitions.json#/$defs/AliasServiceSettings",
+      "description": "The alias service settings to store the user alias."
+    }
+  },
+  "required": ["company_name", "point_of_contact_url", "identity_mapping", "extension_mapping"]
+}

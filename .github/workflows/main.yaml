@@ -8,7 +8,7 @@ on:
 
 # This job installs dependencies, builds the project's doc, and pushes it to `gh-pages`
 jobs:
-  deploy-gh-pages:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -23,11 +23,11 @@ jobs:
       run: |
         pip install -r dev-requirements.txt
 
-    # Build the doc 
+    # Build the doc
     - name: Build the project
       run: |
+        cd docs && bash generate_schema_html.sh && cd ..
         sphinx-build docs html
-        #TODO build and push to pypi
         python -m build
 
     # Push to pypi

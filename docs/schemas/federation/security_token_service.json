@@ -1,0 +1,332 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "security_token_service.json",
+  "description": "Configuration for Security Token Service (STS) chain templates and chains for security token transformation and validation.",
+  "type": "object",
+  "properties": {
+    "chain_templates": {
+      "type": "array",
+      "description": "List of STS chain templates to create or update.",
+      "items": {
+        "$ref": "#/$defs/ChainTemplate"
+      }
+    },
+    "chains": {
+      "type": "array",
+      "description": "List of STS chains to create or update.",
+      "items": {
+        "$ref": "#/$defs/Chain"
+      }
+    }
+  },
+  "$defs": {
+    "ChainTemplate": {
+      "type": "object",
+      "description": "An STS Chain Template defining the sequence of modules for token transformation.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A friendly name for the STS Chain Template."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the STS Chain Template."
+        },
+        "modules": {
+          "type": "array",
+          "description": "An array of the modules that make up the STS Chain Template.",
+          "items": {
+            "$ref": "#/$defs/ChainTemplateItem"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "modules"
+      ]
+    },
+    "ChainTemplateItem": {
+      "type": "object",
+      "description": "A module item in an STS Chain Template.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The token id of an STS module."
+        },
+        "mode": {
+          "type": "string",
+          "description": "The mode the STS module is used in in the chain. Must be one of the supported modes of the STS module.",
+          "enum": [
+            "validate",
+            "map",
+            "issue"
+          ]
+        },
+        "prefix": {
+          "type": "string",
+          "description": "The prefix for the chain item."
+        }
+      },
+      "required": [
+        "id",
+        "mode"
+      ]
+    },
+    "Chain": {
+      "type": "object",
+      "description": "An STS Chain that references a Chain Template and defines specific configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "A friendly name for the STS Chain."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the STS Chain."
+        },
+        "chain_template": {
+          "type": "string",
+          "description": "The name of the STS Chain Template that is referenced by this STS Chain."
+        },
+        "request_type": {
+          "type": "string",
+          "description": "The type of request to associate with this chain. The request is one of the types that are supported by the WS-Trust specification.",
+          "enum": [
+            "validate",
+            "issue",
+            "renew",
+            "cancel"
+          ]
+        },
+        "token_type": {
+          "type": "string",
+          "description": "The STS module type to map a request message to an STS Chain Template."
+        },
+        "xpath": {
+          "type": "string",
+          "description": "The custom lookup rule in XML Path Language to map a request message to an STS Chain Template."
+        },
+        "sign_responses": {
+          "type": "boolean",
+          "description": "Whether to sign the Trust Server SOAP response messages."
+        },
+        "signature": {
+          "$ref": "common_definitions.json#/$defs/KeyIdentifier",
+          "description": "The key to sign the Trust Server SOAP response messages."
+        },
+        "validate_requests": {
+          "type": "boolean",
+          "description": "Whether requires a signature on the received SOAP request message that contains the RequestSecurityToken message."
+        },
+        "validation_key": {
+          "$ref": "common_definitions.json#/$defs/KeyIdentifier",
+          "description": "The key to validate the received SOAP request message."
+        },
+        "send_validation_confirmation": {
+          "type": "boolean",
+          "description": "Whether to send signature validation confirmation."
+        },
+        "issuer": {
+          "$ref": "#/$defs/NameAddress",
+          "description": "The issuer of the token."
+        },
+        "applies_to": {
+          "$ref": "#/$defs/NameAddress",
+          "description": "The scope of the token."
+        },
+        "properties": {
+          "$ref": "#/$defs/ChainProperties",
+          "description": "The properties for all modules within the STS Chain Template referenced in the STS Chain."
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "chain_template",
+        "request_type"
+      ]
+    },
+    "NameAddress": {
+      "type": "object",
+      "description": "A name and address configuration for issuer or applies-to settings.",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "The URI of the company or enterprise.",
+          "format": "uri"
+        },
+        "port_type_namespace": {
+          "type": "string",
+          "description": "The namespace URI part of a qualified name for a Web service port type.",
+          "format": "uri"
+        },
+        "port_type_name": {
+          "type": "string",
+          "description": "The local part of a qualified name for a Web service port type."
+        },
+        "service_namespace": {
+          "type": "string",
+          "description": "The namespace URI part of a qualified name for a Web service.",
+          "format": "uri"
+        },
+        "service_name": {
+          "type": "string",
+          "description": "The local part of a qualified name for a Web service."
+        }
+      },
+      "required": [
+        "address"
+      ]
+    },
+    "ChainProperties": {
+      "type": "object",
+      "description": "Properties for STS Chain modules, separated into self and partner properties.",
+      "properties": {
+        "attributes": {
+          "type": "array",
+          "description": "Attribute mappings for the chain.",
+          "items": {
+            "$ref": "#/$defs/AttributeMapping"
+          }
+        },
+        "myself": {
+          "type": "array",
+          "description": "The self properties for all modules within the STS Chain Template referenced in the STS Chain.",
+          "items": {
+            "$ref": "#/$defs/ChainPropertyItem"
+          }
+        },
+        "partner": {
+          "type": "array",
+          "description": "The partner properties for all modules within the STS Chain Template referenced in the STS Chain.",
+          "items": {
+            "$ref": "#/$defs/ChainPropertyItem"
+          }
+        }
+      }
+    },
+    "AttributeMapping": {
+      "type": "object",
+      "description": "An attribute mapping configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the attribute."
+        },
+        "attribute": {
+          "type": "string",
+          "description": "The attribute value or reference."
+        }
+      },
+      "required": [
+        "name",
+        "attribute"
+      ]
+    },
+    "ChainPropertyItem": {
+      "type": "object",
+      "description": "A property item for an STS Chain module. The final property name is determined by the index in the chain template (to fetch the UUID prefix) and the name of the property.",
+      "properties": {
+        "index": {
+          "type": "integer",
+          "description": "The index in the chain template of the property being set.",
+          "minimum": 0
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the configuration property."
+        },
+        "value": {
+          "type": "array",
+          "description": "The values of the configuration property.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "index",
+        "name",
+        "value"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "sts": {
+        "chain_templates": [
+        {
+          "name": "UsernameTokentoSAML20",
+          "description": "Maps from UsernameToken to SAML20",
+          "modules": [
+            {
+              "id": "Default UserNameToken",
+              "mode": "validate"
+            },
+            {
+              "id": "Default Map Module",
+              "mode": "map"
+            },
+            {
+              "id": "Default SAML 2.0 Token",
+              "mode": "issue"
+            }
+          ]
+        },
+        {
+          "name": "STSUUtoSTSUU",
+          "description": "STSUU to STSUU",
+          "modules": [
+            {
+              "id": "Default STSUU",
+              "mode": "validate"
+            },
+            {
+              "id": "Default Map Module",
+              "mode": "map"
+            },
+            {
+              "id": "Default STSUU",
+              "mode": "issue"
+            }
+          ]
+        }
+      ],
+      "chains": [
+        {
+          "name": "SAML20ToSAML20Chain",
+          "description": "Chain for saml20 to saml20",
+          "chain_template": "SAML20tpSAML20",
+          "request_type": "validate",
+          "applies_to": {
+            "address": "http://appliesto/saml20"
+          },
+          "issuer": {
+            "address": "http://issuer/saml20"
+          },
+          "sign_responses": false,
+          "properties": {
+            "myself": [
+              {
+                "name": "com.tivoli.am.fim.sts.saml.2.0.assertion.replay.validation",
+                "index": 0,
+                "value": [
+                  "false"
+                ]
+              },
+              {
+                "name": "map.rule.reference.name",
+                "index": 1,
+                "value": [
+                  "saml20_to_saml20"
+                ]
+              }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

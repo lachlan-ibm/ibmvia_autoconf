@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/user_mapping.json",
+  "description": "User mapping can be used to modify or enrich an authenticated user's credential data. This can be used to both switch the identity of a user or add attributes to a user's existing credential. User mapping rules are added to a Verify Identity Access deployment using XLST rules. Detailed information about user mapping XSLT configuration can be found [here](https://www.ibm.com/docs/en/sva/latest?topic=methods-authenticated-user-mapping). The name of the XSLT file will be used as the name of the user mapping rule.",
+  "type": "array",
+  "items": {
+    "type": "string",
+    "description": "Path to XSLT user mapping file."
+  },
+  "examples": [
+    {
+      "user_mapping": [
+        "add_email.xslt",
+        "federated_identity_to_basic_user.xslt"
+      ]
+    }
+  ]
+}

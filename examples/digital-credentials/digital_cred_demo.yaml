@@ -1,0 +1,297 @@
+appliance:
+  network:
+    hostname: "isam.myidp.ibm.com"
+    host_file:
+    - address: "192.168.42.102"
+      hosts:
+      - "www.myidp.ibm.com"
+  ssl_certificates:
+  - name: "pdsrv"
+    personal_certificates:
+    - p12_file: "webseal.p12"
+      secret: "Passw0rd"
+    signer_certificates:
+    - "ivia-ca.pem"
+  advanced_tuning_parameters:
+  - name: "isam_cluster.tuning.hvdb.user"
+    value: "iviadc:secret"
+    description: "Digital Credential internal DB user."
+    operation: "update"
+  extensions:
+  - extension: "containerExtIVIAOP.ext"
+    properties:
+      extId: "containerExtIVIAOP"
+  - extension: "containerExtIVIADC.ext"
+    properties:
+      extId: "containerExtIVIADC"
+  managed_containers:
+    volumes:
+    - name: "dc-config"
+      archive: "dc_config.zip"
+    - name: "op-config"
+      archive: "op_config.zip"
+    registries:
+    - host: "icr.io"
+      ca: "icr.io.pem"
+    images:
+    - "icr.io/ivia/ivia-oidc-provider:25.10"
+    - "icr.io/ivia/ivia-digital-credentials:25.09"
+    deployments:
+    - name: "dc-deployment"
+      image: "icr.io/ivia/ivia-digital-credentials:25.09"
+      type: "verify-identity-access-digital-credentials"
+      ports:
+      - name: "https"
+        value: "10.88.0.1:9720"
+      volumes:
+      - name: "configuration"
+        value: "dc-config"
+      env:
+      - name: "NODE_TLS_REJECT_UNAUTHORIZED"
+        value: 0
+      - name: "YAML_FILE"
+        value: "/var/config/config.yaml"
+      - name: "IBM_API_EXPLORER"
+        value: 1
+    - name: "op-deployment"
+      image: "icr.io/ivia/ivia-oidc-provider:25.10"
+      type: "verify-identity-access-oidc-provider"
+      ports:
+      - name: "https"
+        value: "10.88.0.1:8436"
+      volumes:
+      - name: "configuration"
+        value: "op-config"
+  advanced_configuration:
+  - name: "sps.authsvcTargetURLAllowList"
+    value: "https://www.myidp.ibm.com/oauth2.*"
+access_control:
+  authentication:
+    policies:
+    - name: "Username Password"
+      description: "Username and password authentication policy."
+      enabled: true
+      uri: "urn:ibm:security:authentication:asf:password"
+      policy: "<Policy xmlns=\"urn:ibm:security:authentication:policy:1.0:schema\" PolicyId=\"urn:ibm:security:authentication:asf:password\"><Description>Username and password authentication policy.</Description><Step type=\"Authenticator\"><Authenticator AuthenticatorId=\"urn:ibm:security:authentication:asf:mechanism:password\"/></Step><Actions><Action On=\"null\" type=\"null\"><AttributeAssignments/></Action></Actions></Policy>"
+    mechanisms:
+    - id: "7"
+      name: "Username Password"
+      type: "Username Password"
+      description: "Username password authentication"
+      uri: "urn:ibm:security:authentication:asf:mechanism:password"
+      properties:
+        usernamePasswordAuthentication.enableLastLogin: "false"
+        usernamePasswordAuthentication.loginFailuresPersistent: "false"
+        usernamePasswordAuthentication.maxServerConnections: "16"
+        usernamePasswordAuthentication.mgmtDomain: "Default"
+        usernamePasswordAuthentication.sslServerStartTLS: "false"
+        usernamePasswordAuthentication.useFederatedDirectoriesConfig: "false"
+        usernamePasswordAuthentication.userSearchFilter: "(|(objectclass=ePerson)(objectclass=Person))"
+        usernamePasswordAuthentication.ldapBindDN: "cn=root,secAuthority=Default"
+        usernamePasswordAuthentication.ldapHostName: "localhost"
+        usernamePasswordAuthentication.ldapBindPwd: "passw0rd"
+        usernamePasswordAuthentication.ldapPort: "389"
+        usernamePasswordAuthentication.sslEnabled: "false"
+        usernamePasswordAuthentication.sslTrustStore: ""
+webseal:
+  http_transforms:
+    lua:
+    - "req_openid_config.lua"
+    - "rsp_openid_config.lua"
+  runtime:
+    admin_user: "sec_master"
+    admin_password: "passw0rd"
+  pdadmin:
+    users:
+    - username: "user_1"
+      password: "passw0rd"
+      dn: "cn=user_1,dc=iswga"
+    - username: "user_2"
+      password: "passw0rd"
+      dn: "cn=user_2,dc=iswga"
+    - username: "testuser"
+      password: "passw0rd"
+      dn: "cn=testuser,dc=iswga"
+    acls:
+    - name: "unauth"
+      users:
+      - name: "sec_master"
+        permissions: "TcmdbsvaBRl"
+      any_other: "Tdr"
+      unauthenticated: "Tdr"
+    reverse_proxies:
+    - host: "isam.myidp.ibm.com"
+      instance: "default"
+      acls:
+      - name: "unauth"
+        junctions:
+        - "/oauth2"
+        - "/diagency"
+        - "/ibm"
+  reverse_proxy:
+  - name: "default"
+    host: "isam.myidp.ibm.com"
+    listening_port: 7234
+    domain: "Default"
+    nw_interface_yn: "yes"
+    ip_address: !environment WRP_ADDRESS
+    http:
+      enabled: "no"
+    https:
+      enabled: "yes"
+      port: 443
+    aac_configuration:
+      junction: "/mga"
+      runtime:
+        hostname: "localhost"
+        port: 443
+        username: "easuser"
+        password: "passw0rd"
+      reuse_acls: true
+      reuse_certs: true
+    management_root:
+    - "reverse_proxy.zip"
+    junctions:
+    - junction_point: "/oauth2"
+      description: "OIDC OP Container"
+      transparent_path_junction: true
+      junction_type: "ssl"
+      server_hostname: "10.88.0.1"
+      server_port: 8436
+      basic_auth_mode: "ignore"
+    - junction_point: "/diagency"
+      description: "Digital Credentials Container"
+      transparent_path_junction: true
+      junction_type: "ssl"
+      server_hostname: "10.88.0.1"
+      server_port: 9720
+      basic_auth_mode: "ignore"
+    - junction_point: "/ibm"
+      description: "Digital Credentials API Doc"
+      transparent_path_junction: true
+      junction_type: "ssl"
+      server_hostname: "10.88.0.1"
+      server_port: 9720
+    stanza_configuration:
+    - stanza: "local-apps"
+      entry_id: "cred-viewer"
+      value: "cred"
+      operation: "update"
+    - stanza: "ssl"
+      entry_id: "webseal-cert-keyfile-label"
+      value: "CN=my.idp,OU=Security,O=IBM,C=AU"
+      operation: "update"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+    - stanza: "jwt:/oauth2"
+      entry_id: "key-label"
+      value: "CN=my.idp,OU=Security,O=IBM,C=AU"
+      operation: "add"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "claim"
+      value: "attr::AZN_CRED_PRINCIPAL_NAME::sub"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "claim"
+      value: "attr::AZN_CRED_PRINCIPAL_NAME::name"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "claim"
+      value: "attr::AZN_CRED_PRINCIPAL_NAME::uid"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "claim"
+      value: "attr::isTwoFactorPolicy::isTwoFactorPolicy"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "claim"
+      value: "attr::AUTH*"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "claim"
+      value: "attr::x-client-certificate"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "claim"
+      value: "attr::iv-correlation-id"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "claim"
+      value: "attr::tagvalue_session_index"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "claim"
+      value: "attr::attr::user_session_index"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "include-empty-claims"
+      value: "false"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "hdr-name"
+      value: "iv-jwt"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "hdr-format"
+      value: " %TOKEN%"
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "lifetime"
+      value: 0
+    - stanza: "jwt:/oauth2"
+      operation: "add"
+      entry_id: "renewal-window"
+      value: 15
+    - stanza: "http-transformations"
+      entry_id: "req_oidc"
+      value: "req_openid_config.lua"
+      operation: "add"
+    - stanza: "http-transformations"
+      entry_id: "rsp_oidc"
+      value: "rsp_openid_config.lua"
+      operation: "add"
+    - stanza: "http-transformations:req_oidc"
+      operation: "add"
+    - stanza: "http-transformations:req_oidc"
+      entry_id: "request-match"
+      value: "request:GET /oauth2/.well-known/oauth-authorization-server *"
+      operation: "add"
+    - stanza: "http-transformations:rsp_oidc"
+      operation: "add"
+    - stanza: "http-transformations:rsp_oidc"
+      entry_id: "request-match"
+      value: "response:GET /oauth2/.well-known/oauth-authorization-server *"
+      operation: "add"
+    - stanza: "oidc"
+      entry_id: "oidc-auth"
+      value: "https"
+      operation: "update"
+    - stanza: "oidc:default"
+      entry_id: "redirect-uri-host"
+      value: "www.myidp.ibm.com"
+      operation: "update"
+    - stanza: "oidc:default"
+      entry_id: "discovery-endpoint"
+      value: "https://www.myidp.ibm.com/oauth2/.well-known/openid-configuration"
+      operation: "update"
+    - stanza: "oidc:default"
+      entry_id: "client-id"
+      value: "rp_client"
+      operation: "update"
+    - stanza: "oidc:default"
+      entry_id: "response-type"
+      value: "code"
+      operation: "update"
+    - stanza: "oidc:default"
+      entry_id: "client-secret"
+      value: "secret"
+      operation: "update"
+    - stanza: "oidc:default"
+      entry_id: "mapped-identity"
+      value: "{iss}/{sub}"
+      operation: "update"
+    - stanza: "oidc:default"
+      entry_id: "external-user"
+      value: "true"
+      operation: "update"

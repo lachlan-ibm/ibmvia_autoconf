@@ -1,0 +1,333 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "fido2.json",
+  "description": "Configuration for FIDO2/WebAuthn authentication including relying parties, metadata, and mediator JavaScript mapping rules.",
+  "type": "object",
+  "properties": {
+    "mediators": {
+      "type": "array",
+      "description": "JavaScript files to upload as FIDO2 mediators.",
+      "items": {
+        "type": "string",
+        "description": "Path to JavaScript mediator file."
+      }
+    },
+    "metadata": {
+      "$ref": "#/$defs/Metadata",
+      "description": "Files to upload as static FIDO2 metadata documents, or URL's to use as dynamic metadata services."
+    },
+    "relying_parties": {
+      "type": "array",
+      "description": "List of relying parties to configure.",
+      "items": {
+        "$ref": "#/$defs/RelyingParty"
+      }
+    }
+  },
+  "$defs": {
+    "RelyingParty": {
+      "type": "object",
+      "description": "A FIDO2 relying party configuration.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the relying party."
+        },
+        "rp_id": {
+          "type": "string",
+          "description": "URI of the relying party base domain."
+        },
+        "origins": {
+          "type": "array",
+          "description": "List of permitted origins. These should be valid sub-domains of the rp_id.",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "minItems": 1
+        },
+        "metadata": {
+          "type": "array",
+          "description": "List of metadata documents to enable for this relying party.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metadata_services": {
+          "type": "array",
+          "description": "List of metadata services to enable for this relying party. This can be either the Verify Identity Access assigned id of the metadata service, or the URL of the metadata service.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "use_all_metadata": {
+          "type": "boolean",
+          "description": "Use all available metadata documents for this relying party."
+        },
+        "mediator": {
+          "type": "string",
+          "description": "Mediator mapping rule to configure for this relying party."
+        },
+        "impersonation_group": {
+          "type": "string",
+          "description": "Group used to permit admin operations for this relying party."
+        },
+        "attestation": {
+          "$ref": "#/$defs/Attestation",
+          "description": "Attestation properties permitted for this relying party."
+        },
+        "android": {
+          "$ref": "#/$defs/Android",
+          "description": "Android attestation specific configuration."
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Time period a user has to complete a FIDO2/WebAuthn ceremony.",
+          "default": 300,
+          "minimum": 1
+        }
+      },
+      "required": [
+        "name",
+        "rp_id",
+        "origins"
+      ]
+    },
+    "Attestation": {
+      "type": "object",
+      "description": "Attestation validation configuration.",
+      "properties": {
+        "statement_types": {
+          "type": "array",
+          "description": "List of attestation types to permit.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "basic",
+              "self",
+              "attCA",
+              "anonCA",
+              "none"
+            ]
+          }
+        },
+        "statement_formats": {
+          "type": "array",
+          "description": "List of attestation formats to permit.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "fido-u2f",
+              "packed",
+              "self",
+              "android-key",
+              "android-safetynet",
+              "tpm",
+              "none"
+            ]
+          }
+        },
+        "public_key_algorithms": {
+          "type": "array",
+          "description": "List of COSE algorithm identifiers to permit.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "compound_all_valid": {
+          "type": "boolean",
+          "description": "True if all attestation statements in a compound attestation must be valid to successfully register an authenticator.",
+          "default": true
+        }
+      }
+    },
+    "Android": {
+      "type": "object",
+      "description": "Android SafetyNet attestation configuration.",
+      "properties": {
+        "max_age": {
+          "type": "integer",
+          "description": "Maximum age of attestation signature.",
+          "minimum": 0
+        },
+        "clock_skew": {
+          "type": "integer",
+          "description": "Maximum allowed clock skew in signed attestation attributes.",
+          "minimum": 0
+        },
+        "cts_profile_match": {
+          "type": "boolean",
+          "description": "True if the Android SafetyNet CTS Profile Match flag should be enforced.",
+          "default": true
+        }
+      },
+      "required": [
+        "max_age",
+        "clock_skew"
+      ]
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "FIDO2 metadata configuration.",
+      "properties": {
+        "metadata_services": {
+          "type": "array",
+          "description": "List of metadata services to enable for the relying party.",
+          "items": {
+            "$ref": "#/$defs/MetadataService"
+          }
+        },
+        "metadata": {
+          "type": "array",
+          "description": "List of metadata documents to enable for the relying party.",
+          "items": {
+            "type": "string",
+            "description": "Path to metadata file."
+          }
+        }
+      }
+    },
+    "MetadataService": {
+      "type": "object",
+      "description": "A FIDO2 metadata service configuration.",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "Address of the metadata service.",
+          "format": "uri"
+        },
+        "retry_interval": {
+          "type": "integer",
+          "description": "Wait interval (in seconds) before retrying the download when metadata retrieval fails.",
+          "default": 3600,
+          "minimum": 0
+        },
+        "jws_truststore": {
+          "type": "string",
+          "description": "The name of the JWS verification truststore."
+        },
+        "truststore": {
+          "type": "string",
+          "description": "The name of the truststore to use for HTTPS connections and JWS verification."
+        },
+        "username": {
+          "type": "string",
+          "description": "The basic authentication username."
+        },
+        "password": {
+          "type": "string",
+          "description": "The basic authentication password."
+        },
+        "keystore": {
+          "type": "string",
+          "description": "The client keystore for client certificate authentication."
+        },
+        "certificate": {
+          "type": "string",
+          "description": "The client key alias for client certificate authentication."
+        },
+        "protocol": {
+          "type": "string",
+          "description": "The SSL protocol to use for the HTTPS connection.",
+          "enum": [
+            "TLS",
+            "TLSv1",
+            "TLSv1.1",
+            "TLSv1.2"
+          ]
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "The request timeout in seconds. A value of 0 will result in no timeout.",
+          "minimum": 0
+        },
+        "proxy": {
+          "type": "string",
+          "description": "The URL of the proxy server used to connect to the metadata service.",
+          "format": "uri"
+        },
+        "headers": {
+          "type": "array",
+          "description": "A list of HTTP headers to be added to the HTTP request when retrieving the metadata from the service.",
+          "items": {
+            "$ref": "#/$defs/Header"
+          }
+        }
+      },
+      "required": [
+        "url"
+      ]
+    },
+    "Header": {
+      "type": "object",
+      "description": "An HTTP header for metadata service requests.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the HTTP header."
+        },
+        "value": {
+          "type": "string",
+          "description": "The value of the HTTP header."
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ]
+    }
+  },
+  "examples": [
+    {
+      "fido2": {
+        "relying_parties": [
+          {
+            "name": "fidointerop.securitypoc.com",
+            "rp_id": "fidointerop.securitypoc.com",
+            "origins": [
+              "https://fidointerop.securitypoc.com",
+              "urn:ibm:security:verify:app:namespace"
+            ],
+            "use_all_metadata": true,
+            "metadata_soft_fail": false,
+            "metadata_services": [
+              "https://mds3.fidoalliance.org"
+            ],
+            "mediator": "fido2_mediator_verifysecuritypoc.js",
+            "attestation": {
+              "statement_types": [
+                "basic",
+                "self",
+                "attCA",
+                "anonCA",
+                "none"
+              ],
+              "statement_formats": [
+                "fido-u2f",
+                "packed",
+                "self",
+                "android-key",
+                "android-safetynet",
+                "tpm",
+                "none"
+              ]
+            }
+          }
+        ],
+        "metadata": {
+          "metadata": [
+            "fido2/metadata"
+          ],
+          "metadata_services": [
+            {
+              "url": "https://mds.fidoalliance.org",
+              "timeout": 30,
+              "truststore": "rt_profile_keys",
+              "jws_truststore": "fido_mds_certs"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

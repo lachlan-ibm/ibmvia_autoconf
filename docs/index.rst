@@ -109,10 +109,11 @@ these variables are set, they take priority over values set in configuration fil
 
 - ``IVIA_MGMT_USER``
                         The user to perform configuration as. This user should have sufficient permissions to configure 
-                        all of the features in your YAML configuration file.
+                        all of the features in your YAML configuration file. If a username is not supplied then the 
+                        ``IVIA_MGMT_PWD`` value is used as a bearer API access token.
 
 - ``IVIA_MGMT_PWD``
-                        The password required to authenticate as the user defined by ``IVIA_MGMT_USER``.
+                        The password or API access token required to authenticate.
 
 - ``IVIA_MGMT_OLD_PWD``
                         If a password change is required then this variable defines the password for ``IVIA_MGMT_USER``

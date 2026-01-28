@@ -13,153 +13,123 @@ enabling FIPS compliance. This is always done with the admin account using the d
 Failing this step does not result in autoconfig aborting.
 
 
-.. autofunction:: src.ibmvia_autoconf.configure.IVIA_Configurator.accept_eula
-
-
-.. autofunction:: src.ibmvia_autoconf.configure.IVIA_Configurator.complete_setup
+.. note::
+   The accept_eula and complete_setup functions are used internally during first-time setup.
 
 
 .. _lmi-password-update:
 
-Password update
+Password Update
 ===============
-The password of the management account may be updated once. This account must already exist on the appliance and
-have sufficient permission to complete all of the configuration required.
 
 
-.. autoclass:: src.ibmvia_autoconf.configure.IVIA_Configurator.Admin_Password
-   :members:
+.. raw:: html
+   :file: schema_html/base/admin_password.html
 
+|br|
 
 .. _system-settings:
 
 Administrator Configuration
 ===========================
-System wide settings such as LMI log file configuration, account management and advanced tuning parameters.
-
-To set system administrator settings use the ``admin_config`` key. A complete list of the available configuration 
-properties can be found `here <https://lachlan-ibm.github.io/pyivia>`_. An example configuration is:
 
 
-.. autoclass:: src.ibmvia_autoconf.configure.IVIA_Configurator.Admin_Config
-   :members:
-   :undoc-members:
+.. raw:: html
+   :file: schema_html/base/admin_config.html
 
+|br|
 
 .. _ssl-database:
 
-SSL Certificate database
+SSL Certificate Database
 ========================
-X509 Certificates and PCKS12 key-files can be imported into Verify Identity Access SSL databases. The structure of this 
-configuration option is to specify a yaml list of SSL databases. Each entry in the list has three keys: database name; 
-personal certificates; and signer certificates. If a database does not exist on the appliance then it is created before 
-files are imported.
-
-SSL certificates are imported into the appliance by reading files from the file system. Therefore any PKI which is to 
-be imported into the appliance must specify the fully-qualified path or be a path relative to the ``IVIA_CONFIG_BASE`` 
-environment variable. A complete list of the available configuration properties can be found 
-`here <https://lachlan-ibm.github.io/pyivia>`_. An example configuration is:
 
 
-.. autoclass:: src.ibmvia_autoconf.configure.IVIA_Configurator.SSL_Certificates
-   :members:
+.. raw:: html
+   :file: schema_html/base/ssl_certificates.html
 
+|br|
 
 Administrator Account Management
 ================================
-Administrator accounts, groups and permissions for managing Verify Identity Access features can be defined in two configuration
-entries. The first entry allows for the creation of users and groups which can be used to authenticate to the 
-management interface. A complete list of the available configuration properties can be found 
-`here <https://lachlan-ibm.github.io/pyivia>`_. An example configuration is:
 
 
-.. autoclass:: src.ibmvia_autoconf.configure.IVIA_Configurator.Account_Management
-   :members:
+.. raw:: html
+   :file: schema_html/base/account_management.html
 
+|br|
 
 Management Authorization
 ========================
-Administrators are also able to manage access to Verify Identity Access features. This allows for more fine grained control 
-over which accounts are permitted to modify a deployment. Administrators are not able to create new features, however 
-they can create "roles" which contains permissions for one or more features. Each feature in a role has two permission
-levels: read access (can view but cannot modify); and write access (permission to modify). A complete list of the 
-available configuration properties can be found `here <https://lachlan-ibm.github.io/pyivia>`_. An example 
-configuration is:
 
 
-.. autoclass:: src.ibmvia_autoconf.configure.IVIA_Configurator.Management_Authorization
-   :members:
+.. raw:: html
+   :file: schema_html/base/management_authorization.html
 
+|br|
 
 Management Authentication
 =========================
-Administrators are able to configure how users are able to authenticate to the Verify Identity Access management interface. By
-default the management interface uses a local user registry, but administrators can configure a LDAP server or integrate
-a third party identity provider using the OIDC specification.
 
 
-.. autoclass:: src.ibmvia_autoconf.configure.IVIA_Configurator.Management_Authentication
-   :members:
+.. raw:: html
+   :file: schema_html/base/management_authentication.html
 
+|br|
 
 .. _module-activation:
 
 Module Activation
 =================
-License files to activate the Advanced Access Control, Federation and WebSEAL Reverse Proxy modules are imported in 
-this step. Subsequent module configuration is dependant on one or more of these licenses being applied to an appliance
-or container. An example configuration is:
 
 
-.. autoclass:: src.ibmvia_autoconf.configure.IVIA_Configurator.Module_Activations
-   :members:
+.. raw:: html
+   :file: schema_html/base/module_activations.html
 
+|br|
 
 .. _advanced-tuning-parameters:
 
-Advanced tuning parameters
+Advanced Tuning Parameters
 ==========================
-Advanced Tuning Parameters can be set on an appliance to configure additional settings not exposed by the LMI. Any 
-required advanced tuning parameters for your deployment will be communicated to you via support. An example 
-configuration is:
 
 
-.. autoclass:: src.ibmvia_autoconf.configure.IVIA_Configurator.Advanced_Tuning_Parameter
-   :members:
+.. raw:: html
+   :file: schema_html/base/advanced_tuning_parameter.html
 
+|br|
 
 Configuration Snapshots
 =======================
-A snapshot can be applied to both Container and Appliance deployments to restore a previous configuration state. This 
-is done via a signed archive file, generated by the deployment you are trying to preserve / re-create.
 
 
-.. autoclass:: src.ibmvia_autoconf.configure.IVIA_Configurator.Snapshot
-   :members:
+.. raw:: html
+   :file: schema_html/base/snapshot.html
 
+|br|
 
 Extensions
 ==========
-Extensions are used to install third party applications, such as platform monitoring tools, onto
-a Verify Identity Access appliance. An extension consists of:
-- A signed installation package from IBM Security Verify Identity Access App-Xchange
-- Some configuration properties in key/value format
-- Optionally, additional binaries (RPM, ZIP, ect) required by the extension.
 
-The specific properties required to install an extension will change based on the type of extension being
-installed. Administrators can use a Web Browser to inspect HTTP requests when uploading an 
-extension to a Verify Identity Access appliance to determine which properties are required for their 
-particular extension.
 
-.. autoclass:: src.ibmvia_autoconf.configure.IVIA_Configurator.Extensions
-   :members:
+.. raw:: html
+   :file: schema_html/base/extensions.html
 
+|br|
 
 Remote Syslog
 =============
-The remote system logging capabilities of Verify Identity Access deployments can be configured with this 
-option. Administrators are able to define external servers where logs for Verify Identity Access sub-components 
-should be forwarded to.
 
-.. autoclass:: src.ibmvia_autoconf.configure.IVIA_Configurator.Remote_Syslog
-   :members:
+
+.. raw:: html
+   :file: schema_html/base/remote_syslog.html
+
+|br|
+
+Managment Certificate
+=====================
+
+.. raw:: html
+   :file: schema_html/base/lmi_certificate.html
+
+|br|

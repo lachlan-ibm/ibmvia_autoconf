@@ -20,15 +20,25 @@ from .util.data_util import FILE_LOADER, optional_list, KUBE_CLIENT_SLEEP
 from .util.configure_util import deploy_pending_changes, creds, old_creds, ext_user_creds, mgmt_base_url, config_yaml
 from .util.constants import HEADERS, LOG_LEVEL
 
-logging.basicConfig(stream=sys.stdout, level=os.environ.get(LOG_LEVEL, logging.DEBUG))
+logging.basicConfig(stream=sys.stdout, level=os.environ.get(LOG_LEVEL, logging.INFO))
 _logger = logging.getLogger(__name__)
 
 class IVIA_Configurator(object):
     #Only restart containers if we import PKI or apply a license
     needsRestart = False
+    tlsVerify = os.environ.get('PYIVIA_VERIFY_TLS_LMI', 'false').lower() \
+                                                in ["true", "yes", "t", "1", "on"]
 
     def old_password(self, config_file):
-        rsp = requests.get(mgmt_base_url(config_file), auth=old_creds(config_file), headers=HEADERS, verify=False)
+        old_cred = old_creds(config_file)
+        if not old_cred:
+            return
+        
+        rsp = requests.get(
+                                    mgmt_base_url(config_file),
+                                    auth=old_cred,
+                                    headers=HEADERS,
+                                    verify=self.tlsVerify)
         if rsp.status_code == 403:
             return False
         return True
@@ -38,7 +48,7 @@ class IVIA_Configurator(object):
         url = mgmt_base_url(config_file)
         for _ in range(12):
             try:
-                rsp = requests.get(url, verify=False, allow_redirects=False, timeout=6)
+                rsp = requests.get(url, verify=self.tlsVerify, allow_redirects=False, timeout=6)
                 _logger.debug("\trsp.sc={}; rsp.url={}".format(rsp.status_code, rsp.headers.get('Location', 'NULL')))
                 if rsp.status_code == 302 and 'Location' in rsp.headers and '/core/login' in rsp.headers['Location']:
                     _logger.info("LMI returning login page")
@@ -52,6 +62,8 @@ class IVIA_Configurator(object):
     def _deploy_if_needed(self):
         r = None if self.needsRestart == True else \
                 self.factory.get_system_settings().configuration.get_pending_changes()
+        if r == None or not hasattr(r, 'success') or not hasattr(r, 'json'):
+            return
         if self.needsRestart == True or \
                         (r.success == True and 'changes' in r.json and len(r.json['changes']) > 0):
             deploy_pending_changes(self.factory, self.config)
@@ -79,7 +91,9 @@ class IVIA_Configurator(object):
         'Password to update for the Administrator user.'
 
     def set_admin_password(self, old, new):
-
+        if old[1] == None or new[1] == None:
+            _logger.debug("Old and new passwords must be specified to update")
+            return
         response = self.factory.get_system_settings().sysaccount.update_admin_password(old_password=old[1], password=new[1])
         if response.success == True:
             _logger.info("Successfully updated admin password")
@@ -267,7 +281,7 @@ class IVIA_Configurator(object):
         personal_parsed_file = optional_list(FILE_LOADER.read_file(cert.p12_file))[0]
         rsp = ssl.import_personal(db_name, 
                                     file_path=os.path.abspath(personal_parsed_file['path']), 
-                                    password=cert.get("secret", ""))
+                                    password=cert.get("secret", ""), label=cert.name)
         if rsp.success == True:
             _logger.info("Successfully uploaded {} personal certificate to {}".format(
                 personal_parsed_file['name'], db_name))
@@ -276,6 +290,18 @@ class IVIA_Configurator(object):
             _logger.error("Failed to upload {} personal certificate to {}\n{}".format(
                personal_parsed_file['path'], db_name, rsp.data))
 
+    def _import_certificates(self, database): 
+        if database.personal_certificates:
+                    for cert in database.personal_certificates:
+                        self._import_personal_cert(database.name, cert)
+        if database.signer_certificates:
+            for fp in database.signer_certificates:
+                signer_parsed_files = FILE_LOADER.read_files(fp)
+                for parsed_file in signer_parsed_files:
+                    self._import_signer_certs(database.name, parsed_file)
+        if database.load_certificates:
+            for item in database.load_certificates:
+                self._load_signer_certificates(database.name, item.server, item.port, item.label)
 
     class SSL_Certificates(typing.TypedDict):
         '''
@@ -296,19 +322,23 @@ class IVIA_Configurator(object):
 
         '''
 
-        class Personal_Certificate(typing.TypedDict):
-            path: str
-            'Path to file to import as a personal certificate.'
-            secret: typing.Optional[str]
-            'Optional secret to decrypt personal certificate.'
-
-        class Load_Certificate(typing.TypedDict):
+        class Load_Certificate(typing.TypedDict): # type: ignore
             server: str
             'Domain name or address of web service.'
             port: int
             'Port Web service is listening on.'
             label: str
             'Name of retrieved X509 certificate alias in SSL database.'
+            
+        class Personal_Certificate(typing.TypedDict):
+            name: typing.Optional[str]
+            'Optional label to include when importing the certificate. If this is not present the CN X.500 attribute is used.'  # type: ignore
+            p12_file: str
+            'Path to PKCS12 file to import as a personal certificate/key.'
+            secret: typing.Optional[str]
+            'Optional secret to decrypt personal certificate.'
+
+
 
         name: typing.Optional[str]
         'Name of SSL database to configure. If database does not exist it will be created. Either ``name`` or ``kdb_file`` must be defined.'
@@ -329,7 +359,7 @@ class IVIA_Configurator(object):
         if ssl_config:
             old_databases = [d['id'] for d in ssl.list_databases().json]
             for database in ssl_config:
-                if database.name != None: # Create the database
+                if database.name: # Create the database
                     if database.name not in old_databases:
                         rsp = ssl.create_database(database.name, db_type='kdb')
                         if rsp.success == True:
@@ -339,7 +369,7 @@ class IVIA_Configurator(object):
                             _logger.error("Failed to create {} SSL Certificate database".format(
                                 database.name))
                             continue
-                elif database.kdb_file != None and database.sth_file != None: #Import the database
+                elif database.kdb_file and database.sth_file: #Import the database
                     kdb_f = optional_list(FILE_LOADER.read_file(database.kdb_file))[0]
                     sth_f = optional_list(FILE_LOADER.read_file(database.sth_file))[0]
                     rsp = ssl.import_database(kdb_file=kdb_f.get("path"), sth_file=sth_f.get("path"))
@@ -351,17 +381,7 @@ class IVIA_Configurator(object):
                 else:
                     _logger.error("SSL Database config provided but cannot be identified: {}".format(
                                                                                 json.dumps(database, indent=4)))
-                if database.personal_certificates:
-                    for cert in database.personal_certificates:
-                        self._import_personal_cert(database.name, cert)
-                if database.signer_certificates:
-                    for fp in database.signer_certificates:
-                        signer_parsed_files = FILE_LOADER.read_files(fp)
-                        for parsed_file in signer_parsed_files:
-                            self._import_signer_certs(database.name, parsed_file)
-                if database.load_certificates:
-                    for item in database.load_certificates:
-                        self._load_signer_certificates(database.name, item.server, item.port, item.label)
+                self._import_certificates(database)
         self._deploy_if_needed()
 
 
@@ -523,7 +543,7 @@ class IVIA_Configurator(object):
                    - "anotherUser"
 
         '''
-        class Management_User(typing.TypedDict):
+        class Management_User(typing.TypedDict):  # type: ignore
             operation: str
             'Operation to perform with user. ``add`` | ``update`` | ``delete``.'
             name: str
@@ -534,7 +554,7 @@ class IVIA_Configurator(object):
             'Optional list of groups to add user to.'
 
 
-        class Management_Group(typing.TypedDict):
+        class Management_Group(typing.TypedDict):  # type: ignore
             '''
             .. note:: Groups are created before users; therefore if a user is being created and added to a group then this should be done in the user configuration entry.
             '''
@@ -608,20 +628,20 @@ class IVIA_Configurator(object):
 
         '''
 
-        class Role(typing.TypedDict):
-            class User(typing.TypedDict):
+        class Role(typing.TypedDict):  # type: ignore
+            class User(typing.TypedDict):  # type: ignore
                 name: str
                 'Name of user'
                 type: str
                 'Type of user. ``local`` | ``remote``.'
 
-            class Group(typing.TypedDict):
+            class Group(typing.TypedDict):  # type: ignore
                 name: str
-                'name of group.'
+                'Name of group.'
                 type: str
                 'Type of group. ``local`` | ``remote``.'
 
-            class Feature(typing.TypedDict):
+            class Feature(typing.TypedDict):  # type: ignore
                 name: str
                 'Name of feature.'
                 access: str
@@ -672,9 +692,9 @@ class IVIA_Configurator(object):
 
         '''
 
-        class LDAP(typing.TypedDict):
+        class LDAP(typing.TypedDict):  # type: ignore
             host: str
-            'Specifies the name of the LDAP server. '
+            'Specifies the name of the LDAP server.'
             port: str
             'Specifies the port over which to communicate with the LDAP server.'
             ssl: bool
@@ -686,7 +706,7 @@ class IVIA_Configurator(object):
             user_attribute: str
             'Specifies the name of the LDAP attribute which holds the supplied authentication user name of the user.'
             group_member_attribute: str
-            'Specifies the name of the LDAP attribute which is used to hold the members of a group. '
+            'Specifies the name of the LDAP attribute which is used to hold the members of a group.'
             base_dn: str
             'Specifies the base DN which is used to house all administrative users.'
             admin_group_dn: str
@@ -708,7 +728,7 @@ class IVIA_Configurator(object):
             ssh_pubkey_auth_attribute: str
             'Specifies the name of the LDAP attribute which contains a user\'s public key data. This field is required if SSH public key authentication is enabled.'
 
-        class OIDC(typing.TypedDict):
+        class OIDC(typing.TypedDict):  # type: ignore
             client_id: str
             'The OIDC Client Identifier.'
             client_secret: str
@@ -825,13 +845,15 @@ class IVIA_Configurator(object):
                             atp.name, rsp.data))
                 elif atp.operation == "update":
                     exists = False
+                    uuid = None
                     for p in old_atps:
                         if p['key'] == atp.name:
+                            uuid = p['uuid']
                             exists = True
                             break
                     rsp = None
                     if exists == True:
-                        rsp = self.factory.get_system_settings().advanced_tuning.update_parameter(
+                        rsp = self.factory.get_system_settings().advanced_tuning.update_parameter(atp_id=uuid,
                             key=atp.name, value=atp.value, comment=atp.description)
                     else:
                         rsp = self.factory.get_system_settings().advanced_tuning.create_parameter(
@@ -943,7 +965,7 @@ class IVIA_Configurator(object):
 
         '''
 
-        class Forwarder(typing.TypedDict):
+        class Forwarder(typing.TypedDict):  # type: ignore
             name: str
             'The name of the log file source. The list of available source names can be retrieved via the ``source_names`` Web service.'
             tag: str
@@ -951,7 +973,7 @@ class IVIA_Configurator(object):
             facility: str
             'The syslog facility which will be used when sending messages to the remote syslog server. Valid values include ``kern``, ``user``, ``mail``, ``daemon``, ``auth``, ``syslog``, ``lpr``, ``news``, ``uucp``, ``cron``, ``security``, ``ftp``, ``ntp``, ``logaudit``, ``logalert``, ``clock``, ``local0``, ``local1``, ``local2``, ``local3``, ``local4``, ``local5``, ``local6`` and ``local7``.'
             severity: int
-            'The syslog severity which will be used when sending messages to the remote syslog server. Valid values include ``emerg``, ``alert``, ``crit``, ``error``, ``warning``, ``notice``, ``info`` and ``debug``. '
+            'The syslog severity which will be used when sending messages to the remote syslog server. Valid values include ``emerg``, ``alert``, ``crit``, ``error``, ``warning``, ``notice``, ``info`` and ``debug``.'
 
         server: str
         'The IP address or host name of the remote syslog server.'
@@ -985,6 +1007,35 @@ class IVIA_Configurator(object):
                     _logger.error("Failed to update the remote syslog configuration with:\n{}\n{}".format(
                         json.dumps(server, indent=4) , rsp.data))
 
+
+    class Management_Certificate(typing.TypedDict):
+        '''
+
+        Example::
+
+            management_certificate:
+              p12: "/path/to/certificate.p12"
+              password: "passw0rd"
+
+        '''
+
+        p12: str
+        'The PKCS12 file containing the certificate and private key.'
+        password: typing.Optional[str]
+        'The password used to protect the PKCS12 file. IVIA requires the file to be password protected.'
+
+    def import_lmi_certificate(self, config):
+        if config and config.lmi_certificate:
+            lmiP12 = optional_list(FILE_LOADER.read_file(config.lmi_certificate.p12))[0].get('path', 'INVALID')
+            rsp = self.factory.get_system_settings().mgmt_certificate.update_certificate(lmiP12, 
+                                                                            password=config.lmi_certificate.password)
+            if rsp.success == True:
+                _logger.info("Successfully updated the LMI certificate.")
+                self.needsRestart = True
+            else:
+                _logger.error("Failed to update the LMI certificate with PKCS12 file:: {}\n{}".format(
+                                                                                        lmiP12, rsp.data))
+
     def configure_base(self):
         base_config = None
         deployment = None
@@ -1008,9 +1059,14 @@ class IVIA_Configurator(object):
         if ext_user_creds(self.config) != creds(self.config):
             _logger.debug("Swapping to given external user credentials . . . ")
             self.factory = pyivia.Factory(mgmt_base_url(self.config), *ext_user_creds(self.config))
-        deployment(self.config, self.factory).configure()
+        d = deployment(self.config, self.factory)
+        d.configure() # Set up HVDB before activating modules in container
         self.activate_appliance(base_config)
+        self.advanced_tuning_parameters(base_config)
         self.install_extensions(base_config)
+        if isinstance(d, APPLIANCE): # DC and OP extension require product activation...
+            d.container_management(base_config)
+        self.import_lmi_certificate(base_config) #Update LMI cert after hostname changes are applied
         self._deploy_if_needed()
 
     def _check_aac_fed_licenses(self):
@@ -1059,12 +1115,13 @@ class IVIA_Configurator(object):
         self._deploy_if_needed()
 
     def first_setps(self):
-        if self.old_password(self.config):
-            self.factory = pyivia.Factory(mgmt_base_url(self.config), *old_creds(self.config))
+        old_credentials = old_creds(self.config)
+        if old_credentials:
+            self.factory = pyivia.Factory(mgmt_base_url(self.config), *old_credentials)
             self.accept_eula()
             self.fips(self.config)
             self.complete_setup()
-            self.set_admin_password(old_creds(self.config), creds(self.config))
+            self.set_admin_password(old_credentials, creds(self.config))
             self.factory = pyivia.Factory(mgmt_base_url(self.config), *creds(self.config))
         else:
             self.factory = pyivia.Factory(mgmt_base_url(self.config), *creds(self.config))

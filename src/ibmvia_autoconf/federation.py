@@ -4,7 +4,6 @@
 """
 
 import json
-import os
 import logging
 import typing
 import copy
@@ -15,6 +14,7 @@ from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, to_cam
 
 _logger = logging.getLogger(__name__)
 
+"""
 class Federation_Common(typing.TypedDict):
     '''
     Data structures which are shared between the different types of Federation protocols/roles.
@@ -292,7 +292,7 @@ class Federation_Common(typing.TypedDict):
         'The hostname of the runtime.'
         port: str
         'The port of the runtime. Must be the SSL port.'
-
+"""
 ############################################################################################################
 ############################################################################################################
 ######################### Configurator #####################################################################
@@ -301,8 +301,8 @@ class Federation_Common(typing.TypedDict):
 
 class FED_Configurator(object):
 
-    factory = None
-    fed = None
+    #factory = None
+    #fed = None
     config = Map()
     restartWRPs = []
 
@@ -327,7 +327,7 @@ class FED_Configurator(object):
         else:
             return None
 
-
+    """
     class Point_Of_Contact_Profiles(typing.TypedDict):
         '''
         Example::
@@ -404,6 +404,7 @@ class FED_Configurator(object):
         'List of point of contact profiles to configure'
         active_profile: str
         'The name of the Point of Contact profile which should be the active profile. Only one profile can be active at a time.'
+    """
 
     def configure_poc(self, federation_config):
         if federation_config.point_of_contact != None:
@@ -414,7 +415,7 @@ class FED_Configurator(object):
                 #Convert keys from snake to camel case, also renaming nested key if we find it
                 for prop in ["sign_in_callbacks", "local_id_callbacks", "sign_out_callbacks", "authn_policy_callbacks"]:
                     if prop in methodArgs:
-                        methodArgs[to_camel_case(prop)] = remap_keys(methodArgs.pop(prop), {"module_reference_id", "moduleReferenceId"})
+                        methodArgs[to_camel_case(prop)] = remap_keys(methodArgs.pop(prop), {"module_reference_id": "moduleReferenceId"})
 
                 rsp = None; verb = None
                 if old_poc:
@@ -473,7 +474,7 @@ class FED_Configurator(object):
     def _chain_template_name_to_id(self, template_name, chain_templates):
         return optional_list(filter_list('name', template_name, chain_templates))[0].get('id', template_name)
 
-    def _remap_sts_chain_keys(self, chain, chain_templates, mapping_rules):
+    def _remap_sts_chain_keys(self, chain, chain_templates, mapping_rules) -> typing.Dict[str, typing.Any]:
         remap = {"issuer": "issuer_",
                     "validation_key": "validation_",
                     "signature": "sign_",
@@ -518,6 +519,7 @@ class FED_Configurator(object):
         del chain["chain_template"]
         return remap_keys(chain, remap)
 
+    """
     class Security_Token_Service(typing.TypedDict):
         '''
         Example::
@@ -678,6 +680,7 @@ class FED_Configurator(object):
         'List of STS chain templates to create or update.'
         chains: typing.Optional[typing.List[Chain]]
         'List of STS chains to create or update.'
+    """
 
     def configure_sts(self, federation_config):
         if federation_config.sts != None:
@@ -775,7 +778,7 @@ class FED_Configurator(object):
                     _logger.error("Failed to {} access policy:\n{}\n{}".format(verb, json.dumps(
                                                                                         policy, indent=4), rsp.data))
 
-
+    """
     class Alias_Service(typing.TypedDict):
         '''
         Example::
@@ -811,6 +814,7 @@ class FED_Configurator(object):
         'The baseDN to search for the user entry.'
         aliases: typing.Optional[typing.List[Alias]]
         'The SAML aliases to create.'
+    """
 
     def configure_alias_service(self, federation_config):
         if federation_config.alias_service:
@@ -833,7 +837,7 @@ class FED_Configurator(object):
                     rsp = None; verb = None
                     #Convert name to id if required
                     if alias['partner'] != None:
-                        alias['federation_id'] = existing_federations.get(alias.get("federation"), "UNKNOWN") + "|" + \
+                        alias['federation_id'] = str(existing_federations.get(alias.get("federation"), "UNKNOWN")) + "|" + \
                                     existing_federations.get(alias.pop("federation"), {}).get(alias.pop("partner"), "UNKNOWN")
                     else:
                         alias["federation_id"] = existing_federations.get(alias.pop("federation"), "UNKNOWN")
@@ -849,7 +853,7 @@ class FED_Configurator(object):
                         _logger.error("Failed to {} alias:\n{}\n{}".format(
                             verb, json.dumps(alias, indent=4), rsp.data))
 
-
+    """
     class Attribute_Sources(typing.TypedDict):
         '''
         Example::
@@ -889,6 +893,7 @@ class FED_Configurator(object):
 
         attribute_sources: typing.List[Attribute_Source]
         'List of attribute sources to create or update.'
+    """
 
     def configure_attribute_sources(self, federation_config):
         if "attribute_sources" in federation_config:
@@ -1065,14 +1070,14 @@ class FED_Configurator(object):
                             "validate_name_id_rsp": sigSetting.validation_options.validate_name_id_management_response
                         })
                 if partnerConfig and partnerConfig.soap_settings != None and \
-                                                    isinstance(partnerConfig.soap_settings.server_cert_validation, dict):
+                                                    isinstance(partnerConfig.soap_settings.server_cert_validation, Map):
                     methodArgs.update({
                             "soap_key_store": partnerConfig.soap_settings.server_cert_validation.store,
                             "soap_key_alias":  partnerConfig.soap_settings.server_cert_validation.label,
                             
                         })
                 if partnerConfig and partnerConfig.soap_settings != None and \
-                                                        isinstance(partnerConfig.soap_settings.client_auth_data, dict):
+                                                        isinstance(partnerConfig.soap_settings.client_auth_data, Map):
                     methodArgs.update({
                             "soap_client_auth_method": partnerConfig.soap_settings.client_auth_data.method,
                             "soap_client_auth_ba_user": partnerConfig.soap_settings.client_auth_data.basic_auth_username,
@@ -1379,6 +1384,7 @@ class FED_Configurator(object):
                 self._configure_federation_partner(fed_id, partner)
 
 
+    """
     class Federations(typing.TypedDict):
         '''
         Example::
@@ -1756,6 +1762,7 @@ class FED_Configurator(object):
 
         federations: typing.List[Federation]
         'List of federations and associated partner properties.'
+    """
 
     def configure_federations(self, federation_config):
         if federation_config.federations != None:
@@ -1780,7 +1787,7 @@ class FED_Configurator(object):
                     fed_objs = optional_list(self.fed.federations.list_federations().json)
                     fed_obj = optional_list(filter_list("name", federation.name, fed_objs))[0]
                     if fed_obj:
-                        export_file_path = config_base_dir() + '/' + federation.export_metadata
+                        export_file_path = str(config_base_dir()) + '/' + federation.export_metadata
                         rsp = self.fed.federations.export_federation_metadata(
                                 fed_id=fed_obj.get('id', "ID_MISSING"), metadata_file=export_file_path)
                         if rsp.success == True:
