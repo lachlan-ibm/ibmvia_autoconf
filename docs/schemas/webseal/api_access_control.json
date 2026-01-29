@@ -304,7 +304,7 @@
           "type": "string",
           "description": "The key label for the client-side certificate that is used when the system authenticates to the junctioned Web server."
         },
-        "gso_respource_group": {
+        "gso_resource_group": {
           "type": "string",
           "description": "The name of the GSO resource or resource group."
         },
@@ -567,14 +567,14 @@
         },
         "groups": {
           "type": "array",
-          "description": "The groups referenced by this policy. User must be a member of at least one group for this policy to be authorised. The default is no groups if not specified.",
+          "description": "The groups referenced by this policy. User must be a member of at least one group for this policy to be authorized. The default is no groups if not specified.",
           "items": {
             "type": "string"
           }
         },
         "attributes": {
           "type": "array",
-          "description": "The attribute matches referenced by this policy. Each attribute must be matched for this policy to be authorised. The default is no attributes if not specified.",
+          "description": "The attribute matches referenced by this policy. Each attribute must be matched for this policy to be authorized. The default is no attributes if not specified.",
           "items": {
             "type": "string"
           }

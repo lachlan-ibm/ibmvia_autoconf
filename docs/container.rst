@@ -92,7 +92,7 @@ of a deployment configuration is::
 
 Docker-Compose
 --------------
-If Verify Identity Access is deployed with Docker-Compose, then ``docker-compose`` clit tool can be used to manage runtime
+If Verify Identity Access is deployed with Docker-Compose, then ``docker-compose`` cli tool can be used to manage runtime
 containers when a snapshot needs to be promoted. The configurator can use the compose service names to request a restart 
 of runtime containers. If this functionality is used then the user running the configurator should have sufficient 
 privilege to restart docker containers. 

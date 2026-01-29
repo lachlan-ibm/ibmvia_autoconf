@@ -8,7 +8,7 @@ import typing
 
 from .util.constants import HEADERS
 from .util.configure_util import config_yaml, deploy_pending_changes
-from .util.data_util import Map, optional_list, filter_list, FILE_LOADER
+from .util.data_util import Map, optional_list, filter_list, prefix_keys, FILE_LOADER
 
 _logger = logging.getLogger(__name__)
 
@@ -434,6 +434,14 @@ class Appliance_Configurator(object):
             else:
                 _logger.error("Failed to set the runtime database with: {}\n{}".format(json.dumps(
                     config.runtime_database, indent=4), rsp.data))
+        if config.dsc != None:
+            dscConfig = {"dsc_" + k: v for k, v in config.dsc.items()}
+            rsp = self.appliance.get_system_settings().cluster.update_cluster(**dscConfig)
+            if rsp.success == True:
+                _logger.info("Successfully set the dsc configuration")
+            else:
+                _logger.error("Failed to set the dsc configuration with: {}\n{}".format(
+                                                json.dumps(config.dsc, indent=4), rsp.data))
         if config.cluster != None:
             rsp = self.appliance.get_system_settings().cluster.update_cluster(**config.cluster)
             if rsp.success == True:
@@ -441,7 +449,6 @@ class Appliance_Configurator(object):
             else:
                 _logger.error("Failed to set the cluster configuration with:{}\n{}".format(
                     json.dumps(config.cluster, indent=4), rsp.data))
-
 
     def _container_volumes(self, containers):
         if containers.volumes != None:

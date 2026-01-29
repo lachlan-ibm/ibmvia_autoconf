@@ -386,9 +386,9 @@
             "dn": "cn=testuser,dc=iswga"
           },
           {
-            "username": "aaascc",
+            "username": "aacuser",
             "password": "aac_user_password",
-            "dn": "cn=aaascc,dc=iswga"
+            "dn": "cn=aacuser,dc=iswga"
           }
         ],
         "reverse_proxies": [

@@ -39,13 +39,13 @@ These steps include:
        export LDAP_BIND_PASSWORD=betterThanPassw0rd
        export LDAP_SEC_PASSWORD=betterThanPassw0rd
 
-    .. note:: Module acivation codes can be replaced with a trial license. 
+    .. note:: Module activation codes can be replaced with a trial license. 
               See :ref:`instana demo<Installation of the Instana monitoring agent>` for trial license config example.
     .. note:: This deployment uses ``isam.myidp.ibm.com`` as a domain name for the management interface. You might need 
               to set a host file entry for your Operating System.
     |br|
     ``first_steps.yaml`` should be a file that exist in the working directory of the 
-    user running the configuration tool. The content of this file is expectd to be:
+    user running the configuration tool. The content of this file is expected to be:
 
      .. include:: ../examples/first_steps.yaml
         :literal:
@@ -88,11 +88,11 @@ These steps include:
        export LDAP_BIND_PASSWORD=betterThanPassw0rd
        export LDAP_SEC_PASSWORD=betterThanPassw0rd
 
-    .. note:: Module acivation codes can be replaced with a trial license. See 
+    .. note:: Module activation codes can be replaced with a trial license. See 
               :ref:`instana demo<Installation of the Instana monitoring agent>` for trial license config example.
     |br|
     ``appliance_first_steps.yaml`` should be a file that exist in the working directory of the 
-    user running the configuration tool. The content of this file is expectd to be:
+    user running the configuration tool. The content of this file is expected to be:
 
     .. include:: ../examples/appliance_first_steps.yaml
        :literal:
@@ -123,7 +123,7 @@ by running :ref:`First Steps (container deployment)`.
 The deployment can be tested with the ``testuser`` IVIA user account. The user is created in the reverse 
 proxy user registry, and can have password control and other account management capabilities applied.
 
-Once you have this scenario working you should try the "Identifier First Authetication" scenario for 
+Once you have this scenario working you should try the "Identifier First Authentication" scenario for 
 advanced login user experiences, include MMFA, passkey, and password authentication.
 
 .. collapse:: Expand for code example of webseal reverse proxy configuration
@@ -181,10 +181,10 @@ Base Snapshot
 -------------
 This configuration will accept the EULA, activate the modules of Verify Identity Access and enable OIDC 
 authentication to the management interface. Giving federated users access to the management interface can 
-be useful for compliance reasons (eg. ability to set mulit-factor authentication), however it can present 
+be useful for compliance reasons (eg. ability to set multi-factor authentication), however it can present 
 some challenges. 
 
-If contact with the identity provier is lost, there is no mechanism to regain access the the management 
+If contact with the identity provider is lost, there is no mechanism to regain access the the management 
 interface (or corresponding snapshot). Container deployments also often make use of the management 
 authorization feature to manage access for the ``cfgsvc`` account, which is responsible for pulling 
 images from the configuration service. Admins must ensure that federated admin users are in the appropriate 
@@ -203,7 +203,7 @@ groups and that group-to-feature management authorization mapping is performed f
        export IVIA_BASE_CODE="webseal activation code"
        export IVIA_AAC_CODE="access control activation code"
        export IVIA_FED_CODE="federations activation code"
-       export OIDC_API_TOKEN=TODO
+       export OIDC_API_TOKEN="api access token"
        export OIDC_CLIENT_ID=clientId
        export OIDC_CLIENT_SECRET=clientSecret
        export OIDC_WELL_KNOWN=https://www.myidp.ibm.com/.well-known/openid-configuration
@@ -215,7 +215,7 @@ groups and that group-to-feature management authorization mapping is performed f
             You might need to set a host file entry for your Operating System.
     |br|
     ``base_image.yaml`` should be a file that exist in the working directory of the 
-    user running the configuration tool. The content of this file is expectd to be:
+    user running the configuration tool. The content of this file is expected to be:
 
     .. include:: ../examples/snapshot_pipeline/base_image.yaml
        :literal:
@@ -310,7 +310,7 @@ Mobile Multi-Factor Authentication Cookbook
 ===========================================
 
 The mobile multi-facter authentication example follows the previously release cookbook deployment guide and adds in
-passkey and identifier-first authentiction scenarios. This guide will configure Verify Identity Access to 
+passkey and identifier-first authentication scenarios. This guide will configure Verify Identity Access to 
 demonstrate the transaction signing, context-base access and risk-based access capabilities of the product.
 
 It will aslo add an "advanced" login scenario to the WebSEAL html login template page which will permit username only login.
@@ -322,7 +322,7 @@ To successfully run this demo there are some prerequisites which your environmen
 
 * Deploy the user registry (ISDS/LDAP) and runtime database (HVDB).
 
-  * Temporary services can be deployed using the verify access demo containers, an exampele deployment is 
+  * Temporary services can be deployed using the verify access demo containers, an example deployment is 
     available `here <https://github.com/IBM-Security/verify-access-container-deployment/blob/master/kubernetes/ivia-minikube.yaml>`_.
 
 * [Optional] Deploy the Verify Identity Access Operator to manage runtime containers and configuration snapshots.
@@ -375,7 +375,7 @@ Mobile Multi-Factor Authentication scenario configuration:
         kubectl create configmap mmfaconfigvol --from-file=mmfa_config.yaml --from-file=mapping_rules.zip \
                 --from-file=reverse_proxy.zip --from-file=ssl_certificates.zip --from-file=template_files.zip
 
-    .. collapse:: Expand for YAML deloyment of ibmvia_autoconf on microk8s
+    .. collapse:: Expand for YAML deployment of ibmvia_autoconf on microk8s
 
         .. include:: ../examples/mmfa_demo/mmfa_demo_configurator.yaml
             :literal:
@@ -399,7 +399,7 @@ Mobile Multi-Factor Authentication scenario configuration:
 
     |br|
 
-    The mmfa scenario deployed by the above job creates two reverse proxy instances, which seperates tcp traffic 
+    The mmfa scenario deployed by the above job creates two reverse proxy instances, which separates tcp traffic 
     between browser and mmfa device runtime flows. Administrators should update integrations with external services (eg.
     push notification providers) with real values.
 

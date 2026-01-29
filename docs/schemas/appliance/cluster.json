@@ -15,6 +15,10 @@
     "cluster": {
       "$ref": "#/$defs/Cluster",
       "description": "Configuration for Verify Identity Access High Availability cluster nodes."
+    },
+    "dsc": {
+      "$ref": "#/$defs/DSC",
+      "description": "Configuration for the Verify Identity Access Distributed Session Cache."
     }
   },
   "$defs": {
@@ -113,6 +117,66 @@
         "sig_file",
         "primary_master"
       ]
+    },
+    "DSC": {
+      "type": "object",
+      "description": "Distributed Session Cache configuration.",
+      "properties": {
+        "external_clients": {
+          "type": "boolean",
+          "description": "A flag indicating whether clients that are external to the cluster will need to use the DSC."
+        },
+        "port": {
+          "type": "integer",
+          "description": "The port over which DSC communication will take place. This parameter is required if external_clients is set to true.",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "use_ssl": {
+          "type": "boolean",
+          "description": "A flag indicating whether or not SSL should be used when communicating with the DSC. This parameter is required if external_clients is set to true."
+        },
+        "ssl_keyfile": {
+          "type": "string",
+          "description": "The keyfile that will house the SSL certificates used by the DSC. This parameter is required if use_ssl is set to true."
+        },
+        "ssl_label": {
+          "type": "string",
+          "description": "The name of the SSL certificate that will be presented to clients. This parameter is optional and can only be set if ssl_keyfile is set."
+        },
+        "ssl_ciphers": {
+          "type": "string",
+          "description": "Comma separated list of SSL ciphers permitted for use in TLS connections to the DSC. Valid values include: \"RSA_WITH_SHA224\", \"RSA_WITH_SHA256\", \"RSA_WITH_SHA384\", \"RSA_WITH_SHA512\", \"ECDSA_WITH_SHA224\", \"ECDSA_WITH_SHA256\", \"ECDSA_WITH_SHA384\", and \"ECDSA_WITH_SHA512\"."
+        },
+        "tls_12_cipher_specs": {
+          "type": "string",
+          "description": "Comma separated list of TLS 1.2 cipher specs permitted for use in TLS connections to the DSC."
+        },
+        "tls_13_cipher_specs": {
+          "type": "string",
+          "description": "Comma separated list of TLS 1.3 cipher specs permitted for use in TLS connections to the DSC."
+        },
+        "worker_threads": {
+          "type": "integer",
+          "description": "The number of worker threads that will be used."
+        },
+        "maximum_session_lifetime": {
+          "type": "integer",
+          "description": "The maximum lifetime of sessions within the DSC."
+        },
+        "maximum_session_list": {
+          "type": "integer",
+          "description": "The maximum number of sessions to return when a \"listSessions\" request is made to the DSC. Note this may have an impact on performance."
+        },
+        "client_grace_period": {
+          "type": "integer",
+          "description": "When a client is shut down we give the client a grace period (in seconds) to restart and register an interest in a session again before we remove the session from the session cache. This will give the client a chance to restart without losing sessions from the server. The value specified here should be similar to the idle timeout value for the session."
+        },
+        "connection_idle_timeout": {
+          "type": "integer",
+          "description": "The maximum length of time that a connection from a client can remain idle before it is closed by the server. A value of 0 indicates that connections will not be reused. The default value is 0."
+        }
+      }
     }
   },
   "examples": [

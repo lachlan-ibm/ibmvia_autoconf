@@ -172,7 +172,7 @@
         "admin_cert_lifetime": 1460,
         "ssl_compliance": "FIPS 140-2",
         "isam": {
-          "host": "isvaconfig",
+          "host": "iviaconfig",
           "port": 443
         },
         "stanza_configuration": [
