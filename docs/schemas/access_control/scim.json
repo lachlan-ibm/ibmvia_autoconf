@@ -105,7 +105,25 @@
           ]
         },
         "properties": {
-          "description": "Schema unique properties to apply. The structure depends on the schema URI."
+          "description": "Schema unique properties to apply. The structure depends on the schema URI.",
+          "oneOf": [
+            {
+              "description": "Properties for urn:ietf:params:scim:schemas:core:2.0:User",
+              "$ref": "#/$defs/UserSchemaProperties"
+            },
+            {
+              "description": "Properties for urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+              "$ref": "#/$defs/EnterpriseSchemaProperties"
+            },
+            {
+              "description": "Properties for urn:ietf:params:scim:schemas:core:2.0:Group",
+              "$ref": "#/$defs/GroupSchemaProperties"
+            },
+            {
+              "description": "Properties for urn:ietf:params:scim:schemas:extension:isam:1.0:User",
+              "$ref": "#/$defs/IVIAUserSchemaProperties"
+            }
+          ]
         }
       },
       "required": [
@@ -275,7 +293,20 @@
           "description": "The name of the SCIM attribute being mapped."
         },
         "mapping": {
-          "description": "For a simple SCIM attribute - the mapping for this attribute. For a complex SCIM attribute this can be an array of mappings."
+          "description": "For a simple SCIM attribute - the mapping for this attribute. For a complex SCIM attribute this can be an array of mappings.",
+          "oneOf": [
+            {
+              "description": "Single mapping for simple SCIM attribute",
+              "$ref": "#/$defs/Mapping"
+            },
+            {
+              "description": "Array of mappings for complex SCIM attribute",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Mapping"
+              }
+            }
+          ]
         }
       },
       "required": [
