@@ -39,13 +39,56 @@
           "description": "An identifier for the template on which to base this federation."
         },
         "configuration": {
-          "description": "The protocol-specific configuration data. The contents will be different for each protocol and role combination."
+          "description": "The protocol-specific configuration data. The contents will be different for each protocol and role combination.",
+          "oneOf": [
+            {
+              "description": "OIDC Relying Party configuration",
+              "$ref": "oidc_relying_party.json"
+            },
+            {
+              "description": "SAML 2.0 Identity Provider configuration",
+              "$ref": "saml20_identity_provider.json"
+            },
+            {
+              "description": "SAML 2.0 Service Provider configuration",
+              "$ref": "saml20_service_provider.json"
+            },
+            {
+              "description": "WS-Federation Identity Provider configuration",
+              "$ref": "wsfed_identity_provider.json"
+            },
+            {
+              "description": "WS-Federation Service Provider configuration",
+              "$ref": "wsfed_service_provider.json"
+            }
+          ]
         },
         "partners": {
           "type": "array",
           "description": "List of federation partners to create for this federation.",
           "items": {
-            "type": "object"
+            "oneOf": [
+              {
+                "description": "OIDC Relying Party partner",
+                "$ref": "oidc_relying_party_partner.json"
+              },
+              {
+                "description": "SAML 2.0 Identity Provider partner",
+                "$ref": "saml20_identity_provider_partner.json"
+              },
+              {
+                "description": "SAML 2.0 Service Provider partner",
+                "$ref": "saml20_service_provider_partner.json"
+              },
+              {
+                "description": "WS-Federation Identity Provider partner",
+                "$ref": "wsfed_identity_provider_partner.json"
+              },
+              {
+                "description": "WS-Federation Service Provider partner",
+                "$ref": "wsfed_service_provider_partner.json"
+              }
+            ]
           }
         },
         "import_partners": {
