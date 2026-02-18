@@ -57,9 +57,9 @@
       "description": "Optional property to attempt to force a reconfiguration of the runtime component if it is already configured. This is not possible if there are reverse proxy objects.",
       "default": false
     },
-    "password": {
+    "embedded_root_password": {
       "type": "string",
-      "description": "The password to update the sec_master user's secret.",
+      "description": "The password to update the embedded LDAP server's root user secret. If provided and the runtime component is in the ``Available`` state, this property can be used to modify the embedded LDAP root user ``cn=root,secAuthority=Default`` secret.",
       "format": "password"
     }
   },
