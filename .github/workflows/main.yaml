@@ -23,15 +23,22 @@ jobs:
       run: |
         pip install -r dev-requirements.txt
 
-    # Build the doc
+    - name: Install hunspell
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y hunspell hunspell-en-us
+
+    - name: Run spell check
+      run: |
+        cd docs && bash spellcheck.sh
+
     - name: Build the project
       run: |
         cd docs && bash generate_schema_html.sh && cd ..
         sphinx-build docs html
         python -m build
 
-    # Push to pypi
-    - name: Publish python module
+    - name: Publish module
       run: |
         python -m build
         twine upload --verbose dist/* -u $PYPI_API_USER -p $PYPI_API_KEY
@@ -40,8 +47,7 @@ jobs:
         PYPI_API_KEY: ${{ secrets.PYPI_API_KEY }}
       if: github.ref == 'refs/heads/stable'
 
-    # Push the HTML to github-pages
-    - name: Deploy
+    - name: Publish docs
       uses: peaceiris/actions-gh-pages@v3
       with:
         publish_branch: gh-pages

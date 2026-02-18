@@ -16,7 +16,7 @@
     },
     "session_timeout": {
       "type": "integer",
-      "description": "The length of time, in minutes, that a session can remain idle before it is deleted (valid values0 - 720). A default value of 120 is used.",
+      "description": "The length of time, in minutes, that a session can remain idle before it is deleted (valid values 0 - 720). A default value of 120 is used.",
       "minimum": 0,
       "maximum": 720,
       "default": 120

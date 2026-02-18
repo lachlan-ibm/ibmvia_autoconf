@@ -1,7 +1,7 @@
 Federations Configuration
 #########################
 The Federation module is used to integrate Verify Identity Access with third party applications to provide or 
-accept identity information. This module can be use fro both: supplying third party applications with 
+accept identity information. This module can be use for both: supplying third party applications with 
 identity information (Verify Identity Access is the identity source); or accepting identity information (Verify Identity 
 Access is the identity consumer).
 

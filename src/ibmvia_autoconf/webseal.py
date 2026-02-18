@@ -601,6 +601,12 @@ class WEB_Configurator(object):
                                                                                 json.dumps(entry, indent=4), rsp.data))
 
 
+    def _update_internal_ldap_secret(self, ldap_secret):
+        rsp = self.web.runtime_component.update_embedded_ldap_password(ldap_secret)
+        if rsp.success == True:
+            _logger.info("Successfully updated the embedded LDAP secret")
+        else:
+            _logger.error("Failed to update the embedded LDAP secret:\n{}".format(rsp.data))
 
     class Runtime(typing.TypedDict):
         '''
@@ -705,6 +711,8 @@ class WEB_Configurator(object):
         if rte_status.json['status'] == "Available":
             _logger.info("RTE already configured, skipping.")
             return
+        if runtime.password:
+            return self._update_internal_ldap_secret(runtime.password)
 
         config = {"ps_mode": runtime.policy_server,
                   "user_registry": runtime.user_registry,

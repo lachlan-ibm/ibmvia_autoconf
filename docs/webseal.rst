@@ -177,8 +177,8 @@ Password Strength Rules
 
 .. _webseal_rsa_config:
 
-RSA SecurID Authenticaton
-=========================
+RSA SecurID Authentication
+==========================
 
 
 .. raw:: html

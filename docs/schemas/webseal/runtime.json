@@ -172,7 +172,7 @@
         "admin_cert_lifetime": 1460,
         "ssl_compliance": "FIPS 140-2",
         "isam": {
-          "host": "isvaconfig",
+          "host": "iviaconfig",
           "port": 443
         },
         "stanza_configuration": [
@@ -189,6 +189,13 @@
             "stanza": "server:MyFederatedDirectory"
           }
         ]
+      }
+    },
+    {
+      "runtime": {
+        "password": "newEmbeddedLdapPassw0rd",
+        "admin_id": "sec_master",
+        "admin_password": "newEmbeddedLdapPassw0rd"
       }
     }
   ]

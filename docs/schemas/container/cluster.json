@@ -114,6 +114,14 @@
           "type": "string",
           "description": "The comma separated list of permitted SSL algorithms for TLS connections to the DSC."
         },
+        "tls_12_cipher_specs": {
+          "type": "string",
+          "description": "The comma separated list of permitted TLS 1.2 cipher specs for established TLS connections to the DSC."
+        },
+        "tls_13_cipher_specs": {
+          "type": "string",
+          "description": "The comma separated list of permitted TLS 1.3 cipher specs for established TLS connections to the DSC."
+        },
         "worker_threads": {
           "type": "integer",
           "description": "The number of worker threads allocated to processing requests.",
