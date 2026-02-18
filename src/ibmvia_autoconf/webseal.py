@@ -710,40 +710,40 @@ class WEB_Configurator(object):
                 return
         elif rte_status.json['status'] == "Available":
             _logger.info("RTE already configured, skipping configuration.")
-            if runtime.password:
-                self._update_internal_ldap_secret(runtime.password)
-            return
+            if runtime.embedded_root_password:
+                self._update_internal_ldap_secret(runtime.embedded_root_password)
 
-        config = {"ps_mode": runtime.policy_server,
-                  "user_registry": runtime.user_registry,
-                  "ldap_suffix": runtime.suffix,
-                  "clean_ldap": runtime.clean_ldap,
-                  "isam_domain": runtime.domain,
-                  "admin_password": runtime.admin_password,
-                  "admin_cert_lifetime": runtime.admin_cert_lifetime,
-                  "ssl_compliance": runtime.ssl_compliance
-                }
-        if runtime.ldap:
-            config.update({
-                        "ldap_host": runtime.ldap.host,
-                        "ldap_port": runtime.ldap.port,
-                        "ldap_dn": runtime.ldap.dn,
-                        "ldap_password": runtime.ldap.dn_password,
-                        "ldap_suffix": runtime.ldap.suffix,
-                        "ldap_ssl_db": runtime.ldap.key_file,
-                        "ldap_ssl_label": runtime.ldap.cert_label
-                    })
-        if runtime.isam:
-            config.update({
-                        "isam_host": runtime.isam.host,
-                        "isam_port": runtime.isam.prt
-                    })
-        rsp = self.web.runtime_component.configure(**config)
-        if rsp.success == True:
-            _logger.info("Successfully configured Reverse Proxy Runtime Policy Server")
-        else:
-            _logger.error("Failed to configure Reverse Proxy Runtime Policy Server with config:\n{}\n{}".format(
-                json.dumps(runtime, indent=4), rsp.data))
+        if rte_status.json['status'] == "Unconfigured" or runtime.override_config == True:
+            config = {"ps_mode": runtime.policy_server,
+                    "user_registry": runtime.user_registry,
+                    "ldap_suffix": runtime.suffix,
+                    "clean_ldap": runtime.clean_ldap,
+                    "isam_domain": runtime.domain,
+                    "admin_password": runtime.admin_password,
+                    "admin_cert_lifetime": runtime.admin_cert_lifetime,
+                    "ssl_compliance": runtime.ssl_compliance
+                    }
+            if runtime.ldap:
+                config.update({
+                            "ldap_host": runtime.ldap.host,
+                            "ldap_port": runtime.ldap.port,
+                            "ldap_dn": runtime.ldap.dn,
+                            "ldap_password": runtime.ldap.dn_password,
+                            "ldap_suffix": runtime.ldap.suffix,
+                            "ldap_ssl_db": runtime.ldap.key_file,
+                            "ldap_ssl_label": runtime.ldap.cert_label
+                        })
+            if runtime.isam:
+                config.update({
+                            "isam_host": runtime.isam.host,
+                            "isam_port": runtime.isam.prt
+                        })
+            rsp = self.web.runtime_component.configure(**config)
+            if rsp.success == True:
+                _logger.info("Successfully configured Reverse Proxy Runtime Policy Server")
+            else:
+                _logger.error("Failed to configure Reverse Proxy Runtime Policy Server with config:\n{}\n{}".format(
+                    json.dumps(runtime, indent=4), rsp.data))
 
         if runtime.stanza_configuration != None:
             self._runtime_stanza(runtime.stanza_configuration)
