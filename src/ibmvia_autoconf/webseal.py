@@ -708,8 +708,10 @@ class WEB_Configurator(object):
             else:
                 _logger.error("RTE cannot be unconfigured, will not override config")
                 return
-        if rte_status.json['status'] == "Available":
-            _logger.info("RTE already configured, skipping.")
+        elif rte_status.json['status'] == "Available":
+            _logger.info("RTE already configured, skipping configuration.")
+            if runtime.password:
+                self._update_internal_ldap_secret(runtime.password)
             return
         if runtime.password:
             return self._update_internal_ldap_secret(runtime.password)
