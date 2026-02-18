@@ -190,6 +190,13 @@
           }
         ]
       }
+    },
+    {
+      "runtime": {
+        "password": "newEmbeddedLdapPassw0rd",
+        "admin_id": "sec_master",
+        "admin_password": "newEmbeddedLdapPassw0rd"
+      }
     }
   ]
 }
