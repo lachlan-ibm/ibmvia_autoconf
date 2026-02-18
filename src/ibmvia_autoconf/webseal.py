@@ -712,7 +712,6 @@ class WEB_Configurator(object):
             _logger.info("RTE already configured, skipping configuration.")
             if runtime.embedded_root_password:
                 self._update_internal_ldap_secret(runtime.embedded_root_password)
-            return
         else: #Not available, so we can configure it
             config = {"ps_mode": runtime.policy_server,
                     "user_registry": runtime.user_registry,
