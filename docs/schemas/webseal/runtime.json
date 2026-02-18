@@ -56,6 +56,11 @@
       "type": "boolean",
       "description": "Optional property to attempt to force a reconfiguration of the runtime component if it is already configured. This is not possible if there are reverse proxy objects.",
       "default": false
+    },
+    "password": {
+      "type": "string",
+      "description": "The password to update the sec_master user's secret.",
+      "format": "password"
     }
   },
   "required": [
