@@ -54,6 +54,12 @@ must be updated with deployment specific parameters, usually this is network add
                       for management authentication. If external authentication has previously been configured, then
                       the credentials should be set as the `IVIA_MGMT_USER` and `IVIA_MGMT_PWD` properties.
 - `IVIA_EXT_PWD` :: The administrator password (or API token) to authenticate to the IVIA LMI as `IVIA_EXT_USER`.
+- `ISVA_CONFIGURATOR_LOG_LEVEL` :: The log level to use for the configurator. Default is `INFO`. Valid values are 
+                                  `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
+- `ISVA_CONFIGURATOR_LOG_FILE` :: The path to the log file to write to. If not specified, logs will be written to 
+                                  stdout.
+- `ISVA_CONFIGURATOR_LOG_FORMAT` :: The format to use for the log messages. Default is `%(message)s`.
+
 
 ## Deployment
 ### Local environment

@@ -7,14 +7,29 @@ from typing import Optional, Tuple
 from . import constants as const
 from .data_util import Map, FileLoader, CustomLoader, get_kube_client, KUBE_CLIENT_SLEEP
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+log_level = logging.INFO
+if const.LOG_LEVEL in os.environ.keys():
+    log_level = os.environ.get(const.LOG_LEVEL)
+elif const.LEGACY_LOG_LEVEL in os.environ.keys():
+    ll = os.environ.get(const.LEGACY_LOG_LEVEL)
+log_file = None
+if const.LOG_FILE in os.environ.keys():
+    log_file = os.environ.get(const.LOG_FILE)
+
+log_fmt = "%(asctime)s - %(levelname)s - %(message)s"
+if const.LOG_FORMAT in os.environ.keys():
+    env_fmt = str(os.environ.get(const.LOG_FORMAT))
+    log_fmt = "{\"time\": %(asctime)-s, \"level\": %(levelname)-s, \"message\": %(message)s}," if env_fmt == "json" else env_fmt
+
+logging.basicConfig(stream=sys.stdout, level=log_level, filename=log_file, format=log_fmt)
 _logger = logging.getLogger(__name__)
+
 
 def config_base_dir():
     if const.CONFIG_BASE_DIR in os.environ.keys():
         return os.environ.get(const.CONFIG_BASE_DIR)
     elif const.LEGACY_CONFIG_BASE_DIR in os.environ.keys():
-        _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd " 
+        _logger.warning("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd " 
                      "properties instead".format(const.LEGACY_CONFIG_BASE_DIR))
         return os.environ.get(const.LEGACY_CONFIG_BASE_DIR)
     return os.path.expanduser("~") #Default is home directory
@@ -29,7 +44,7 @@ def config_yaml(config_file=None):
         cfg_file_var = const.CONFIG_YAML_ENV_VAR
     elif const.LEGACY_CONFIG_YAML_ENV_VAR in os.environ.keys():
         cfg_file_var = const.LEGACY_CONFIG_YAML_ENV_VAR
-        _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd "
+        _logger.warning("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd "
                      "properties instead".format(const.LEGACY_CONFIG_YAML_ENV_VAR))
     base_dir = config_base_dir()
     cfg_file = const.CONFIG_YAML
@@ -272,7 +287,7 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
                     break
             except Exception as e:
                 _logger.exception(e)
-            _logger.warn(f"Failed to publish, retrying in 3 seconds (attempt {i + 1}/5)")
+            _logger.warning(f"Failed to publish, retrying in 3 seconds (attempt {i + 1}/5)")
             time.sleep(3) # TODO config option?
         if published == True and restartContainers == True and isvaConfig.container != None:
             if isvaConfig.container.k8s_deployments is not None:
@@ -297,7 +312,7 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
                     _docker_restart_container(container, isvaConfig)
 
             else:
-                _logger.error("Unable to perform container restart, this may lead to errors")
+                _logger.debug("Unable to perform container restart, this may lead to errors")
             _logger.info("Idle for {}s to allow orchestration to recover and Verify Identity Access "
                         "components to initialize.".format(KUBE_CLIENT_SLEEP))
             time.sleep(KUBE_CLIENT_SLEEP)

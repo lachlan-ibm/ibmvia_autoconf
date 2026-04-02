@@ -1332,7 +1332,8 @@ class AAC_Configurator(object):
                 "pin_length": definition.pin_length, "enforce_single_use_authorization_grant": definition.enforce_single_use_grant, 
                 "issue_refresh_token": definition.issue_refresh_token, "enforce_single_access_token_per_grant": definition.single_token_per_grant, 
                 "enable_multiple_refresh_tokens_for_fault_tolerance": definition.multiple_refresh_tokens, "pin_policy_enabled": definition.pin_policy, 
-                "grant_types": definition.grant_types, "tcm_behavior": definition.tcm_behavior
+                "grant_types": definition.grant_types, "tcm_behavior": definition.tcm_behavior, "id": definition.id, "hash_secrets": definition.hash_secrets,
+                "max_active_secrets": definition.max_active_secrets, "min_secret_len": definition.min_secret_len
             }
         if definition.oidc:
             methodArgs.update({
