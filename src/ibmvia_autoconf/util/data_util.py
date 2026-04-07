@@ -11,8 +11,9 @@ import sys
 
 from copy import deepcopy
 from . import constants as const
+from .logging_util import setup_logging
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+setup_logging()
 _logger = logging.getLogger(__name__)
 
 def to_camel_case(snake_case):

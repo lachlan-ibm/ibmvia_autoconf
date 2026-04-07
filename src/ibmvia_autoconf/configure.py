@@ -18,9 +18,10 @@ from .webseal import WEB_Configurator as WEB
 from .federation import FED_Configurator as FED
 from .util.data_util import FILE_LOADER, optional_list, KUBE_CLIENT_SLEEP
 from .util.configure_util import deploy_pending_changes, creds, old_creds, ext_user_creds, mgmt_base_url, config_yaml
-from .util.constants import HEADERS, LOG_LEVEL
+from .util.constants import HEADERS
+from .util.logging_util import setup_logging
 
-logging.basicConfig(stream=sys.stdout, level=os.environ.get(LOG_LEVEL, logging.INFO))
+setup_logging()
 _logger = logging.getLogger(__name__)
 
 class IVIA_Configurator(object):

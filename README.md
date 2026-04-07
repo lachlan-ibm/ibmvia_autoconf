@@ -57,8 +57,9 @@ must be updated with deployment specific parameters, usually this is network add
 - `ISVA_CONFIGURATOR_LOG_LEVEL` :: The log level to use for the configurator. Default is `INFO`. Valid values are 
                                   `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
 - `ISVA_CONFIGURATOR_LOG_FILE` :: The path to the log file to write to. If not specified, logs will be written to 
-                                  stdout.
-- `ISVA_CONFIGURATOR_LOG_FORMAT` :: The format to use for the log messages. Default is `%(message)s`.
+                                  stdout. This should be a fully qualified path.
+- `ISVA_CONFIGURATOR_LOG_FORMAT` :: The format to use for the log messages. Default is `%(asctime)s - %(levelname)s - %(message)s"`.
+                                If the format is set to ``json`` then the messages logged will be JSON parsible.
 
 
 ## Deployment
@@ -71,7 +72,8 @@ IBM Verify Identity Access Configuration Automation is simple to run locally.
 python -m ibmvia_autoconf
 ```
 
-### Docker
+### Docker (Compose)
+- Requires the `docker-compose` pip package.
 IBM Verify Identity Access Automated Configurator can also be run within a docker container. Use to 
 [Dockerfile](Dockerfile) to build a local docker image.
 
@@ -91,6 +93,7 @@ docker run --volume /path/to/config/yaml:/config \
 
 
 ### Kubernetes
+- Requires the `kubernetes` pip package.
 IBM Verify Identity Access Automated Configurator can be run from within a Kubernetes cluster. This is useful if there 
 are routing issues between the deployment host and the kubernetes external addresses this option will allow for 
 configuration using the kubernetes internal network.

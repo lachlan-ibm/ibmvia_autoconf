@@ -145,14 +145,16 @@ these variables are set, they take priority over values set in configuration fil
                         .. note:: This is only applicable for Container deployments using Docker-Compose orchestration.
 
 - ``IVIA_CONFIGURATOR_LOG_LEVEL``
-                        This variable set the logging level for the autoconf tool. The default log level is ``INFO``. Valid values are 
-                                  `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
+                        This variable set the logging level for the autoconf tool. The default log level is ``INFO``. Valid 
+                        values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
 
 - ``ISVA_CONFIGURATOR_LOG_FILE``
-                        The path to the log file to write to. If not specified, logs will be written to stdout.
+                        The path to the log file to write to. If not specified, logs will be written to stdout. This 
+                        should be a fully qualified path.
 
 - ``ISVA_CONFIGURATOR_LOG_FORMAT``
-                        The format to use for the log messages. Default is ``%(message)s``.
+                        The format to use for the log messages. Default is `%(asctime)s - %(levelname)s - %(message)s"`.
+                        If the format is set to ``json`` then the messages logged will be JSON parsible.
 
 
 

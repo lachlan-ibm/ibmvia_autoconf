@@ -41,11 +41,8 @@ setup(
     install_requires=['requests',
                       'PyYAML',
                       'pyivia',
-                      'kubernetes',
-                      'docker-compose',
                       'typing',
-                      'pyyaml==5.4.1',
-                      'Cython<3'
+                      'python-json-logger'
     ],
     project_urls={
         'Homepage': 'https://github.com/lachlan-ibm/ibmvia_autoconf',

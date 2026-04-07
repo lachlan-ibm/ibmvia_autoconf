@@ -6,22 +6,10 @@ import os, logging, sys, yaml, pyivia, datetime, subprocess, shutil, time, json
 from typing import Optional, Tuple
 from . import constants as const
 from .data_util import Map, FileLoader, CustomLoader, get_kube_client, KUBE_CLIENT_SLEEP
+from .logging_util import setup_logging
 
-log_level = logging.INFO
-if const.LOG_LEVEL in os.environ.keys():
-    log_level = os.environ.get(const.LOG_LEVEL)
-elif const.LEGACY_LOG_LEVEL in os.environ.keys():
-    ll = os.environ.get(const.LEGACY_LOG_LEVEL)
-log_file = None
-if const.LOG_FILE in os.environ.keys():
-    log_file = os.environ.get(const.LOG_FILE)
+setup_logging()
 
-log_fmt = "%(asctime)s - %(levelname)s - %(message)s"
-if const.LOG_FORMAT in os.environ.keys():
-    env_fmt = str(os.environ.get(const.LOG_FORMAT))
-    log_fmt = "{\"time\": %(asctime)-s, \"level\": %(levelname)-s, \"message\": %(message)s}," if env_fmt == "json" else env_fmt
-
-logging.basicConfig(stream=sys.stdout, level=log_level, filename=log_file, format=log_fmt)
 _logger = logging.getLogger(__name__)
 
 
@@ -298,10 +286,6 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
                         _kube_rollout_restart(namespace, deployment)
                     for deployment in isvaConfig.container.k8s_deployments.deployments:
                         _kube_wait_for_deployment(namespace, deployment)
-
-                elif isvaConfig.container.k8s_deployments.pods is not None:
-                    for pod in isvaConfig.container.pods:
-                        _kube_reload_container(namespace, pod)
 
             elif isvaConfig.container.compose_services:
                 for service in isvaConfig.container.compose_services:
