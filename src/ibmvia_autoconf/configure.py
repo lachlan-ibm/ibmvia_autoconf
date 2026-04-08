@@ -20,11 +20,15 @@ from .util.data_util import FILE_LOADER, optional_list, KUBE_CLIENT_SLEEP
 from .util.configure_util import deploy_pending_changes, creds, old_creds, ext_user_creds, mgmt_base_url, config_yaml
 from .util.constants import HEADERS
 from .util.logging_util import setup_logging
+from .util.api_tracker import track_failure, get_tracker
 
 setup_logging()
 _logger = logging.getLogger(__name__)
 
 class IVIA_Configurator(object):
+
+    factory: pyivia.Factory
+    config: typing.Dict[str, typing.Any]
     #Only restart containers if we import PKI or apply a license
     needsRestart = False
     tlsVerify = os.environ.get('PYIVIA_VERIFY_TLS_LMI', 'false').lower() \
@@ -107,6 +111,7 @@ class IVIA_Configurator(object):
         if rsp.success == True:
             _logger.info("Accepted SLA")
         else:
+            track_failure('system', 'sla', rsp)
             _logger.error("Failed to accept SLA:\n{}".format(rsp.data))
 
 
@@ -170,6 +175,7 @@ class IVIA_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully uploaded trial license.")
         else:
+            track_failure('system', 'activation', rsp, {'trial': trialCert['path']})
             _logger.error("Failed to activate Verify Access modules with supplied trail license:\n{}\n{}".format(
                                 trialCert['path'], rsp.data))
 
@@ -182,6 +188,7 @@ class IVIA_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully restarted LMI after uploading trial certificate")
             else:
+                track_failure('system', 'activation - trial', rsp)
                 _logger.error("Failed to restart LMI after uploading trial certificate")
             if self._wait_for_trial_activation():
                 return
@@ -195,6 +202,7 @@ class IVIA_Configurator(object):
             _logger.info("Successfully applied {} license".format(module))
             self.needsRestart = True
         else:
+            track_failure('system', 'activation - {}'.format(module), rsp)
             _logger.error("Failed to apply {} license:\n{}".format(module, rsp.data))
 
     def _activateBaseAppliance(self, config):
@@ -262,6 +270,7 @@ class IVIA_Configurator(object):
                 parsed_file['name'], database))
             self.needsRestart = True
         else:
+            track_failure('system', 'ssl - certificate', rsp, {"certificate": parsed_file['name']})
             _logger.error("Failed to upload {} signer certificate to {} database\n{}".format(
                 parsed_file['name'], database, rsp.data))
 
@@ -274,6 +283,7 @@ class IVIA_Configurator(object):
                 str(server) + ":" + str(port), database))
             self.needsRestart = True
         else:
+            track_failure('system', 'ssl - certificate import', rsp, {"certificate": str(server) + ":" + str(port)})
             _logger.error("Failed to load {} signer certificate to {}/n{}".format(
                 str(server) + ":" + str(port), database, rsp.data))
 
@@ -289,6 +299,7 @@ class IVIA_Configurator(object):
                 personal_parsed_file['name'], db_name))
             self.needsRestart = True
         else:
+            track_failure('system', 'ssl - key', rsp, {"PKCS12": personal_parsed_file['path']})
             _logger.error("Failed to upload {} personal certificate to {}\n{}".format(
                personal_parsed_file['path'], db_name, rsp.data))
 
@@ -368,6 +379,7 @@ class IVIA_Configurator(object):
                             _logger.info("Successfully created {} SSL Certificate database".format(
                                 database.name))
                         else:
+                            track_failure('system', 'ssl', rsp, database)
                             _logger.error("Failed to create {} SSL Certificate database".format(
                                 database.name))
                             continue
@@ -378,9 +390,11 @@ class IVIA_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully imported {} SSL KDB file".format(database.kdb_file))
                     else:
+                        track_failure('system', 'ssl', rsp, database)
                         _logger.error("Failed to import {} SSL KDB file:\n{}\n{}".format(database.kdb_file,
                                         json.dumps(database, indent=4), rsp.data))
                 else:
+                    track_failure('system', 'ssl', None, database)
                     _logger.error("SSL Database config provided but cannot be identified: {}".format(
                                                                                 json.dumps(database, indent=4)))
                 self._import_certificates(database)
@@ -462,6 +476,7 @@ class IVIA_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully set admin config")
             else:
+                track_failure('system', 'admin config', rsp, config.admin_config)
                 _logger.error("Failed to set admin config using:\n{}\n{}".format(
                     json.dumps(config.admin_config), rsp.data))
 
@@ -479,6 +494,7 @@ class IVIA_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully update password for {}".format(user.name))
                     else:
+                        track_failure('system', 'system user', rsp, user)
                         _logger.error("Failed to update password for {}:\n{}".format(
                             user.name, rsp.data))
                 if user.groups != None:
@@ -489,6 +505,7 @@ class IVIA_Configurator(object):
                             _logger.info("Successfully added {} to {} group".format(
                                 user.name, g))
                         else:
+                            track_failure('system', 'system group', rsp, user)
                             _logger.error("Failed to add {} to {} group:\n{}".format(
                                 user.name, g, rsp.data))
             elif user.operation == "delete":
@@ -496,6 +513,7 @@ class IVIA_Configurator(object):
                 if rsp.success == True:
                     _logger.info("Successfully removed user {}".format(user.name))
                 else:
+                    track_failure('system', 'system user', rsp, user)
                     _logger.error("Failed to remove system user {}:\n{}".format(
                         user.name, rsp.data))
 
@@ -512,6 +530,7 @@ class IVIA_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully {} group {}".format(group.operation, group.id))
             else:
+                track_failure('system', 'system group', rsp, group)
                 _logger.error("Failed to {} group {}:\n{}\n{}".format(
                     group.operation, group.id, json.dumps(group, indent=4), rsp.data))
 
@@ -521,6 +540,7 @@ class IVIA_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully added {} to group {}".format(user, group.id))
                     else:
+                        track_failure('system', 'system group', rsp, group)
                         _logger.error("Failed to add user {} to group {}:\n{}\n{}".format(
                             user, group.id, json.dumps(group, indent=4), rsp.data))
 
@@ -586,6 +606,7 @@ class IVIA_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully removed {} authorization role".format(role.name))
             else:
+                track_failure('system', 'authorization', rsp, role)
                 _logger.error("Failed to remove {} authorization role:\n{}".format(
                     role.name, rsp.data))
         elif role.operation in ["add", "update"]:
@@ -606,6 +627,7 @@ class IVIA_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully configured {} authorization role".format(role.name))
             else:
+                track_failure('system', 'authorization', rsp, role)
                 _logger.error("Failed to configure {} authorization role:\n{}".format(
                     role.name, rsp.data))
         else:
@@ -677,6 +699,7 @@ class IVIA_Configurator(object):
                 if rsp.success == True:
                     _logger.info("Successfully enabled role based authorization")
                 else:
+                    track_failure('system', 'authorization', rsp, config.management_authorization)
                     _logger.error("Failed to enable role based authorization:\n{}".format(rsp.data))
 
     class Management_Authentication(typing.TypedDict):
@@ -805,6 +828,7 @@ class IVIA_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully updated the management authentication configuration")
             else:
+                track_failure('system', 'authentication', rsp, ma)
                 _logger.error("Failed to update the management authentication configuration:\n{}\nconfig:\n{}".format(
                                                                                     rsp.data, json.dumps(ma, indent=4)))
 
@@ -863,6 +887,7 @@ class IVIA_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully {} {} Advanced Tuning Parameter".format(verb, atp.name))
                     else:
+                        track_failure('system', 'advanced tuning', rsp, atp)
                         _logger.error("Failed to {} {} Advanced Tuning Parameter:\n{}".format(
                             verb, atp.name, rsp.data))
                 else:
@@ -888,6 +913,7 @@ class IVIA_Configurator(object):
                 _logger.info("Successfully applied snapshot [{}]".format(snapshotConfig.snapshot))
                 deploy_pending_changes(self.factory, self.config)
             else:
+                track_failure('system', 'snapshot', rsp, snapshotConfig)
                 _logger.error("Failed to apply snapshot [{}]\n{}".format(snapshotConfig.snapshot),
                         rsp.data)
 
@@ -998,6 +1024,7 @@ class IVIA_Configurator(object):
                     _logger.info("Successfully added {} to the remote syslog configuration.".format(server.server))
                     self.needsRestart = True
                 else:
+                    track_failure('system', 'remote syslog', rsp, server)
                     _logger.error("Failed to update the remote syslog configuration with:\n{}\n{}".format(
                         json.dumps(server, indent=4) , rsp.data))
 
@@ -1027,17 +1054,18 @@ class IVIA_Configurator(object):
                 _logger.info("Successfully updated the LMI certificate.")
                 self.needsRestart = True
             else:
+                track_failure('system', 'lmi certificate', rsp, config.lmi_certificate)
                 _logger.error("Failed to update the LMI certificate with PKCS12 file:: {}\n{}".format(
                                                                                         lmiP12, rsp.data))
 
     def configure_base(self):
         base_config = None
         deployment = None
-        if self.config.appliance is not None:
-            base_config = self.config.appliance
+        if self.config.get('appliance') is not None:
+            base_config = self.config.get('appliance')
             deployment = APPLIANCE
-        elif self.config.container is not None:
-            base_config = self.config.container
+        elif self.config.get('container') is not None:
+            base_config = self.config.get('container')
             deployment = CONTAINER
         else:
             _logger.error("Deployment model cannot be found in config.yaml, skipping container/appliance configuration.")
@@ -1075,25 +1103,27 @@ class IVIA_Configurator(object):
         return result
 
     def global_config(self, aac, fed, web):
-        if self.config.webseal != None and self.config.webseal.runtime != None:
-            web.runtime(self.config.webseal.runtime)
+        webseal_config = self.config.get('webseal')
+        if webseal_config is not None and webseal_config.get('runtime') is not None:
+            web.runtime(webseal_config.get('runtime'))
 
         config = None
-        if self.config.appliance is not None:
-            config = self.config.appliance
-        elif self.config.container is not None:
-            config = self.config.container
+        if self.config.get("appliance") is not None:
+            config = self.config.get("appliance")
+        elif self.config.get("container") is not None:
+            config = self.config.get("container")
         else:
             _logger.error("Deployment model cannot be found in config.yaml, skipping global configuration.")
             return
 
-        options = ['template_files', 'mapping_rules', 'server_connections', 'runtime_properties', 
+        options = ['template_files', 'mapping_rules', 'server_connections', 'runtime_properties',
                         'point_of_contact', 'advanced_configuration', 'access_policies', 'attribute_sources']
         configRequired = False
-        for k in config.keys():
-            if k in options:
-                configRequired = True
-                break
+        if config is not None:
+            for k in config.keys():
+                if k in options:
+                    configRequired = True
+                    break
         if configRequired == True and self._check_aac_fed_licenses() == False:
             _logger.error("You must activate the Advanced Access Control or Federation modules to configure global properties.")
             return
@@ -1131,23 +1161,26 @@ class IVIA_Configurator(object):
         return web, aac, fed
 
     def configure(self, config_file=None):
-        _logger.info("Reading configuration file")
-        self.config = config_yaml(config_file)
-        _logger.info("Testing LMI connectivity")
-        if self.lmi_responding(self.config) == False:
-            _logger.error("Unable to contact LMI, exiting")
-            sys.exit(1)
-        _logger.info("LMI responding, begin configuration")
-        self.first_setps()
-        self.configure_base()
-        web, aac, fed = self.get_modules()
-        self.global_config(aac, fed, web)
-        aac.configure()
-        fed.configure()
-        web.configure()
-        #Configure the remote syslog after everything else as it might rely on config we create
-        self.remote_syslog(self.config.appliance if self.config.appliance else self.config.container)
-        self._deploy_if_needed()
+        try:
+            _logger.info("Reading configuration file")
+            self.config = config_yaml(config_file)
+            _logger.info("Testing LMI connectivity")
+            if self.lmi_responding(self.config) == False:
+                _logger.error("Unable to contact LMI, exiting")
+                sys.exit(1)
+            _logger.info("LMI responding, begin configuration")
+            self.first_setps()
+            self.configure_base()
+            web, aac, fed = self.get_modules()
+            self.global_config(aac, fed, web)
+            aac.configure()
+            fed.configure()
+            web.configure()
+            #Configure the remote syslog after everything else as it might rely on config we create
+            self.remote_syslog(self.config.get('appliance') if self.config.get('appliance') else self.config.get('container'))
+            self._deploy_if_needed()
+        finally:
+            get_tracker().print_summary()
 
 if __name__ == "__main__":
     IVIA_Configurator().configure()

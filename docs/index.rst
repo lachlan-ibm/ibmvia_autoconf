@@ -129,6 +129,11 @@ these variables are set, they take priority over values set in configuration fil
                         this property can be used to define the external password to authenticate with
                         once the ``management_authorization`` feature has been configured.
 
+- - ``IVIA_PUBLISH_SNAPSHOT_SLEEP`` 
+                        The number of seconds to deplay after publishing a configuration snapshot. This property can 
+                        be used to allow time for the configuration to be replicated in the filesystem or for the 
+                        configuration container to stabilize after publishing a snapshot.
+
 - ``IVIA_KUBERNETES_YAML_CONFIG``
                         This variable defines the Kubernetes cluster configuration file required to run ``kubectl``
                         commands. This configuration file should have sufficient permission in your cluster to restart 
@@ -136,6 +141,11 @@ these variables are set, they take priority over values set in configuration fil
                         The file path can either be absolute or relative to the ``IVIA_CONFIG_BASE`` variable.
 
                         .. note:: This is only applicable for Container deployments using Kubernetes orchestration.
+
+- ``KUBERNETES_CLIENT_SLEEP`` 
+                        The number of seconds to delay after requesting a restart of the runtime containers managed by 
+                        the automated configuration tool. Use this property to allow time for the runtime containers 
+                        to fetch the latest snapshot and apply the configuration.
 
 - ``IVIA_DOCKER_COMPOSE_CONFIG``
                         This variable defines the Docker-Compose deployment configuration file required to run

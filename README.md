@@ -43,12 +43,20 @@ must be updated with deployment specific parameters, usually this is network add
 - *depreciated* `ISVA_MGMT_OLD_PWD` :: if a password change for the administrator account (eg. from the default) is 
                       required, the old password can be specified with this environment variable. If present the 
                       administrator's password will be changed from `MGMT_OLD_PASSWORD` to `MGMT_PASSWORD`
+- `IVIA_PUBLISH_SNAPSHOT_SLEEP` (optional) :: number of seconds to deplay after publishing a configuration snapshot.
+                                              This property can be used to allow time for the configuration to be 
+                                              replicated in the filesystem or for the configuration container to stabilize
+                                              after publishing a snapshot.
 - `IVIA_KUBERNETES_YAML_CONFIG` (optional) :: path to Kubernetes configuration yaml for kubernetes deployments. 
   - Note: If your kubernetes cluster requires mutual authentication (TLS) then a pem certificate file must also be 
           available to IBM VIA Configurator
   - Note: When run from a Kubernetes cluster a Service Account can be used in place of a YAML configuration file
 - *depreciated* `ISVA_KUBERNETES_YAML_CONFIG` (optional) :: path to Kubernetes configuration yaml for kubernetes 
                       deployments. 
+- `KUBERNETES_CLIENT_SLEEP` (optional) :: number of seconds to delay after requesting a restart of the runtime 
+                                          containers managed by the automated configuration tool. Use this property to
+                                          allow time for the runtime containers to fetch the latest snapshot and apply 
+                                          the configuration.
 - `IVIA_EXT_USER` :: The user to continue configuration as once the Management Authentication configuration has been 
                       applied. This may be required if you are using an external LDAP registry or OIDC identity provider
                       for management authentication. If external authentication has previously been configured, then
@@ -60,6 +68,10 @@ must be updated with deployment specific parameters, usually this is network add
                                   stdout. This should be a fully qualified path.
 - `ISVA_CONFIGURATOR_LOG_FORMAT` :: The format to use for the log messages. Default is `%(asctime)s - %(levelname)s - %(message)s"`.
                                 If the format is set to ``json`` then the messages logged will be JSON parsible.
+- `IVIA_TRACK_API_FAILURES` :: Enable or disable API failure tracking. Default is `true`. Set to `false` to disable.
+                               When enabled, a summary of all failed API requests will be printed at the end of
+                               execution. If `ISVA_CONFIGURATOR_LOG_FORMAT` is set to `json`, the summary will be
+                               output in JSON format.
 
 
 ## Deployment
@@ -89,6 +101,110 @@ docker run --volume /path/to/config/yaml:/config \
             --env IVIA_MGMT_BASE_URL="https://<mgmt address>:<mgmt port>" \
             --env "IVIA_MGMT_PASSWORD=Passw0rd1!" \
             verify-identity-access-configurator
+```
+
+## API Failure Tracking
+
+IBM Verify Identity Access Automated Configurator includes built-in tracking of failed API requests. When enabled 
+(default), the configurator will collect information about any API calls that fail during execution and print a 
+comprehensive summary at the end.
+
+Captures context for each failure:
+  - Module name and operation being performed
+  - Error message from the API response
+  - API endpoint that was called
+  - HTTP status code
+  - Full response content/data
+  - Request payload/parameters sent
+  - Timestamp of the failure
+- Outputs summary grouped by module
+- Supports both human-readable and JSON output formats
+- Can be disabled via environment variable
+
+### Configuration
+- **Enable/Disable**: Set `IVIA_TRACK_API_FAILURES=false` to disable tracking (enabled by default)
+- **JSON Output**: When `ISVA_CONFIGURATOR_LOG_FORMAT=json`, the summary will be output in JSON format
+
+### Example Output (Human-Readable Format)
+```
+================================================================================
+API FAILURE SUMMARY - 3 Failed Request(s)
+================================================================================
+
+Module: access_control (2 failure(s))
+--------------------------------------------------------------------------------
+  1. Operation: create_policy
+     Error: Policy name already exists
+     API Endpoint: /iam/access/v8/policies
+     Status Code: 409
+     Response: {'error': 'DUPLICATE_NAME', 'message': 'Policy name already exists'}
+     Request Data: {'name': 'MyPolicy', 'type': 'authorization'}
+     Timestamp: 2026-04-02T03:15:00.123Z
+
+  2. Operation: update_pip
+     Error: Connection timeout
+     API Endpoint: /iam/access/v8/pips/123
+     Status Code: 504
+     Response: {'error': 'GATEWAY_TIMEOUT'}
+     Timestamp: 2026-04-02T03:16:30.456Z
+
+Module: webseal (1 failure(s))
+--------------------------------------------------------------------------------
+  1. Operation: create_junction
+     Error: Backend server unreachable
+     API Endpoint: /wga/reverseproxy/junctions
+     Status Code: 502
+     Response: {'error': 'BAD_GATEWAY', 'backend': 'https://backend.example.com'}
+     Request Data: {'junction_point': '/app', 'server': 'backend.example.com'}
+     Timestamp: 2026-04-02T03:18:00.012Z
+
+================================================================================
+```
+
+### Example Output (JSON Format)
+When `ISVA_CONFIGURATOR_LOG_FORMAT=json`:
+```json
+{
+  "api_failure_summary": {
+    "total_failures": 3,
+    "by_module": {
+      "access_control": 2,
+      "webseal": 1
+    }
+  },
+  "failures": [
+    {
+      "timestamp": "2026-04-02T03:15:00.123Z",
+      "module": "access_control",
+      "operation": "create_policy",
+      "error_message": "Policy name already exists",
+      "api_endpoint": "/iam/access/v8/policies",
+      "status_code": 409,
+      "response_content": {"error": "DUPLICATE_NAME", "message": "Policy name already exists"},
+      "request_data": {"name": "MyPolicy", "type": "authorization"}
+    },
+    {
+      "timestamp": "2026-04-02T03:16:30.456Z",
+      "module": "access_control",
+      "operation": "update_pip",
+      "error_message": "Connection timeout",
+      "api_endpoint": "/iam/access/v8/pips/123",
+      "status_code": 504,
+      "response_content": {"error": "GATEWAY_TIMEOUT"},
+      "request_data": null
+    },
+    {
+      "timestamp": "2026-04-02T03:18:00.012Z",
+      "module": "webseal",
+      "operation": "create_junction",
+      "error_message": "Backend server unreachable",
+      "api_endpoint": "/wga/reverseproxy/junctions",
+      "status_code": 502,
+      "response_content": {"error": "BAD_GATEWAY", "backend": "https://backend.example.com"},
+      "request_data": {"junction_point": "/app", "server": "backend.example.com"}
+    }
+  ]
+}
 ```
 
 

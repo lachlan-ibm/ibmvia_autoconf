@@ -9,6 +9,7 @@ import typing
 from .util.constants import HEADERS
 from .util.configure_util import config_yaml, deploy_pending_changes
 from .util.data_util import Map, optional_list, filter_list, prefix_keys, FILE_LOADER
+from .util.api_tracker import track_failure
 
 _logger = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ class Appliance_Configurator(object):
             _logger.info("Successfully {} route info for {} interface".format(
                                         verb, route.interface))
         else:
+            track_failure('appliance', 'interface - routes', rsp, route)
             _logger.error("Failed to {} route info for {} interface:\n{}\n{}".format(
                                 verb, route.info, json.dumps(route, indent=4), rsp.data))
 
@@ -108,6 +110,7 @@ class Appliance_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully set the DNS properties")
         else:
+            track_failure('appliance', 'dns', rsp, dns_config)
             _logger.error("Failed to set the DNS properties:\n{}\n{}".format(
                                                 json.dumps(dns_config, indent=4), rsp.data))
 
@@ -117,6 +120,7 @@ class Appliance_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully updated the hostname of the Verify Identity Access appliance.")
         else:
+            track_failure('appliance', 'hostname', rsp, hostname)
             _logger.error("Failed to update the hostname of the Verify Identity Access appliance.")
 
 
@@ -146,6 +150,7 @@ class Appliance_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully {} {} host file entry".format(verb, entry.address))
             else:
+                track_failure('appliance', 'host file', rsp, entry)
                 _logger.error("Failed to {} host file config with entry:\n{}\n{}".format(
                                         verb, json.dumps(entry, indent=4), rsp.data))
 
@@ -330,6 +335,7 @@ class Appliance_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully updated Date/Time settings on appliance")
             else:
+                track_failure('appliance', 'date time', rsp, config.date_time)
                 _logger.error("Failed to update the Date/Time settings on the appliance with:\n{}\n{}".format(
                     json.dumps(config.date_time, indent=4), rsp.data))
 
@@ -418,6 +424,7 @@ class Appliance_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully set the configuration database")
             else:
+                track_failure('appliance', 'cluster - config db', rsp, methodArgs)
                 _logger.error("Failed to set the configuration database with:{}\n{}".format(
                     json.dumps(config.config_database, indent=4), rsp.data))
         if config.runtime_database != None:
@@ -432,6 +439,7 @@ class Appliance_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully set the runtime database")
             else:
+                track_failure('appliance', 'cluster - hvdb', rsp, methodArgs)
                 _logger.error("Failed to set the runtime database with: {}\n{}".format(json.dumps(
                     config.runtime_database, indent=4), rsp.data))
         if config.dsc != None:
@@ -440,6 +448,7 @@ class Appliance_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully set the dsc configuration")
             else:
+                track_failure('appliance', 'cluster - dsc', rsp, dscConfig)
                 _logger.error("Failed to set the dsc configuration with: {}\n{}".format(
                                                 json.dumps(config.dsc, indent=4), rsp.data))
         if config.cluster != None:
@@ -447,6 +456,7 @@ class Appliance_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully set the cluster configuration")
             else:
+                track_failure('appliance', 'cluster - ha', rsp, config.cluster)
                 _logger.error("Failed to set the cluster configuration with:{}\n{}".format(
                     json.dumps(config.cluster, indent=4), rsp.data))
 
@@ -469,6 +479,7 @@ class Appliance_Configurator(object):
                 if rsp.success == True:
                     _logger.info("Successfully {} managed container volume {}".format(verb, volume.name))
                 else:
+                    track_failure('appliance', 'container - volume', rsp, volume)
                     _logger.error("Failed to {} managed container volume with:\n{}\n{}".format(
                                             verb, json.dumps(volume, indent=4), rsp.data))
 
@@ -491,6 +502,7 @@ class Appliance_Configurator(object):
                 if rsp.success == True:
                     _logger.info("Successfully {} {} container registry properties".format(verb, rgy.host))
                 else:
+                    track_failure('appliance', 'container - registry', rsp, rgy)
                     _logger.error("Failed to {} container registry properties:\n{}\n{}".format(
                                             verb, json.dumps(rgy, indent=4), rsp.data))
 
@@ -510,6 +522,7 @@ class Appliance_Configurator(object):
                 if rsp.success == True:
                     _logger.info("Successfully {} {} cached container image".format(verb, image))
                 else:
+                    track_failure('appliance', 'container - image', rsp, image)
                     _logger.error("Failed to {} cached container image {}:\n{}".format(verb, image, rsp.data))
 
 
@@ -536,6 +549,7 @@ class Appliance_Configurator(object):
                 if rsp.success == True:
                     _logger.info("Successfully {} {} managed container deployment".format(verb, deployment.name))
                 else:
+                    track_failure('appliance', 'container - deployment', rsp, deployment)
                     _logger.error("Failed to {} managed container deployment:\n{}\n{}".format(
                                             verb, json.dumps(deployment, indent=4), rsp.data))
 

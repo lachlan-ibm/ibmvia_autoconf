@@ -221,3 +221,7 @@ try:
         KUBE_CLIENT_SLEEP = int(os.environ.get(const.LEGACY_KUBERNETES_CLIENT_SLEEP, 15))
 except ValueError:
     KUBE_CLIENT_SLEEP = 15
+
+PUBLISH_SNAPSHOT_SLEEP = 3
+if const.PUBLISH_SNAPSHOT_SLEEP in os.environ.keys():
+    PUBLISH_SNAPSHOT_SLEEP = int(os.environ.get(const.PUBLISH_SNAPSHOT_SLEEP, 3))
