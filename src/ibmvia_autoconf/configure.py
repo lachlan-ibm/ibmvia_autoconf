@@ -62,10 +62,10 @@ class IVIA_Configurator(object):
     def _deploy_if_needed(self):
         r = None if self.needsRestart == True else \
                 self.factory.get_system_settings().configuration.get_pending_changes()
-        if r == None or not hasattr(r, 'success') or not hasattr(r, 'json'):
+        if not self.needsRestart and (r == None or not hasattr(r, 'success') or not hasattr(r, 'json')):
             return
         if self.needsRestart == True or \
-                        (r.success == True and 'changes' in r.json and len(r.json['changes']) > 0):
+                        (r.success == True and r.json and 'changes' in r.json and len(r.json['changes']) > 0):
             deploy_pending_changes(self.factory, self.config)
             self.needsRestart = False
 
@@ -132,7 +132,7 @@ class IVIA_Configurator(object):
         if config != None and config.appliance and config.appliance.fips and \
                 config.appliance.fips.fips_enabled == True:
             fips_settings = self.factory.get_system_settings().fips.get_settings().json
-            if fips_settings.get("fipsEnabled", False) == False:
+            if fips_settings and fips_settings.get("fipsEnabled", False) == False:
                 response = self.factory.get_system_settings().fips.update_settings(**config.appliance.fips)
                 if response.success == True:
                     _logger.info("Successfully enabled FIPS mode.")
@@ -142,7 +142,8 @@ class IVIA_Configurator(object):
 
 
     def complete_setup(self):
-        if self.factory.get_system_settings().first_steps.get_setup_status().json.get("configured", True) == False:
+        first_steps = self.factory.get_system_settings().first_steps.get_setup_status()
+        if first_steps.json and first_steps.json.get("configured", True) == False:
             rsp = self.factory.get_system_settings().first_steps.set_setup_complete()
             assert rsp.status_code == 200, "Did not complete setup"
             deploy_pending_changes(self.factory, self.config, restartContainers=False)
@@ -242,14 +243,14 @@ class IVIA_Configurator(object):
         _logger.debug("Existing activations: {}".format(activations))
         if config.activation != None and config.activation.trial_license != None:
             self._apply_trial_cert(config)
-        else:
+        elif activations is not None and isinstance(activations, list):
             if not any(module.get('id', None) == 'wga' and module.get('enabled', "False") == "True" for module in activations):
                 self._activateBaseAppliance(config)
             if not any(module.get('id', None) == 'mga' and module.get('enabled', "False") == "True" for module in activations):
                 self._activateAdvancedAccessControl(config)
             if not any(module.get('id', None) == 'federation' and module.get('enabled', "False") == "True" for module in activations):
                 self._activateFederation(config)
-        _logger.debug("Appliance activated")
+        _logger.debug("exit activate_appliance")
 
 
     def _import_signer_certs(self, database, parsed_file):
@@ -357,7 +358,7 @@ class IVIA_Configurator(object):
         ssl_config = config.ssl_certificates
         ssl = self.factory.get_system_settings().ssl_certificates
         if ssl_config:
-            old_databases = [d['id'] for d in ssl.list_databases().json]
+            old_databases = [d['id'] for d in optional_list(ssl.list_databases().json)]
             for database in ssl_config:
                 if database.name: # Create the database
                     if database.name not in old_databases:
@@ -587,7 +588,8 @@ class IVIA_Configurator(object):
                 _logger.error("Failed to remove {} authorization role:\n{}".format(
                     role.name, rsp.data))
         elif role.operation in ["add", "update"]:
-            configured_roles = self.factory.get_system_settings().mgmt_authorization.get_roles().json
+            configured_roles = optional_list(
+                        self.factory.get_system_settings().mgmt_authorization.get_roles().json)
             exists = False
             for r in configured_roles:
                 if r['name'] == role.name:
@@ -798,7 +800,7 @@ class IVIA_Configurator(object):
                     "tokenmapping_script": ma.oidc.tokenmapping_script
                 })
             ma = config.management_authentication
-            rsp = self.factory.get_system_settings().management_authentication.update(ma.auth_type, **methodArgs)
+            rsp = self.factory.get_system_settings().mgmt_authentication.update(ma.auth_type, **methodArgs)
             if rsp.success == True:
                 _logger.info("Successfully updated the management authentication configuration")
             else:
@@ -829,48 +831,39 @@ class IVIA_Configurator(object):
 
     def advanced_tuning_parameters(self, config):
         if config.advanced_tuning_parameters != None:
-            old_atps = optional_list(self.factory.get_system_settings().advanced_tuning.list_parameters().json)
+            old_atps = optional_list(
+                            self.factory.get_system_settings().advanced_tuning.list_parameters().json)
             for atp in config.advanced_tuning_parameters:
+                verb = 'None'
+                rsp = None
+                uuid = None
+                for p in old_atps:
+                    if p['key'] == atp.name:
+                        uuid = p['uuid']
+                        break
                 if atp.operation == "delete":
-                    uuid = None
-                    for p in old_atps:
-                        if p['key'] == atp.name:
-                            uuid = p['uuid']
-                            break
-                    rsp = self.factory.get_system_settings().advanced_tuning.delete_parameter(uuid=uuid)
-                    if rsp.success == True:
-                        _logger.info("Successfully removed {} Advanced Tuning Parameter".format(atp.name))
-                    else:
-                        _logger.error("Failed to remove {} Advanced Tuning Parameter:\n{}".format(
-                            atp.name, rsp.data))
+                    rsp = self.factory.get_system_settings().advanced_tuning.delete_parameter(atp_id=uuid)
+                    verb = 'removed' if rsp.success == True else 'remove'
+
                 elif atp.operation == "update":
-                    exists = False
-                    uuid = None
-                    for p in old_atps:
-                        if p['key'] == atp.name:
-                            uuid = p['uuid']
-                            exists = True
-                            break
-                    rsp = None
-                    if exists == True:
+                    if uuid:
                         rsp = self.factory.get_system_settings().advanced_tuning.update_parameter(atp_id=uuid,
-                            key=atp.name, value=atp.value, comment=atp.description)
+                                        key=atp.name, value=atp.value, comment=atp.description)
                     else:
                         rsp = self.factory.get_system_settings().advanced_tuning.create_parameter(
-                            key=atp.name, value=atp.value, comment=atp.description)
-                    if rsp.success == True:
-                        _logger.info("Successfully updated {} Advanced Tuning Parameter".format(atp.name))
-                    else:
-                        _logger.error("Failed to update {} Advanced Tuning Parameter with:\n{}\n{}".format(
-                            atp.name, json.dumps(atp, indent=4), rsp.data))
+                                        key=atp.name, value=atp.value, comment=atp.description)
+                    verb = 'updated' if rsp.success == True else 'update'
+
                 elif atp.operation == "add":
                     rsp = self.factory.get_system_settings().advanced_tuning.create_parameter(
-                        key=atp.name, value=atp.value, comment=atp.description)
+                                    key=atp.name, value=atp.value, comment=atp.description)
+                    verb = 'added' if rsp.success == True else 'added'
+                if rsp:
                     if rsp.success == True:
-                        _logger.info("Successfully add {} Advanced Tuning Parameter".format(atp.name))
+                        _logger.info("Successfully {} {} Advanced Tuning Parameter".format(verb, atp.name))
                     else:
-                        _logger.error("Failed to add {} Advanced Tuning Parameter with:\n{}\n{}".format(
-                            atp.name, json.dumps(atp, indent=4), rsp.data))
+                        _logger.error("Failed to {} {} Advanced Tuning Parameter:\n{}".format(
+                            verb, atp.name, rsp.data))
                 else:
                     _logger.error("Unknown operation {} for Advanced Tuning Parameter:\n{}".format(
                         atp.operation, json.dumps(atp, indent=4)))
@@ -1070,7 +1063,8 @@ class IVIA_Configurator(object):
         self._deploy_if_needed()
 
     def _check_aac_fed_licenses(self):
-        activations = self.factory.get_system_settings().licensing.get_activated_modules().json
+        activations = optional_list(
+                    self.factory.get_system_settings().licensing.get_activated_modules().json)
         result = False
         _logger.debug("Existing activations: {}".format(activations))
         if any(module.get('id', None) == 'mga' and module.get('enabled', "False") == "True" for module in activations):
