@@ -62,7 +62,7 @@ class IVIA_Configurator(object):
     def _deploy_if_needed(self):
         r = None if self.needsRestart == True else \
                 self.factory.get_system_settings().configuration.get_pending_changes()
-        if r == None or not hasattr(r, 'success') or not hasattr(r, 'json'):
+        if not self.needsRestart and (r == None or not hasattr(r, 'success') or not hasattr(r, 'json')):
             return
         if self.needsRestart == True or \
                         (r.success == True and r.json and 'changes' in r.json and len(r.json['changes']) > 0):
@@ -243,7 +243,7 @@ class IVIA_Configurator(object):
         _logger.debug("Existing activations: {}".format(activations))
         if config.activation != None and config.activation.trial_license != None:
             self._apply_trial_cert(config)
-        elif activations:
+        elif activations is not None and isinstance(activations, list):
             if not any(module.get('id', None) == 'wga' and module.get('enabled', "False") == "True" for module in activations):
                 self._activateBaseAppliance(config)
             if not any(module.get('id', None) == 'mga' and module.get('enabled', "False") == "True" for module in activations):
