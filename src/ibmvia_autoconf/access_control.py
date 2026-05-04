@@ -237,7 +237,7 @@ class AAC_Configurator(object):
             self.needsRestart = True
             _logger.info("Successfully configured {} resource for {}".format(resource.uri, resource.server))
         else:
-            track_failure('access_control', 'cba_resource', rsp, methodArgs)
+            track_failure('access_control', 'context_based_access/resource', rsp, methodArgs)
             _logger.error("Failed to create resource with configuration:\n{}\n{}".format(
                 json.dumps(resource, indent=4), rsp.data))
 
@@ -250,7 +250,7 @@ class AAC_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully published the RBA resources")
         else:
-            track_failure('access_control', 'cba_publish_resources', rsp, my_resources)
+            track_failure('access_control', 'context_based_access/publish_resources', rsp, my_resources)
             _logger.error("Failed to publish the RBA policy list [{}] :\n{}".format(my_resources,
                                                                                    rsp.data))
 
@@ -279,7 +279,7 @@ class AAC_Configurator(object):
             self.needsRestart = True
             _logger.info("Successfully {} {} Access Control Policy".format(verb, policy.name))
         else:
-            track_failure('access_control', 'cba_policy', rsp, policy)
+            track_failure('access_control', 'context_based_access/policy', rsp, policy)
             _logger.error("Failed to {} Access Control Policy with config:\n{}\n{}".format(verb,
                                                                     json.dumps(policy, indent=4), rsp.data))
 
@@ -448,7 +448,7 @@ class AAC_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully authentiated to pdadmin")
                     else:
-                        track_failure('access_control', 'context based access', rsp, cba)
+                        track_failure('access_control', 'context_based_access', rsp, cba)
                         _logger.error("Failed to authenticate to pdadmin")
                 for resource in cba.resources:
                     self._cba_resource(resource, policies, policy_sets, definitions)
@@ -506,7 +506,7 @@ class AAC_Configurator(object):
                 _logger.info("Successfully updated the {} attribute {} (subattr {}) with mode [{}]".format(
                             schema, attr_mode.attribute, attr_mode.get("subattribute", None), attr_mode.mode))
             else:
-                track_failure('access_control', 'scim_update_attr_mode', rsp, attr_mode)
+                track_failure('access_control', 'scim/attr_mode', rsp, attr_mode)
                 _logger.error("Failed to update {} attribute mode with config:\n{}\n{}".format(
                                 schema, json.dumps(attr_mode, indent=4), rsp.data))
 
@@ -683,7 +683,7 @@ class AAC_Configurator(object):
                     self.needsRestart = True
                     _logger.info("Successfully updated the SCIM general configuration")
                 else:
-                    track_failure('access_control', 'scim - general', rsp, generalConfig)
+                    track_failure('access_control', 'scim/general', rsp, generalConfig)
                     _logger.error("Failed to update SCIM general configuration:\n{}\n{}".format(
                                                         json.dumps(generalConfig, indent=4), rsp.data))
             for schema in aac_config.scim.schemas:
@@ -699,7 +699,7 @@ class AAC_Configurator(object):
                     self.needsRestart = True
                     _logger.info("Successfully updated schema [{}]".format(schema.uri))
                 else:
-                    track_failure('access_control', 'scim - schema', rsp, schemaConfig)
+                    track_failure('access_control', 'scim/schema', rsp, schemaConfig)
                     _logger.error("Failed to update schema [{}] with configuration:\n{}".format(
                         schema.uri, schemaConfig))
 
@@ -1055,7 +1055,7 @@ class AAC_Configurator(object):
                         _logger.info("Successfully created {} server connection".format(connection.name))
                         self.needsRestart = True
                     else:
-                        track_failure('access_control', 'server connection', rsp, connection)
+                        track_failure('access_control', 'server_connection', rsp, connection)
                         _logger.error("Failed to create server connection [{}] with config:\n{}".format(
                             connection.name, connection))
 
@@ -1094,7 +1094,7 @@ class AAC_Configurator(object):
                 self.needsRestart = True
                 _logger.info("Successfully {} template file {}".format(verb, file_pointer['path']))
             else:
-                track_failure('access_control', 'template files', rsp, {'file': file_pointer['name']})
+                track_failure('access_control', 'template_files', rsp, {'file': file_pointer['name']})
                 _logger.error("Failed to {} template file {}".format(verb, file_pointer['path']))
 
 
@@ -1375,7 +1375,7 @@ class AAC_Configurator(object):
             self.needsRestart = True
             _logger.info("Successfully created {} API Protection definition".format(definition.name))
         else:
-            track_failure('access_control', 'api protection - definition', rsp, definition)
+            track_failure('access_control', 'api_protection/definition', rsp, definition)
             _logger.error("Failed to create {} API Protection definition with config:\n{}\n{}".format(
                 definition.name, json.dumps(definition, indent=4), rsp.data))
         for token_rule_file in [("pre_token_mapping_rule", "PreTokenGeneration"), 
@@ -1393,7 +1393,7 @@ class AAC_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully uploaded {} {} ".format(definition.name, rulePrettyName))
                     else:
-                        track_failure('access_control', 'mapping rule', rsp, {"rule": ruleName})
+                        track_failure('access_control', 'mapping_rule', rsp, {"rule": ruleName})
                         _logger.error("Failed to upload {} {}".format(definition.name, rulePrettyName))
 
     def _configure_api_protection_client(self, definitions, client):
@@ -1407,7 +1407,7 @@ class AAC_Configurator(object):
             self.needsRestart = True
             _logger.info("Successfully created {} API Protection client.".format(client.name))
         else:
-            track_failure('access_control', 'api protection - client' , rsp, methodArgs)
+            track_failure('access_control', 'api_protection/client' , rsp, methodArgs)
             _logger.error("Failed to create {} API Protection client with config:\n{}\n{}".format(
                 client.name, json.dumps(client, indent=4), rsp.data))
 
@@ -1631,7 +1631,7 @@ class AAC_Configurator(object):
             _logger.info("Successfully set configuration for {} mechanism.".format(mechanism.name))
             self.needsRestart = True
         else:
-            track_failure('access_control', 'authentication - mechanism', rsp, mechanism)
+            track_failure('access_control', 'authentication/mechanism', rsp, mechanism)
             _logger.error("Failed to set configuration for {} mechanism with:\n{}\n{}".format(
                 mechanism.name, json.dumps(mechanism, indent=4), rsp.data))
 
@@ -1648,7 +1648,7 @@ class AAC_Configurator(object):
             _logger.info("Successfully set configuration for {} policy".format(policy.name))
             self.needsRestart = True
         else:
-            track_failure('access_control', 'authentication - policy', rsp, policy)
+            track_failure('access_control', 'authentication/policy', rsp, policy)
             _logger.error("Failed to set configuration for {} policy with:\n{}\n{}".format(
                 policy.name, json.dumps(policy, indent=4), rsp.data))
 
@@ -1900,7 +1900,7 @@ class AAC_Configurator(object):
                 self.needsRestart = True
                 _logger.info("Successfully created {} FIDO metadata".format(metadata_file['name']))
             else:
-                track_failure('access_control', 'fido - metadata', rsp, {'name': metadata_file['name']})
+                track_failure('access_control', 'fido2/metadata', rsp, {'name': metadata_file['name']})
                 _logger.error("Failed to create {} FIDO metadata".format(metadata_file["name"]))
 
 
@@ -1910,7 +1910,7 @@ class AAC_Configurator(object):
             self.needsRestart = True
             _logger.info("Successfully created {} FIDO metadata service".format(mds.url))
         else:
-            track_failure('access_control', 'fido - metadata service', rsp, mds)
+            track_failure('access_control', 'fido2/metadata_service', rsp, mds)
             _logger.error("Failed to create FIDO metadata service:\n{}\n{}".format(
                                                                 json.dumps(mds, indent=4), rsp.data))
 
@@ -1923,7 +1923,7 @@ class AAC_Configurator(object):
                 self.needsRestart = True
                 _logger.info("Successfully created {} FIDO2 Mediator".format(mediator_rule['name']))
             else:
-                track_failure('access_control', 'fido - mediator', rsp, {'name': mediator_rule['name']})
+                track_failure('access_control', 'fido2/mediator', rsp, {'name': mediator_rule['name']})
                 _logger.error("Failed to create {} FIDO2 Mediator".format(mediator_rule['name']))
 
     def _create_relying_party(self, rp):
@@ -1984,7 +1984,7 @@ class AAC_Configurator(object):
             self.needsRestart = True
             _logger.info("Successfully created {} FIDO2 Relying Party".format(rp.name))
         else:
-            track_failure('access_control', 'fido - relying party', rsp, methodArgs)
+            track_failure('access_control', 'fido2/relying_party', rsp, methodArgs)
             _logger.error("Failed to create {} FIDO2 Relying Party with configuration:\n{}\n{}".format(rp.name,
                 json.dumps(rp, indent=4), rsp.data))
 
@@ -2220,7 +2220,7 @@ class AAC_Configurator(object):
                     self.needsRestart = True
                     _logger.info("Successfully updated the runtime trace.")
                 else:
-                    track_failure('access_control', 'runitme liberty - trace', rsp, aac_config.runtime_properties)
+                    track_failure('access_control', 'runitme_liberty/trace', rsp, aac_config.runtime_properties)
                     _logger.error("Failed to update the runtime trace:\n{}".format(rsp.data))
 
             for parameter in aac_config.runtime_properties.get("tuning_parameters", []):
@@ -2231,7 +2231,7 @@ class AAC_Configurator(object):
                     _logger.info("Successfully updated {} runtime tuning parameter.".format(
                                                                                     parameter.name))
                 else:
-                    track_failure('access_control', 'runitme liberty - tuning', rsp, aac_config.runtime_properties)
+                    track_failure('access_control', 'runitme_liberty/tuning', rsp, aac_config.runtime_properties)
                     _logger.error("Failed to update parameter:\n{}\n{}".format(
                                                             json.dumps(parameter, ident=4), rsp.data))
 
@@ -2257,7 +2257,7 @@ class AAC_Configurator(object):
                         self.needsRestart = True
                         _logger.info("Successfully added runtime endpoint at {}:{}".format(endpoint.address, endpoint.port))
                     else:
-                        track_failure('access_control', 'runtime liberty - interfaces', rsp, aac_config.runtime_properties)
+                        track_failure('access_control', 'runtime_liberty/interfaces', rsp, aac_config.runtime_properties)
                         _logger.error("Failed to create endpoint:\n:{}\n{}".format(
                                                                         json.dumps(endpoint, indent=4), rsp.data))
 
@@ -2273,7 +2273,7 @@ class AAC_Configurator(object):
                                 if rsp.success == True:
                                     _logger.info("Successfully added {} user to {} registry group.".format(user, group.name))
                                 else:
-                                    track_failure('access_control', 'runtime liberty - group', rsp, group)
+                                    track_failure('access_control', 'runtime_liberty/group', rsp, group)
                                     _logger.error("Failed to add {} user to existing registry group\n{}".format(user, rsp.data))
                     else:
                         rsp = self.aac.user_registry.create_group(group.name, users=group.users)
@@ -2281,7 +2281,7 @@ class AAC_Configurator(object):
                             self.needsRestart = True
                             _logger.info("Successfully added {} to the runtime user registry".format(group.name))
                         else:
-                            track_failure('access_control', 'runtime liberty - group', rsp, group)
+                            track_failure('access_control', 'runtime_liberty/group', rsp, group)
                             _logger.error("Failed to create group:\n{}\n{}".format(json.dumps(group, indent=4), rsp.data))
 
             if aac_config.runtime_properties.users:
@@ -2294,7 +2294,7 @@ class AAC_Configurator(object):
                             self.needsRestart = True
                             _logger.info("Successfully removed old user from user registry.")
                         else:
-                            track_failure('access_control', 'runtime liberty - user', rsp, user)
+                            track_failure('access_control', 'runtime_liberty/user', rsp, user)
                             _logger.error("Failed to remove old user from registry, skipping create {} user.".format(
                                                                                                         user.name))
                             continue
@@ -2303,7 +2303,7 @@ class AAC_Configurator(object):
                         self.needsRestart = True
                         _logger.info("Successfully added {} to the runtime user registry".format(user.name))
                     else:
-                        track_failure('access_control', 'runtime liberty - user', rsp, user)
+                        track_failure('access_control', 'runtime_liberty/user', rsp, user)
                         _logger.error("Failed to create user:\n{}\n{}".format(json.dumps(user, indent=4), rsp.data))
 
     def configure(self):

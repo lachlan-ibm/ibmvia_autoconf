@@ -188,7 +188,7 @@ class IVIA_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully restarted LMI after uploading trial certificate")
             else:
-                track_failure('system', 'activation - trial', rsp)
+                track_failure('system', 'activation/trial', rsp)
                 _logger.error("Failed to restart LMI after uploading trial certificate")
             if self._wait_for_trial_activation():
                 return
@@ -202,7 +202,7 @@ class IVIA_Configurator(object):
             _logger.info("Successfully applied {} license".format(module))
             self.needsRestart = True
         else:
-            track_failure('system', 'activation - {}'.format(module), rsp)
+            track_failure('system', f'activation/{module}', rsp)
             _logger.error("Failed to apply {} license:\n{}".format(module, rsp.data))
 
     def _activateBaseAppliance(self, config):
@@ -270,7 +270,7 @@ class IVIA_Configurator(object):
                 parsed_file['name'], database))
             self.needsRestart = True
         else:
-            track_failure('system', 'ssl - certificate', rsp, {"certificate": parsed_file['name']})
+            track_failure('system', 'ssl/signer_certificate', rsp, {"certificate": parsed_file['name']})
             _logger.error("Failed to upload {} signer certificate to {} database\n{}".format(
                 parsed_file['name'], database, rsp.data))
 
@@ -283,7 +283,7 @@ class IVIA_Configurator(object):
                 str(server) + ":" + str(port), database))
             self.needsRestart = True
         else:
-            track_failure('system', 'ssl - certificate import', rsp, {"certificate": str(server) + ":" + str(port)})
+            track_failure('system', 'ssl/signer_certificate', rsp, {"certificate": str(server) + ":" + str(port)})
             _logger.error("Failed to load {} signer certificate to {}/n{}".format(
                 str(server) + ":" + str(port), database, rsp.data))
 
@@ -299,7 +299,7 @@ class IVIA_Configurator(object):
                 personal_parsed_file['name'], db_name))
             self.needsRestart = True
         else:
-            track_failure('system', 'ssl - key', rsp, {"PKCS12": personal_parsed_file['path']})
+            track_failure('system', 'ssl/personal_certificate', rsp, {"PKCS12": personal_parsed_file['path']})
             _logger.error("Failed to upload {} personal certificate to {}\n{}".format(
                personal_parsed_file['path'], db_name, rsp.data))
 
@@ -476,7 +476,7 @@ class IVIA_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully set admin config")
             else:
-                track_failure('system', 'admin config', rsp, config.admin_config)
+                track_failure('system', 'admin_config', rsp, config.admin_config)
                 _logger.error("Failed to set admin config using:\n{}\n{}".format(
                     json.dumps(config.admin_config), rsp.data))
 
@@ -494,7 +494,7 @@ class IVIA_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully update password for {}".format(user.name))
                     else:
-                        track_failure('system', 'system user', rsp, user)
+                        track_failure('system', 'system_user', rsp, user)
                         _logger.error("Failed to update password for {}:\n{}".format(
                             user.name, rsp.data))
                 if user.groups != None:
@@ -505,7 +505,7 @@ class IVIA_Configurator(object):
                             _logger.info("Successfully added {} to {} group".format(
                                 user.name, g))
                         else:
-                            track_failure('system', 'system group', rsp, user)
+                            track_failure('system', 'system_group', rsp, user)
                             _logger.error("Failed to add {} to {} group:\n{}".format(
                                 user.name, g, rsp.data))
             elif user.operation == "delete":
@@ -513,7 +513,7 @@ class IVIA_Configurator(object):
                 if rsp.success == True:
                     _logger.info("Successfully removed user {}".format(user.name))
                 else:
-                    track_failure('system', 'system user', rsp, user)
+                    track_failure('system', 'system_user', rsp, user)
                     _logger.error("Failed to remove system user {}:\n{}".format(
                         user.name, rsp.data))
 
@@ -530,7 +530,7 @@ class IVIA_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully {} group {}".format(group.operation, group.id))
             else:
-                track_failure('system', 'system group', rsp, group)
+                track_failure('system', 'system_group', rsp, group)
                 _logger.error("Failed to {} group {}:\n{}\n{}".format(
                     group.operation, group.id, json.dumps(group, indent=4), rsp.data))
 
@@ -540,7 +540,7 @@ class IVIA_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully added {} to group {}".format(user, group.id))
                     else:
-                        track_failure('system', 'system group', rsp, group)
+                        track_failure('system', 'system_group', rsp, group)
                         _logger.error("Failed to add user {} to group {}:\n{}\n{}".format(
                             user, group.id, json.dumps(group, indent=4), rsp.data))
 
@@ -1024,7 +1024,7 @@ class IVIA_Configurator(object):
                     _logger.info("Successfully added {} to the remote syslog configuration.".format(server.server))
                     self.needsRestart = True
                 else:
-                    track_failure('system', 'remote syslog', rsp, server)
+                    track_failure('system', 'remot_ syslog', rsp, server)
                     _logger.error("Failed to update the remote syslog configuration with:\n{}\n{}".format(
                         json.dumps(server, indent=4) , rsp.data))
 
@@ -1054,7 +1054,7 @@ class IVIA_Configurator(object):
                 _logger.info("Successfully updated the LMI certificate.")
                 self.needsRestart = True
             else:
-                track_failure('system', 'lmi certificate', rsp, config.lmi_certificate)
+                track_failure('system', 'lmi_certificate', rsp, config.lmi_certificate)
                 _logger.error("Failed to update the LMI certificate with PKCS12 file:: {}\n{}".format(
                                                                                         lmiP12, rsp.data))
 

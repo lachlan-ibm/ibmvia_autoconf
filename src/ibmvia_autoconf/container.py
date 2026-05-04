@@ -109,7 +109,7 @@ class Docker_Configurator(object):
             _logger.info("Successfully configured config database")
             self.needsRestart = True
         else:
-            track_failure('container', 'config database', rsp, database)
+            track_failure('container', 'config_database', rsp, database)
             _logger.error("Failed to configure config database with config:\n{}\n{}".format(
                 json.dumps(config_database.config_database, indent=4), rsp.data))
 
@@ -125,7 +125,7 @@ class Docker_Configurator(object):
             _logger.info("Successfully configured HVDB")
             self.needsRestart = True
         else:
-            track_failure('container', 'runtime database', rsp, runtime_database)
+            track_failure('container', 'runtime_database', rsp, runtime_database)
             _logger.error("Failed to configure HVDB with config:\n{}\n{}".format(
                 json.dumps(runtime_database.runtime_database, indent=4), rsp.data))
 
