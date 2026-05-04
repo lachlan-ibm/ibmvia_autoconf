@@ -17,15 +17,22 @@ function collapseAllInContainer(containerId) {
 
 // Initialize all embedded schema sections when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Find all schema containers
-    const schemaContainers = document.querySelectorAll('.schema-container');
+    // Fix missing heading IDs for Sphinx navigation
+    // Find all headerlinks and add the corresponding ID to their parent heading
+    document.querySelectorAll('a.headerlink').forEach(function(link) {
+        var href = link.getAttribute('href');
+        if (href && href.startsWith('#')) {
+            var id = href.substring(1); // Remove the '#'
+            var heading = link.parentElement;
+            if (heading && !heading.id) {
+                heading.id = id;
+            }
+        }
+    });
     
-    // Call anchorOnLoad for each container if the function exists
+    // Process anchor on page load if the function exists
     if (typeof anchorOnLoad === 'function') {
-        schemaContainers.forEach(function(container) {
-            // Set the context to this container and call anchorOnLoad
-            anchorOnLoad();
-        });
+        anchorOnLoad();
     }
 });
 
