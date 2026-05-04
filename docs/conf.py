@@ -66,8 +66,20 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 
-# Add custom JavaScript files to scope expand/collapse to songle config objects
+# Add custom JavaScript and CSS files for schema documentation
 html_js_files = [
+    'https://code.jquery.com/jquery-3.4.1.min.js',
+    'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js',
+    'https://use.fontawesome.com/facf9fa52c.js',
+    'schema_doc.min.js',
     'schema_expand_collapse.js',
 ]
+
+html_css_files = [
+    'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css',
+    'https://fonts.googleapis.com/css?family=Overpass:300,400,600,800',
+    'schema_doc.css',
+    'schema_overrides.css',
+]
+
 html_static_path = ['_static', 'schema_html']
