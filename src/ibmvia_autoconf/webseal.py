@@ -1153,7 +1153,7 @@ class WEB_Configurator(object):
                 _logger.error("Can only specify one cert mapping file")
                 return
             cert_mapping_file = cert_mapping_file[0]
-            rsp = self.web.client_cert_mapping.create(name=cert_mapping_file['name'], content=cert_mapping_file['contents'])
+            rsp = self.web.client_cert_mapping.create(name=cert_mapping_file['name'], content=cert_mapping_file['text'])
             if rsp.success == True:
                 _logger.info("Successfully configured certificate mapping")
             else:
@@ -1184,7 +1184,7 @@ class WEB_Configurator(object):
                 _logger.error("Can only specify one jct mapping file")
                 return
             jct_mapping_file = jct_mapping_file[0]
-            rsp = self.web.jct_mapping.create(name=jct_mapping_file['name'], jmt_config_data=jct_mapping_file['contents'])
+            rsp = self.web.jct_mapping.create(name=jct_mapping_file['name'], jmt_config_data=jct_mapping_file['text'])
             if rsp.success == True:
                 _logger.info("Successfully configured junction mapping")
             else:
@@ -1239,7 +1239,7 @@ class WEB_Configurator(object):
             if len(user_mapping_file) != 1:
                 _logger.error("Can only specify one user mapping file")
                 return
-            rsp = self.web.user_mapping.create(name=user_mapping_file['name'], content=user_mapping_file['contents'])
+            rsp = self.web.user_mapping.create(name=user_mapping_file['name'], content=user_mapping_file['text'])
             if rsp.success == True:
                 _logger.info("Successfully configured user mapping")
             else:
