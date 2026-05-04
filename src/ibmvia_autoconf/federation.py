@@ -11,6 +11,7 @@ import time
 
 from .util.configure_util import deploy_pending_changes, config_base_dir
 from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, to_camel_case, remap_keys, KUBE_CLIENT_SLEEP
+from .util.api_tracker import track_failure
 
 _logger = logging.getLogger(__name__)
 
@@ -427,6 +428,7 @@ class FED_Configurator(object):
                 if rsp.success == True:
                     _logger.info("Successfully {} {} Point of Contact".format(verb, poc.name))
                 else:
+                    track_failure('federation', 'point_of_contact/profile', rsp, poc)
                     _logger.error("Failed to {} {} point of contact with config:\n{}\n{}".format(
                                             verb, poc.name, json.dumps(poc, indent=4), rsp.data))
 
@@ -441,13 +443,16 @@ class FED_Configurator(object):
                             _logger.info("Successfully updated the active POC profile to {}".format(
                                                             federation_config.point_of_contact.active_profile))
                         else:
+                            track_failure('federation', 'point_of_contact/profile_active', rsp, profile_to_activate)
                             _logger.error("Failed to update the active POC profile to {}".format(
                                                             federation_config.point_of_contact.active_profile))
                     else:
+                        track_failure('federation', 'point_of_contact/profile_active', None, profile_to_activate)
                         _logger.error("Could not find the {} POC profile to activate.".format(
                                                             federation_config.point_of_contact.active_profile))
                 else:
-                    _logger.error("Could not list hte point of contact profiles")
+                    track_failure('federation', 'point_of_contact/profile', None, None)
+                    _logger.error("Could not list the point of contact profiles")
 
 
     def _chain_index_to_prefix(self, template_name, chain_index, chain_templates):
@@ -703,6 +708,7 @@ class FED_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully {} {} STS chain template.".format(verb, template.name))
                     else:
+                        track_failure('federation', 'sts/chain_template', rsp, template)
                         _logger.error("Failed to {} STS chain template:\n{}\n{}".format(verb, json.dumps(
                                                                                             template, indent=4), rsp.data))
 
@@ -726,6 +732,7 @@ class FED_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully {} {} STS chain.".format(verb, chain.name))
                     else:
+                        track_failure('federation', 'sts/chain', rsp, chain)
                         _logger.error("Failed to {} {} STS chain:\n{}\n{}".format(
                                                 verb, chain.name, json.dumps(chain, indent=4), rsp.data))
 
@@ -775,6 +782,7 @@ class FED_Configurator(object):
                 if rsp.success == True:
                     _logger.info("Successfully {} {} access policy.".format(verb, policy.name))
                 else:
+                    track_failure('federation', 'access_policy', rsp, policy)
                     _logger.error("Failed to {} access policy:\n{}\n{}".format(verb, json.dumps(
                                                                                         policy, indent=4), rsp.data))
 
@@ -850,6 +858,7 @@ class FED_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully {} {} alias.".format(verb, alias.name))
                     else:
+                        track_failure('federation', 'alias_service', rsp, alias)
                         _logger.error("Failed to {} alias:\n{}\n{}".format(
                             verb, json.dumps(alias, indent=4), rsp.data))
 
@@ -914,6 +923,7 @@ class FED_Configurator(object):
                 if rsp.success == True:
                     _logger.info("Successfully {} {} attribute source".format(verb, source.name))
                 else:
+                    track_failure('federation', 'attribute_source', rsp, source)
                     _logger.error("Failed to {} attribute source:\n{}\n{}".format(
                                             verb, json.dumps(source, indent=4), rsp.data))
 
@@ -926,6 +936,7 @@ class FED_Configurator(object):
             _logger.info("Successfully imported {} Federation Partner".format(partner.name))
             self.needsRestart = True
         else:
+            track_failure('federation', 'federation/partner_import', rsp, partner)
             _logger.error("Failed to import Federation Partner:\n{}\n{}".format(
                                             json.dumps(partner, indent=4), rsp.data))
 
@@ -1091,6 +1102,7 @@ class FED_Configurator(object):
                 partner.name, partner.role))
             self.needsRestart = True
         else:
+            track_failure('federation', 'federation/partner_oidc', rsp, partner)
             _logger.error("Failed to create {} SAML Partner with config:\n{}\n{}".format(
                                         partner.name, json.dumps(partner, indent=4), rsp.data))
 
@@ -1160,6 +1172,7 @@ class FED_Configurator(object):
                 partner.name, fedId))
             self.needsRestart = True
         else:
+            track_failure('federation', 'federation/partner_oidc', rsp, partner)
             _logger.error("Failed to create {} OIDC RP Partner with config:\n{}/n{}".format(
                 partner.name, json.dumps(partner, indent=4), rsp.data))
 
@@ -1169,6 +1182,7 @@ class FED_Configurator(object):
                   "rp": self._configure_oidc_partner
                 }.get(partner.role, None)
         if method == None:
+            track_failure('federation', 'federation/partner', None, partner)
             _logger.error("Federation partner {} does not specify a valid configuration: {}\n\tskipping . . .".format(
                             partner.name, json.dumps(partner, indent=4)))
         else:
@@ -1323,6 +1337,7 @@ class FED_Configurator(object):
                 _logger.info("Successfully created {} SAML2.0 Federation".format(federation.name))
                 self.needsRestart = True
             else:
+                track_failure('federation', 'federation/saml', rsp, methodArgs)
                 _logger.error("Failed to create {} SAML2.0 Federation with config:\n{}\n{}".format(
                     federation.name, json.dumps(federation, indent=4), rsp.data))
                 return
@@ -1375,6 +1390,7 @@ class FED_Configurator(object):
                 _logger.info("Successfully created {} OIDC RP Federation".format(federation.name))
                 self.needsRestart = True
             else:
+                track_failure('federation', 'federation/oidc', rsp, methodArgs)
                 _logger.error("Failed to create {} OIDC RP Federation with config:\n{}\n{}".format(
                         federation.name, json.dumps(federation, indent=4), rsp.data))
         old_feds = optional_list(self.fed.federations.list_federations().json)
@@ -1793,6 +1809,7 @@ class FED_Configurator(object):
                         if rsp.success == True:
                             _logger.info("Exported {} metadata to {}".format(federation.name, export_file_path))
                         else:
+                            track_failure('federation', 'federation/export', rsp, request_data=fed_obj)
                             _logger.error("Failed to export {} federation metadata:\n{}".format(
                                                         federation.name, rsp.data))
                     else:

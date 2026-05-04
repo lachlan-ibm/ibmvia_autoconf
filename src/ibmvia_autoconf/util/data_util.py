@@ -11,8 +11,9 @@ import sys
 
 from copy import deepcopy
 from . import constants as const
+from .logging_util import setup_logging
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+setup_logging()
 _logger = logging.getLogger(__name__)
 
 def to_camel_case(snake_case):
@@ -220,3 +221,7 @@ try:
         KUBE_CLIENT_SLEEP = int(os.environ.get(const.LEGACY_KUBERNETES_CLIENT_SLEEP, 15))
 except ValueError:
     KUBE_CLIENT_SLEEP = 15
+
+PUBLISH_SNAPSHOT_SLEEP = 3
+if const.PUBLISH_SNAPSHOT_SLEEP in os.environ.keys():
+    PUBLISH_SNAPSHOT_SLEEP = int(os.environ.get(const.PUBLISH_SNAPSHOT_SLEEP, 3))

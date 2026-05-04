@@ -12,6 +12,7 @@ from requests import get
 from .util.constants import HEADERS
 from .util.configure_util import deploy_pending_changes
 from .util.data_util import Map
+from .util.api_tracker import track_failure
 
 _logger = logging.getLogger(__name__)
 
@@ -108,6 +109,7 @@ class Docker_Configurator(object):
             _logger.info("Successfully configured config database")
             self.needsRestart = True
         else:
+            track_failure('container', 'config_database', rsp, database)
             _logger.error("Failed to configure config database with config:\n{}\n{}".format(
                 json.dumps(config_database.config_database, indent=4), rsp.data))
 
@@ -123,6 +125,7 @@ class Docker_Configurator(object):
             _logger.info("Successfully configured HVDB")
             self.needsRestart = True
         else:
+            track_failure('container', 'runtime_database', rsp, runtime_database)
             _logger.error("Failed to configure HVDB with config:\n{}\n{}".format(
                 json.dumps(runtime_database.runtime_database, indent=4), rsp.data))
 
@@ -142,6 +145,7 @@ class Docker_Configurator(object):
                 _logger.info("Successfully configured DSC")
                 self.needsRestart = True
             else:
+                track_failure('container', 'dsc', rsp, clusterConfig.dsc)
                 _logger.error("Failed to configure DSC with config:\n{}\n{}".format(
                     json.dumps(clusterConfig.dsc, indent=4), rsp.data))
 

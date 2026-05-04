@@ -1,7 +1,9 @@
 packaging>=22.0
+pyivia
 pyyaml
 requests
 kubernetes
+docker-compose
 pyivia
 wheel
 setuptools
@@ -13,3 +15,4 @@ typing
 build
 json-schema-for-humans
 check-jsonschema
+python-json-logger

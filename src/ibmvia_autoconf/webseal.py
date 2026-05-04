@@ -11,7 +11,7 @@ import copy
 from .util.configure_util import deploy_pending_changes, config_base_dir
 from .util.data_util import prefix_keys, Map, FILE_LOADER, optional_list, filter_list
 
-
+from .util.api_tracker import track_failure
 _logger = logging.getLogger(__name__)
 
 
@@ -33,6 +33,7 @@ class WEB_Configurator(object):
             _logger.info("Successfully updated stanza [{}] with [{}:{}]".format(
                     entry.stanza, entry.entry_id, entry.value))
         else:
+            track_failure('webseal', 'proxy/stanza', rsp, entry)
             _logger.error("Failed to update stanza [{}] with [{}:{}]\n{}".format(
                     entry.stanza, entry.entry_id, entry.value, rsp.data))
 
@@ -44,11 +45,13 @@ class WEB_Configurator(object):
         elif entry.stanza:
             rsp = self.web.reverse_proxy.add_configuration_stanza(proxy_id, entry.stanza)
         else:
+            track_failure('webseal', 'proxy/stanza', rsp, entry)
             _logger.error("Configuration invalid:\n{}".format(json.dumps(entry, indent=4)))
             return
         if rsp.success == True:
             _logger.info("Successfully created stanza entry")
         else:
+            track_failure('webseal', 'proxy/stanza', rsp, entry)
             _logger.error("Failed to create stanza entry:\n{}\n{}".format(json.dumps(entry, indent=4), rsp.data))
 
     def __delete_stanza(self, proxy_id, entry):
@@ -59,11 +62,13 @@ class WEB_Configurator(object):
         elif entry.stanza:
             rsp = self.web.reverse_proxy.delete_configuration_stanza(proxy_id, entry.stana)
         else:
+            track_failure('webseal', 'proxy/stanza', rsp, entry)
             _logger.error("Stanza configuration entry invalid:\n{}".format(json.dumps(entry, indent=4)))
             return
         if rsp.success == True:
             _logger.info("Successfully deleted stanza entry")
         else:
+            track_failure('webseal', 'proxy/stanza', rsp, entry)
             _logger.error("Failed to delete stanza entry:\n{}\n{}".format(json.dumps(entry, indent=4), rsp.data))
 
     def _configure_stanza(self, proxy_id, config):
@@ -75,6 +80,7 @@ class WEB_Configurator(object):
             elif entry.operation == "update":
                 self.__update_stanza(proxy_id, entry)
             else:
+                track_failure('webseal', 'proxy - stanza', None, entry)
                 _logger.error("Unknown operation {} in stanza entry: {}".format(
                     entry.operation, json.dumps(entry, indent=4)))
 
@@ -95,6 +101,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully ran Advanced Access Control configuration wizard on {} proxy instance".format(proxy_id))
         else:
+            track_failure('webseal', 'proxy/aac', rsp, aac_config)
             _logger.error("Failed to run AAC configuration wizard on {} proxy instance with config:\n{}\n{}".format(
                 proxy_id, json.dumps(aac_config, indent=4), rsp.data))
 
@@ -126,6 +133,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully ran MMFA configuration wizard on {} proxy instance".format(proxy_id))
         else:
+            track_failure('webseal', 'proxy/mmfa', rsp, mmfa_config)
             _logger.error("Failed to run MMFA configuration wizard on {} proxy instance with config:\n{}\n{}".format(
                 proxy_id, json.dumps(mmfa_config, indent=4), rsp.data))
 
@@ -145,6 +153,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully ran federation configuration utility for {} federation.".format(fc.name))
             else:
+                track_failure('webseal', 'proxy/federation', rsp, fc)
                 _logger.error("Federation configuration wizard did not run successfully with config:\n{}\n{}".format(
                     json.dumps(fc, indent=4), rsp.data))
 
@@ -171,6 +180,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully created API protection junction {}".format(api_config.junction))
         else:
+            track_failure('webseal', 'proxy/api_protection', rsp, api_config)
             _logger.error("Failed to create API protection junction:\n{}\n{}".format(
                     json.dumps(api_config, indent=4), rsp.data))
 
@@ -187,6 +197,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully added junction to {} proxy".format(proxy_id))
         else:
+            track_failure('webseal', 'proxy/junction', rsp, junction)
             _logger.error("Failed to add junction to {} with config:\n{}\n{}".format(
                 proxy_id, json.dumps(junction, indent=4), rsp.data))
 
@@ -197,6 +208,7 @@ class WEB_Configurator(object):
             _logger.info("Successfully imported {} to {} proxy management root".format(
                 zip_file, proxy_id))
         else:
+            track_failure('webseal', 'proxy/management_root', rsp, path)
             _logger.error("Failed to import {} to {} proxy:\n{}".format(
                                         path, proxy_id, rsp.data))
 
@@ -536,6 +548,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully configured proxy {}".format(proxy.name))
         else:
+            track_failure('webseal', 'proxy', rsp, proxy)
             _logger.error("Configuration of {} proxy failed with config:\n{}\n{}".format(
                 proxy.name, json.dumps(proxy, indent=4), rsp.data))
         if proxy.management_root != None:
@@ -567,6 +580,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully restart {} proxy instance after applying configuration".format(proxy.name))
             else:
+                track_failure('webseal', 'restart_instance', rsp, proxy)
                 _logger.error("Failed to restart {} proxy instance after applying configuration".format(proxy.name))
 
 
@@ -597,6 +611,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully modified the {} stanza file".format(entry.stanza))
             else:
+                track_failure('webseal', 'runtime/stanza', rsp, entry)
                 _logger.error("Failed to modify stanza properties file with config:\n{}\n{}".format(
                                                                                 json.dumps(entry, indent=4), rsp.data))
 
@@ -606,6 +621,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully updated the embedded LDAP secret")
         else:
+            track_failure('webseal', 'runtime/internal_ldap', rsp, ldap_secret)
             _logger.error("Failed to update the embedded LDAP secret:\n{}".format(rsp.data))
 
     class Runtime(typing.TypedDict):
@@ -706,6 +722,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully unconfigured RTE")
             else:
+                track_failure('webseal', 'runtime/unconfigure', rsp)
                 _logger.error("RTE cannot be unconfigured, will not override config")
                 return
         elif rte_status.json['status'] == "Available":
@@ -742,6 +759,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully configured Reverse Proxy Runtime Policy Server")
             else:
+                track_failure('webseal', 'runtime', rsp, runtime)
                 _logger.error("Failed to configure Reverse Proxy Runtime Policy Server with config:\n{}\n{}".format(
                     json.dumps(runtime, indent=4), rsp.data))
 
@@ -766,6 +784,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully attached attributes to policy directory objects {}".format(pd_obj))
         else:
+            track_failure('webseal', 'pdadmin/object', rsp, obj)
             _logger.error("Failed to attach attributes to object {} with config:\n{}\n{}".format(
                     pd_obj, json.dumps(obj, indent=4), rsp.data))
 
@@ -796,6 +815,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully created acl {}".format(acl.name))
         else:
+            track_failure('webseal', 'pdadmin/acl', rsp, acl)
             _logger.error("Failed to create acl {} with config:\n{}\n{}".format(
                     acl.name, json.dumps(acl, indent=4), rsp.data))
 
@@ -828,6 +848,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully created pop {}".format(pop.name))
         else:
+            track_failure('webseal', 'pdadmin/pop', rsp, pop)
             _logger.error("Failed to create pop {} with config:\n{}\n{}".format(
                         pop.name, json.dumps(pop, indent=4), rsp.data))
 
@@ -847,6 +868,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully attached acls/pops to {}".format(proxy_config.host))
         else:
+            track_failure('webseal', 'pdadmin/attach_acls_pops', rsp, proxy_config)
             _logger.error("Failed to attach acls/pops to {} with config:\n{}\n{}".format(
                     proxy_config.host, json.dumps(proxy_config, indent=4), rsp.data))
 
@@ -862,6 +884,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully created user {}".format(user.username))
         else:
+            track_failure('webseal', 'pdadmin/user', rsp, user)
             _logger.error("Failed to create user {} with config:\n{}\n{}".format(
                         user.username, json.dumps(user, indent=4), rsp.data))
 
@@ -874,6 +897,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully created group {}".format(group.name))
         else:
+            track_failure('webseal', 'pdadmin/group', rsp, group)
             _logger.error("Failed to create group {} with config:\n{}\n{}".format(
                         group.name, json.dumps(group, indent=4), rsp.data))
 
@@ -1133,6 +1157,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully configured certificate mapping")
             else:
+                track_failure('webseal', 'client_certificate_mapping', rsp, cert_mapping_file)
                 _logger.error("Failed to configure certificate mapping using {} config file:\n{}".format(
                             cert_mapping_file['name'], rsp.data))
 
@@ -1163,6 +1188,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully configured junction mapping")
             else:
+                track_failure('webseal', 'junction_mapping', rsp, jct_mapping_file)
                 _logger.error("Failed to configure junction mapping using {} config file:\n{}".format(
                                 jct_mapping_file['name'], rsp.data))
 
@@ -1186,10 +1212,11 @@ class WEB_Configurator(object):
                 _logger.error("Can only specify one url mapping file")
                 return
             url_mapping_file = url_mapping_file[0]
-            rsp = self.web.url_mapping.create(name=url_mapping_file['name'], dynurl_config_data=url_mapping_file['contents'])
+            rsp = self.web.url_mapping.create(name=url_mapping_file['name'], dynurl_config_data=url_mapping_file['text'])
             if rsp.success == True:
                 _logger.info("Successfully configured URL mapping")
             else:
+                track_failure('webseal', 'url_mapping', rsp, url_mapping_file)
                 _logger.error("Failed to configure URL mapping using {} config file:\n{}".format(
                                 url_mapping_file['name'], rsp.data))
 
@@ -1216,6 +1243,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully configured user mapping")
             else:
+                track_failure('webseal', 'user_mapping', rsp, user_mapping_file)
                 _logger.error("Failed to configure user mapping using {} config file:\n{}".format(
                                 user_mapping_file['name'], rsp.data))
 
@@ -1242,6 +1270,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully configured Federated Singe Sign On configuration")
             else:
+                track_failure('webseal', 'fsso', rsp, fsso_config_file)
                 _logger.error("Failed to configure FSSO using {} config file:\n{}".format(
                                 fsso_config_file['name'], rsp.data))
 
@@ -1275,6 +1304,7 @@ class WEB_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully created {} HTTP transform rule".format(http_transform_file['name']))
                     else:
+                        track_failure('webseal', 'http_transform', rsp, http_transform_file)
                         _logger.error("Failed to create {} HTTP transform rule".format(http_transform_file['name']))
 
 
@@ -1283,6 +1313,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully configured Kerberos property")
         else:
+            track_failure('webseal', 'kerberos/properties', rsp, request_data={'id': _id, 'name': name, 'value': value})
             _logger.error("Failed to configure Kerberos property:\nsubsection: {} name: {} value:{}\n{}".format(
                             subsection, name, value, rsp.data))
 
@@ -1354,6 +1385,7 @@ class WEB_Configurator(object):
                 if rsp.success == True:
                     _logger.info("Successfully imported Kerberos Keytab file")
                 else:
+                    track_failure('webseal', 'kerberos/keytabs', rsp, config.keytabs)
                     _logger.error("Failed to import Kerberos Keytab file:\n{}\n{}".format(
                                 json.dumps(config.keytabs, indent=4), rsp.data))
 
@@ -1378,6 +1410,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully configured password strength rules")
         else:
+            track_failure('webseal', 'password_strength', rsp, pwd_config_file)
             _logger.error("Failed to configure password strength rules using {}\n{}".format(
                             pwd_config_file['name'], rsp.data))
 
@@ -1406,6 +1439,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("Successfully configured RSA")
         else:
+            track_failure('webseal', 'rsa', rsp, rsa_config)
             _logger.error("Failed to configure RSA using:\n{}\n{}".format(
                             json.dumps(rsa_config, indent=4), rsp.data))
 
@@ -1428,6 +1462,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully created {} API Access Control Authorization Server".format(authz_server.name))
             else:
+                track_failure('webseal', 'proxy/apiac', rsp, authz_server)
                 _logger.error("Failed to create API Authorization Server:\n{}\n{}".format(
                                                             json.dumps(authz_server, indent=4), rsp.data))
 
@@ -1517,6 +1552,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully created {} API AC Resource server".format(resource_server.server_hostname))
             else:
+                track_failure('webseal', 'proxy/apiac', rsp, resource_server)
                 _logger.error("Failed to create {} API AC Resource server with config:\n{}\n{}".format(
                     resource_server.server_hostname, json.dumps(resource_server, indent=4), rsp.data))
                 continue
@@ -1544,6 +1580,7 @@ class WEB_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully created {} junctioned resource".format(resource.name))
                     else:
+                        track_failure('webseal', 'proxy/apiac_resource', rsp, resource)
                         _logger.error("Failed to create {} junctioned resource with config;\n{}\n{}".format(
                             resource.name, json.dumps(resource, indent=4), rsp.data))
 
@@ -1555,6 +1592,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully created {} policy".format(policy.name))
             else:
+                track_failure('webseal', 'proxy/apiac_policy', rsp, policy)
                 _logger.error("Failed to create API Access Control policy {}:\n{}\n{}".format(
                                         policy.name, json.dumps(policy, indent=4), rsp.data))
 
@@ -1564,6 +1602,7 @@ class WEB_Configurator(object):
             if rsp.success == True:
                 _logger.info("Successfully created {} CORS policy".format(cors.name))
             else:
+                track_failure('webseal', 'proxy/apiac_cors', rsp, cors)
                 _logger.error("Failed to create {} CORS policy using config:\n{}\n{}".format(cors.name,
                     json.dumps(cors, indent=4), rsp.data))
 
@@ -1576,6 +1615,7 @@ class WEB_Configurator(object):
                 if rsp.success == True:
                     _logger.info("Successfully uploaded {} {}".format(_file['name'], _file['type']))
                 else:
+                    track_failure('webseal', 'proxy/apiac_document_root', rsp, doc_root)
                     _logger.error("Failed to upload {} {}\n{}".format(_file["name"], _file["type"], rsp.data))
 
 
@@ -1913,6 +1953,7 @@ class WEB_Configurator(object):
         if rsp.success == True:
             _logger.info("API Access Control successfully stored admin credential")
         else:
+            track_failure('webseal', 'proxy/runtime_auth', rsp, runtime)
             _logger.error("API Access Control was unable to store admin credential")
             return
 
@@ -1921,7 +1962,7 @@ class WEB_Configurator(object):
 
         if config.cors != None:
             self.__apiac_cors(config.cors)
-            
+
         if config.authorization_servers != None:
             self.__apiac_authz_server(runtime, config.authorization_servers)
 
