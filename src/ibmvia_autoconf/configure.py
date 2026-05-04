@@ -390,7 +390,7 @@ class IVIA_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully imported {} SSL KDB file".format(database.kdb_file))
                     else:
-                        track_failure('system', 'ssl', rsp, database)
+                        track_failure('system', 'ssl/import_kdb_sth', rsp, database)
                         _logger.error("Failed to import {} SSL KDB file:\n{}\n{}".format(database.kdb_file,
                                         json.dumps(database, indent=4), rsp.data))
                 else:
