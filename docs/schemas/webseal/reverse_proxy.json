@@ -352,6 +352,10 @@
             "type": "string",
             "enum": ["iv-user", "iv-user-l", "iv-groups", "iv-creds", "all"]
           }
+        },
+        "sni_name": {
+          "type": "string",
+          "description": "The server name indicator (SNI) to send to TLS junction servers. By default, no SNI is sent. Any valid DNS name is permitted."
         }
       },
       "required": ["junction_type", "junction_point", "server_hostname", "server_port"]

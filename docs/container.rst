@@ -3,8 +3,9 @@ Container Configuration
 
 This module contains documentation for system level configuration applicable for Container based Verify Identity Access
 deployments. Container configuration is defined under the ``container`` top level key. At a minimum an administrator
-should define the ``isva_base_url``, ``isva_admin_user`` and ``isva_admin_password`` keys (or define the applicable
-environment variables).
+should define the ``mgmt_base_url``, ``mgmt_user`` and ``mgmt_pwd`` keys (or define the applicable
+environment variables). These keys should be defiend at the top level of the configuration file.
+
 
 
 Example
@@ -13,6 +14,9 @@ Example
 
 .. code-block:: yaml
 
+   mgmt_base_url: "https://127.0.0.1:9443"
+   mgmt_user: "admin"
+   mgmt_pwd: "Passw0rd"
    container:
      admin_cfg:
        session_timeout: 720

@@ -28,6 +28,11 @@
           "type": "string",
           "description": "A unique name for the API protection definition."
         },
+        "id": {
+          "type": "integer",
+          "description": "The id to assign to the new API protection definition. The value must be unique. If not provided a unique ID will be generated.",
+          "minimum": 1
+        },
         "description": {
           "type": "string",
           "description": "An optional description of the API protection definition."
@@ -70,6 +75,24 @@
           "default": 20,
           "minimum": 1,
           "maximum": 500
+        },
+        "hash_secrets": {
+         "type": "boolean",
+          "description": "Whether or not to use a one way hash on the client secret before storing. If set to true the secret can no longer be retrieved once it has been created. Use the client secret rotation API to update the secret and optionally keep the old secret active. Note that once hashSecrets is set to true, it cannot be changed.",
+          "default": false
+        },
+        "max_active_secrets": {
+          "type": "integer",
+          "description": "The maximum number of secrets that can be active for a client at any given time. If not provided, the value will be set to 2. Valid values are in the range 1 to 10. Only valid when hashSecrets is true.",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 10
+        },
+        "min_secret_len": {
+          "type": "integer",
+          "description": "The minimum number of characters that a client secret must contain. If not specified the value will be set to 40. A value of 0 means there is no minimum.",
+          "default": 40,
+          "minimum": 0
         },
         "enforce_single_use_grant": {
           "type": "boolean",
@@ -386,6 +409,7 @@
         "definitions": [
           {
             "name": "Verify Demo - Open Banking",
+            "id": 1,
             "description": "The Open Banking Definition.",
             "tcm_behavior": "NEVER_PROMPT",
             "grant_types": [
@@ -406,6 +430,7 @@
           },
           {
             "name": "Verify Demo - Client Credentials Authorization Code Consent PSD2",
+            "id": 2,
             "description": "For Fintechs, this is Client Credentials and Authorization Code with consent.",
             "tcm_behavior": "NEVER_PROMPT",
             "grant_types": [

@@ -129,6 +129,11 @@ these variables are set, they take priority over values set in configuration fil
                         this property can be used to define the external password to authenticate with
                         once the ``management_authorization`` feature has been configured.
 
+- - ``IVIA_PUBLISH_SNAPSHOT_SLEEP`` 
+                        The number of seconds to deplay after publishing a configuration snapshot. This property can 
+                        be used to allow time for the configuration to be replicated in the filesystem or for the 
+                        configuration container to stabilize after publishing a snapshot.
+
 - ``IVIA_KUBERNETES_YAML_CONFIG``
                         This variable defines the Kubernetes cluster configuration file required to run ``kubectl``
                         commands. This configuration file should have sufficient permission in your cluster to restart 
@@ -136,6 +141,11 @@ these variables are set, they take priority over values set in configuration fil
                         The file path can either be absolute or relative to the ``IVIA_CONFIG_BASE`` variable.
 
                         .. note:: This is only applicable for Container deployments using Kubernetes orchestration.
+
+- ``KUBERNETES_CLIENT_SLEEP`` 
+                        The number of seconds to delay after requesting a restart of the runtime containers managed by 
+                        the automated configuration tool. Use this property to allow time for the runtime containers 
+                        to fetch the latest snapshot and apply the configuration.
 
 - ``IVIA_DOCKER_COMPOSE_CONFIG``
                         This variable defines the Docker-Compose deployment configuration file required to run
@@ -145,7 +155,16 @@ these variables are set, they take priority over values set in configuration fil
                         .. note:: This is only applicable for Container deployments using Docker-Compose orchestration.
 
 - ``IVIA_CONFIGURATOR_LOG_LEVEL``
-                        This variable set the logging level for the autoconf tool. The default log level is ``INFO``.
+                        This variable set the logging level for the autoconf tool. The default log level is ``INFO``. Valid 
+                        values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
+
+- ``ISVA_CONFIGURATOR_LOG_FILE``
+                        The path to the log file to write to. If not specified, logs will be written to stdout. This 
+                        should be a fully qualified path.
+
+- ``ISVA_CONFIGURATOR_LOG_FORMAT``
+                        The format to use for the log messages. Default is `%(asctime)s - %(levelname)s - %(message)s"`.
+                        If the format is set to ``json`` then the messages logged will be JSON parsible.
 
 
 

@@ -5,16 +5,19 @@
 import os, logging, sys, yaml, pyivia, datetime, subprocess, shutil, time, json
 from typing import Optional, Tuple
 from . import constants as const
-from .data_util import Map, FileLoader, CustomLoader, get_kube_client, KUBE_CLIENT_SLEEP
+from .data_util import Map, FileLoader, CustomLoader, get_kube_client, KUBE_CLIENT_SLEEP, PUBLISH_SNAPSHOT_SLEEP
+from .logging_util import setup_logging
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+setup_logging()
+
 _logger = logging.getLogger(__name__)
+
 
 def config_base_dir():
     if const.CONFIG_BASE_DIR in os.environ.keys():
         return os.environ.get(const.CONFIG_BASE_DIR)
     elif const.LEGACY_CONFIG_BASE_DIR in os.environ.keys():
-        _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd " 
+        _logger.warning("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd " 
                      "properties instead".format(const.LEGACY_CONFIG_BASE_DIR))
         return os.environ.get(const.LEGACY_CONFIG_BASE_DIR)
     return os.path.expanduser("~") #Default is home directory
@@ -29,7 +32,7 @@ def config_yaml(config_file=None):
         cfg_file_var = const.CONFIG_YAML_ENV_VAR
     elif const.LEGACY_CONFIG_YAML_ENV_VAR in os.environ.keys():
         cfg_file_var = const.LEGACY_CONFIG_YAML_ENV_VAR
-        _logger.warn("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd "
+        _logger.warning("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd "
                      "properties instead".format(const.LEGACY_CONFIG_YAML_ENV_VAR))
     base_dir = config_base_dir()
     cfg_file = const.CONFIG_YAML
@@ -255,6 +258,68 @@ def _docker_restart_container(container, config):
         sys.exit(1)
 
 
+def _publish_docker_configuration(factory, max_attempts=5):
+    for i in range(max_attempts):
+        try:
+            response = factory.get_system_settings().docker.publish()
+            if response.success:
+                time.sleep(PUBLISH_SNAPSHOT_SLEEP) #Wait a bit to stabilize?
+                return True
+        except Exception as e:
+            _logger.exception(e)
+        _logger.warning(
+            f"Failed to publish, retrying in {PUBLISH_SNAPSHOT_SLEEP} seconds (attempt {i + 1}/{max_attempts})")
+        time.sleep(PUBLISH_SNAPSHOT_SLEEP)
+    return False
+
+
+def _wait_for_orchestration_recovery():
+    _logger.info("Idle for {}s to allow orchestration to recover and Verify Identity Access "
+                 "components to initialize.".format(KUBE_CLIENT_SLEEP))
+    time.sleep(KUBE_CLIENT_SLEEP)
+
+
+def _restart_k8s_deployments(isvaConfig):
+    namespace = isvaConfig.container.k8s_deployments.namespace
+    deployments = isvaConfig.container.k8s_deployments.deployments
+    for deployment in deployments:
+        _kube_rollout_restart(namespace, deployment)
+    for deployment in deployments:
+        _kube_wait_for_deployment(namespace, deployment)
+
+
+def _restart_compose_services(isvaConfig):
+    for service in isvaConfig.container.compose_services:
+        _compose_restart_service(service, isvaConfig)
+
+
+def _restart_docker_containers(isvaConfig):
+    for container in isvaConfig.container.containers:
+        _docker_restart_container(container, isvaConfig)
+
+
+def _restart_containers(isvaConfig):
+    container_config = isvaConfig.container
+    restart_handlers = (
+        (
+            container_config.k8s_deployments is not None and
+            container_config.k8s_deployments.deployments is not None,
+            _restart_k8s_deployments
+        ),
+        (container_config.compose_services, _restart_compose_services),
+        (container_config.containers is not None, _restart_docker_containers),
+    )
+
+    for should_restart, handler in restart_handlers:
+        if should_restart:
+            handler(isvaConfig)
+            _wait_for_orchestration_recovery()
+            return
+
+    _logger.debug("Unable to perform automated container restart after snapshot publish, this may lead to errors")
+    _wait_for_orchestration_recovery()
+
+
 def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True):
     if not isvaConfig:
         isvaConfig = config_yaml()
@@ -262,44 +327,14 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
         factory = pyivia.Factory(mgmt_base_url(isvaConfig), *creds(isvaConfig))
 
     factory.get_system_settings().configuration.deploy_pending_changes()
-    if factory.is_docker() == True:
-        published = False
-        for i in range(5):
-            try:
-                response = factory.get_system_settings().docker.publish()
-                if response.success == True:
-                    published = True
-                    break
-            except Exception as e:
-                _logger.exception(e)
-            _logger.warn(f"Failed to publish, retrying in 3 seconds (attempt {i + 1}/5)")
-            time.sleep(3) # TODO config option?
-        if published == True and restartContainers == True and isvaConfig.container != None:
-            if isvaConfig.container.k8s_deployments is not None:
-                namespace = isvaConfig.container.k8s_deployments.namespace
-                #Are we restarting the containers or rolling out a restart to the deployment descriptor
-                if isvaConfig.container.k8s_deployments.deployments is not None:
-                    for deployment in isvaConfig.container.k8s_deployments.deployments:
-                        _kube_rollout_restart(namespace, deployment)
-                    for deployment in isvaConfig.container.k8s_deployments.deployments:
-                        _kube_wait_for_deployment(namespace, deployment)
+    if not factory.is_docker():
+        return
 
-                elif isvaConfig.container.k8s_deployments.pods is not None:
-                    for pod in isvaConfig.container.pods:
-                        _kube_reload_container(namespace, pod)
+    if not _publish_docker_configuration(factory):
+        return
 
-            elif isvaConfig.container.compose_services:
-                for service in isvaConfig.container.compose_services:
-                    _compose_restart_service(service, isvaConfig)
+    if restartContainers and isvaConfig.container is not None:
+        _restart_containers(isvaConfig)
+        return
 
-            elif isvaConfig.container.containers is not None:
-                for container in isvaConfig.container.containers:
-                    _docker_restart_container(container, isvaConfig)
-
-            else:
-                _logger.error("Unable to perform container restart, this may lead to errors")
-            _logger.info("Idle for {}s to allow orchestration to recover and Verify Identity Access "
-                        "components to initialize.".format(KUBE_CLIENT_SLEEP))
-            time.sleep(KUBE_CLIENT_SLEEP)
-        else:
-            _logger.debug("Not asked to restart containers")
+    _logger.debug("Not asked to restart containers")
