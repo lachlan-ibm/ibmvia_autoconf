@@ -39,16 +39,11 @@ for module in base access_control federation appliance container webseal; do
     done
 done
 
-echo "Copying CSS and JS files to _static directory..."
+echo "Copying CSS files to _static directory..."
 if [ -f "$OUTPUT_DIR/base/schema_doc.css" ]; then
     cp "$OUTPUT_DIR/base/schema_doc.css" "$STATIC_DIR/"
     echo "  Copied schema_doc.css"
 fi
-if [ -f "$OUTPUT_DIR/base/schema_doc.min.js" ]; then
-    cp "$OUTPUT_DIR/base/schema_doc.min.js" "$STATIC_DIR/"
-    echo "  Copied schema_doc.min.js"
-fi
-
 echo "Updating HTML files to reference _static resources and add scoped expand/collapse..."
 for html_file in "$OUTPUT_DIR"/*/*.html; do
     if [ -f "$html_file" ]; then
