@@ -1212,7 +1212,7 @@ class WEB_Configurator(object):
                 _logger.error("Can only specify one url mapping file")
                 return
             url_mapping_file = url_mapping_file[0]
-            rsp = self.web.url_mapping.create(name=url_mapping_file['name'], dynurl_config_data=url_mapping_file['contents'])
+            rsp = self.web.url_mapping.create(name=url_mapping_file['name'], dynurl_config_data=url_mapping_file['text'])
             if rsp.success == True:
                 _logger.info("Successfully configured URL mapping")
             else:
