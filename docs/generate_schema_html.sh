@@ -53,7 +53,7 @@ echo "Updating HTML files to reference _static resources and add scoped expand/c
 for html_file in "$OUTPUT_DIR"/*/*.html; do
     if [ -f "$html_file" ]; then
         filename=$(basename "$html_file" .html)
-        # Replace relative CSS/JS paths with _static paths (portable for Linux and macOS)
+        # Replace relative CSS/JS paths with absolute _static paths (portable for Linux and macOS)
         sed_pfx='sed -i'
         if [[ "$OSTYPE" == "darwin"* ]]; then
             # macOS
@@ -61,8 +61,8 @@ for html_file in "$OUTPUT_DIR"/*/*.html; do
         else
             echo "Linux is ok"
         fi
-        $sed_pfx 's|href="schema_doc.css"|href="../_static/schema_doc.css"|g' "$html_file"
-        $sed_pfx 's|src="schema_doc.min.js"|src="../_static/schema_doc.min.js"|g' "$html_file"
+        $sed_pfx 's|href="schema_doc.css"|href="_static/schema_doc.css"|g' "$html_file"
+        $sed_pfx 's|src="schema_doc.min.js"|src="_static/schema_doc.min.js"|g' "$html_file"
         # Add unique container ID to body tag
         $sed_pfx "s|<body onload=\"anchorOnLoad();\" id=\"root\">|<body onload=\"anchorOnLoad();\" id=\"root\"><div class=\"schema-container\" id=\"schema-${filename}\">|g" "$html_file"
         # Close the container div before closing body tag
@@ -108,10 +108,10 @@ for html_file in "$OUTPUT_DIR"/*/*.html; do
         # Insert link to custom CSS after the schema_doc.css link
         if [[ "$OSTYPE" == "darwin"* ]]; then
             # macOS
-            sed -i '' 's|<link rel="stylesheet" type="text/css" href="../_static/schema_doc.css">|<link rel="stylesheet" type="text/css" href="../_static/schema_doc.css">\n\t<link rel="stylesheet" type="text/css" href="../_static/schema_overrides.css">|g' "$html_file"
+            sed -i '' 's|<link rel="stylesheet" type="text/css" href="_static/schema_doc.css">|<link rel="stylesheet" type="text/css" href="_static/schema_doc.css">\n\t<link rel="stylesheet" type="text/css" href="_static/schema_overrides.css">|g' "$html_file"
         else
             # Linux
-            sed -i 's|<link rel="stylesheet" type="text/css" href="../_static/schema_doc.css">|<link rel="stylesheet" type="text/css" href="../_static/schema_doc.css">\n\t<link rel="stylesheet" type="text/css" href="../_static/schema_overrides.css">|g' "$html_file"
+            sed -i 's|<link rel="stylesheet" type="text/css" href="_static/schema_doc.css">|<link rel="stylesheet" type="text/css" href="_static/schema_doc.css">\n\t<link rel="stylesheet" type="text/css" href="_static/schema_overrides.css">|g' "$html_file"
         fi
     fi
 done
