@@ -8,7 +8,7 @@ pyivia
 wheel
 setuptools
 twine
-sphinx
+sphinx<9
 sphinx-rtd-theme
 sphinx_toolbox
 typing

@@ -58,19 +58,24 @@ for html_file in "$OUTPUT_DIR"/*/*.html; do
         if [[ "$OSTYPE" == "darwin"* ]]; then
             # macOS
             sed_pfx="sed -i ''"
-        else
-            echo "Linux is ok"
         fi
-        $sed_pfx 's|href="schema_doc.css"|href="_static/schema_doc.css"|g' "$html_file"
-        $sed_pfx 's|src="schema_doc.min.js"|src="_static/schema_doc.min.js"|g' "$html_file"
+        # Match both quoted and unquoted href/src attributes in minified HTML
+        $sed_pfx 's|href=schema_doc\.css|href=_static/schema_doc.css|g' "$html_file"
+        $sed_pfx 's|href="schema_doc\.css"|href="_static/schema_doc.css"|g' "$html_file"
+        $sed_pfx 's|src=schema_doc\.min\.js|src=_static/schema_doc.min.js|g' "$html_file"
+        $sed_pfx 's|src="schema_doc\.min\.js"|src="_static/schema_doc.min.js"|g' "$html_file"
         # Add unique container ID to body tag
         $sed_pfx "s|<body onload=\"anchorOnLoad();\" id=\"root\">|<body onload=\"anchorOnLoad();\" id=\"root\"><div class=\"schema-container\" id=\"schema-${filename}\">|g" "$html_file"
+        # Also handle minified version without quotes
+        $sed_pfx "s|<body onload=anchorOnLoad(); id=root>|<body onload=anchorOnLoad(); id=root><div class=\"schema-container\" id=\"schema-${filename}\">|g" "$html_file"
         # Close the container div before closing body tag
         $sed_pfx 's|</body>|</div></body>|g' "$html_file"
         # Update expand/collapse buttons to be scoped to their container
-        $sed_pfx "s|data-toggle=\"collapse\" data-target=\".collapse:not(.show)\"|onclick=\"expandAllInContainer('schema-${filename}')\"|g" "$html_file"
-        $sed_pfx "s|data-toggle=\"collapse\" data-target=\".collapse.show\"|onclick=\"collapseAllInContainer('schema-${filename}')\"|g" "$html_file"
-
+        # Match the actual minified HTML patterns with and without quotes
+        $sed_pfx "s|data-toggle=\"collapse\" data-target=\"\.collapse:not(\.show)\"|onclick=\"expandAllInContainer('schema-${filename}')\"|g" "$html_file"
+        $sed_pfx "s|data-toggle=\"collapse\" data-target=\"\.collapse\.show\"|onclick=\"collapseAllInContainer('schema-${filename}')\"|g" "$html_file"
+        $sed_pfx "s|data-toggle=collapse data-target=\.collapse:not(\.show)|onclick=\"expandAllInContainer('schema-${filename}')\"|g" "$html_file"
+        $sed_pfx "s|data-toggle=collapse data-target=\.collapse\.show|onclick=\"collapseAllInContainer('schema-${filename}')\"|g" "$html_file"
     fi
 done
 
@@ -107,11 +112,34 @@ for html_file in "$OUTPUT_DIR"/*/*.html; do
     if [ -f "$html_file" ]; then
         # Insert link to custom CSS after the schema_doc.css link
         if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS - handle both minified and regular HTML
+            sed -i '' 's|href=_static/schema_doc\.css>|href=_static/schema_doc.css><link rel=stylesheet type=text/css href=_static/schema_overrides.css>|g' "$html_file"
+            sed -i '' 's|href="_static/schema_doc\.css">|href="_static/schema_doc.css"><link rel="stylesheet" type="text/css" href="_static/schema_overrides.css">|g' "$html_file"
+        else
+            # Linux - handle both minified and regular HTML
+            sed -i 's|href=_static/schema_doc\.css>|href=_static/schema_doc.css><link rel=stylesheet type=text/css href=_static/schema_overrides.css>|g' "$html_file"
+            sed -i 's|href="_static/schema_doc\.css">|href="_static/schema_doc.css"><link rel="stylesheet" type="text/css" href="_static/schema_overrides.css">|g' "$html_file"
+        fi
+    fi
+done
+
+echo "Stripping HTML/head/body wrappers from schema files for proper embedding..."
+for html_file in "$OUTPUT_DIR"/*/*.html; do
+    if [ -f "$html_file" ]; then
+        # Extract only the body content (everything between <body> and </body>)
+        # This removes the opening body tag and everything before it, and the closing body/html tags
+        if [[ "$OSTYPE" == "darwin"* ]]; then
             # macOS
-            sed -i '' 's|<link rel="stylesheet" type="text/css" href="_static/schema_doc.css">|<link rel="stylesheet" type="text/css" href="_static/schema_doc.css">\n\t<link rel="stylesheet" type="text/css" href="_static/schema_overrides.css">|g' "$html_file"
+            sed -i '' 's/^.*<body[^>]*>//g' "$html_file"
+            sed -i '' 's/<\/body>.*$//g' "$html_file"
+            # Remove the extra closing div that was added before </body>
+            sed -i '' 's|</div>$||g' "$html_file"
         else
             # Linux
-            sed -i 's|<link rel="stylesheet" type="text/css" href="_static/schema_doc.css">|<link rel="stylesheet" type="text/css" href="_static/schema_doc.css">\n\t<link rel="stylesheet" type="text/css" href="_static/schema_overrides.css">|g' "$html_file"
+            sed -i 's/^.*<body[^>]*>//g' "$html_file"
+            sed -i 's/<\/body>.*$//g' "$html_file"
+            # Remove the extra closing div that was added before </body>
+            sed -i 's|</div>$||g' "$html_file"
         fi
     fi
 done

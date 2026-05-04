@@ -1,7 +1,7 @@
 /* Override json-schema-for-humans font sizes to match Sphinx theme */
 
 #root {
-    font-size: 10px !important;
+    font-size: 14px !important;
     line-height: 1.5 !important;
 }
 
@@ -11,7 +11,7 @@
 
 /* Schema titles are now h3 (converted from h1) - style appropriately */
 #root h3 {
-    font-size: 1.15em !important;
+    font-size: 1.4em !important;
     font-weight: 600 !important;
     margin-top: 0.8em !important;
     margin-bottom: 0.5em !important;
@@ -20,68 +20,68 @@
 
 /* Nested headings in schema (if any) */
 #root h4 {
-    font-size: 1.0em !important;
+    font-size: 1.2em !important;
     margin-top: 0.5em !important;
     margin-bottom: 0.4em !important;
 }
 
 #root h5, #root h6 {
-    font-size: 0.9em !important;
+    font-size: 1.1em !important;
     margin-top: 0.4em !important;
     margin-bottom: 0.3em !important;
 }
 
-/* Reduce property names and descriptions */
+/* Property names and descriptions */
 .property-name {
-    font-size: 10px !important;
+    font-size: 14px !important;
 }
 
 .property-name-button {
-    font-size: 10px !important;
+    font-size: 14px !important;
 }
 
 .description {
-    font-size: 10px !important;
+    font-size: 14px !important;
 }
 
 .description p {
-    font-size: 10px !important;
+    font-size: 14px !important;
     margin-bottom: 0.5em !important;
 }
 
-/* Reduce code/example font size */
+/* Code/example font size */
 .examples pre,
 .examples code,
 pre, code {
-    font-size: 10px !important;
+    font-size: 13px !important;
     line-height: 1.4 !important;
 }
 
-/* Reduce badge sizes */
+/* Badge sizes */
 .badge {
-    font-size: 10px !important;
-    padding: 1px 4px !important;
+    font-size: 12px !important;
+    padding: 2px 6px !important;
 }
 
-/* Reduce accordion headers */
+/* Accordion headers */
 .accordion-button {
-    font-size: 10px !important;
+    font-size: 14px !important;
     padding: 0.5rem !important;
 }
 
-/* Reduce table text */
+/* Table text */
 table {
-    font-size: 10px !important;
+    font-size: 14px !important;
 }
 
 table td, table th {
-    font-size: 10px !important;
+    font-size: 14px !important;
     padding: 0.4rem !important;
 }
 
-/* Reduce type information */
+/* Type information */
 .type-label {
-    font-size: 10px !important;
+    font-size: 13px !important;
 }
 
 /* Compact spacing */
@@ -113,10 +113,10 @@ li {
     margin-bottom: 0.2rem !important;
 }
 
-/* Reduce button sizes */
+/* Button sizes */
 .btn {
-    font-size: 10px !important;
-    padding: 0.25rem 0.5rem !important;
+    font-size: 13px !important;
+    padding: 0.35rem 0.65rem !important;
 }
 
 /* Made with Bob */
