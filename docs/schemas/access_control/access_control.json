@@ -128,9 +128,9 @@
           "type": "string",
           "description": "The web container that contains the protected object space for a server instance."
         },
-        "resource_uri": {
+        "uri": {
           "type": "string",
-          "description": "The resource URI of the resource in the protected object space.",
+          "description": "The URI of the resource in the protected object space.",
           "pattern": "^/"
         },
         "policies": {
@@ -228,7 +228,7 @@
         "resources": [
           {
             "server": "my.ibmsec.idp",
-            "resource_uri": "/login",
+            "uri": "/login",
             "policies": [
               {
                 "name": "Verify Demo - MFA Login Policy",
@@ -238,7 +238,7 @@
           },
           {
             "server": "my.ibmsec.idp",
-            "resource_uri": "/protected/transfer",
+            "uri": "/protected/transfer",
             "policies": [
               {
                 "name": "Verify Demo - MFA Transaction Policy",
@@ -248,7 +248,7 @@
           },
           {
             "server": "my.ibmsec.idp",
-            "resource_uri": "/isam/sps/SP-SAML-QC/saml20/login",
+            "uri": "/isam/sps/SP-SAML-QC/saml20/login",
             "policies": [
               {
                 "name": "Verify Demo - MFA Office 365 Login",

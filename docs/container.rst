@@ -4,7 +4,7 @@ Container Configuration
 This module contains documentation for system level configuration applicable for Container based Verify Identity Access
 deployments. Container configuration is defined under the ``container`` top level key. At a minimum an administrator
 should define the ``mgmt_base_url``, ``mgmt_user`` and ``mgmt_pwd`` keys (or define the applicable
-environment variables). These keys should be defiend at the top level of the configuration file.
+environment variables). These keys should be defined at the top level of the configuration file.
 
 
 

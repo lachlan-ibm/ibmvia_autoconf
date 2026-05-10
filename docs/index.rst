@@ -21,17 +21,21 @@ You can install ``ibmvia-autoconf`` with ``pip``:
 
     $ pip install ibmvia-autoconf
 
-.. _ibmvia_autoconf_architecture:
 
-Architecture
-------------
+If you require the extra dependencies (for example using K8S secrets to store sensitive properties) you can install with:
 
-Users should take care to ensure the configuration of these separate features are compatible (eg. conflicting ALC's
-in a WebSEAL reverse proxy). Administrators will also have to define the ``webseal.runtime`` entry for many configuration
-options even if the :ref:`WebSEAL Runtime Component<webseal_runtime_server>` is already configured.
+.. code-block:: console
 
-Example configurations can be found in the ``examples`` directory with additional documentation in the 
-`Examples / Getting Started <examples.html>`_ page.
+    $ pip install ibmvia-autoconf[kubernetes]
+
+
+or
+
+
+.. code-block:: console
+
+    $ pip install ibmvia-autoconf[all]
+
 
 
 .. _ibmvia_autoconf_modules:
@@ -45,11 +49,138 @@ Verify Identity Access features. The order of configuration is:
 - base (Licensing, SSL Databases, Cluster Settings)
 - appliance (if applicable)
 - container (if applicable)
+- federations
 - webseal
 - access control
-- federations
+
+This ordering has been chosen to allow for modules which depend on each-other to be deployed in the correct 
+order. 
 
 More complex deployment architectures can be achieved by running sequential ``config.yaml`` descriptors.
+
+
+.. _ibmvia_autoconf_architecture:
+
+Architecture
+------------
+
+Users should take care to ensure the configuration of these separate features are compatible (eg. conflicting ALC's
+in a WebSEAL reverse proxy). Administrators will also have to define the ``webseal.runtime`` entry for many configuration
+options even if the :ref:`WebSEAL Runtime Component<webseal_runtime_server>` is already configured.
+
+Example configurations can be found in the ``examples`` directory with additional documentation in the 
+`Examples / Getting Started <examples.html>`_ page.
+
+Strategies on how administrators can attempt idempotency are documented `here <idempotency.html>`_.
+
+API Failure Tracking
+____________________
+
+IBM Verify Identity Access Automated Configurator includes built-in tracking of failed API requests. When enabled 
+(default), the configurator will collect information about any API calls that fail during execution and print a 
+comprehensive summary at the end.
+
+Captures context for each failure:
+
+- Module name and operation being performed
+- Error message from the API response
+- API endpoint that was called
+- HTTP status code
+- Full response content/data
+- Request payload/parameters sent
+- Timestamp of the failure
+- Outputs summary grouped by module
+- Supports both human-readable and JSON output formats
+- Can be disabled via environment variable
+
+
+Example Output (Human-Readable Format)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+================================================================================
+API FAILURE SUMMARY - 3 Failed Request(s)
+================================================================================
+
+Module: access_control (2 failure(s))
+--------------------------------------------------------------------------------
+  1. Operation: create_policy
+     Error: Policy name already exists
+     API Endpoint: /iam/access/v8/policies
+     Status Code: 409
+     Response: {'error': 'DUPLICATE_NAME', 'message': 'Policy name already exists'}
+     Request Data: {'name': 'MyPolicy', 'type': 'authorization'}
+     Timestamp: 2026-04-02T03:15:00.123Z
+
+  2. Operation: update_pip
+     Error: Connection timeout
+     API Endpoint: /iam/access/v8/pips/123
+     Status Code: 504
+     Response: {'error': 'GATEWAY_TIMEOUT'}
+     Timestamp: 2026-04-02T03:16:30.456Z
+
+Module: webseal (1 failure(s))
+--------------------------------------------------------------------------------
+  1. Operation: create_junction
+     Error: Backend server unreachable
+     API Endpoint: /wga/reverseproxy/junctions
+     Status Code: 502
+     Response: {'error': 'BAD_GATEWAY', 'backend': 'https://backend.example.com'}
+     Request Data: {'junction_point': '/app', 'server': 'backend.example.com'}
+     Timestamp: 2026-04-02T03:18:00.012Z
+
+================================================================================
+Example Output (JSON Format)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When ``ISVA_CONFIGURATOR_LOG_FORMAT=json``:
+
+.. code-block:: json
+
+    {
+      "api_failure_summary": {
+        "total_failures": 3,
+        "by_module": {
+          "access_control": 2,
+          "webseal": 1
+        }
+      },
+      "failures": [
+        {
+          "timestamp": "2026-04-02T03:15:00.123Z",
+          "module": "access_control",
+          "operation": "create_policy",
+          "error_message": "Policy name already exists",
+          "api_endpoint": "/iam/access/v8/policies",
+          "status_code": 409,
+          "response_content": {"error": "DUPLICATE_NAME", "message": "Policy name already exists"},
+          "request_data": {"name": "MyPolicy", "type": "authorization"}
+        },
+        {
+          "timestamp": "2026-04-02T03:16:30.456Z",
+          "module": "access_control",
+          "operation": "update_pip",
+          "error_message": "Connection timeout",
+          "api_endpoint": "/iam/access/v8/pips/123",
+          "status_code": 504,
+          "response_content": {"error": "GATEWAY_TIMEOUT"},
+          "request_data": null
+        },
+        {
+          "timestamp": "2026-04-02T03:18:00.012Z",
+          "module": "webseal",
+          "operation": "create_junction",
+          "error_message": "Backend server unreachable",
+          "api_endpoint": "/wga/reverseproxy/junctions",
+          "status_code": 502,
+          "response_content": {"error": "BAD_GATEWAY", "backend": "https://backend.example.com"},
+          "request_data": {"junction_point": "/app", "server": "backend.example.com"}
+        }
+      ]
+    }
+
+
 
 .. _ibmvia_autoconf_yaml_keywords:
 
@@ -130,7 +261,7 @@ these variables are set, they take priority over values set in configuration fil
                         once the ``management_authorization`` feature has been configured.
 
 - - ``IVIA_PUBLISH_SNAPSHOT_SLEEP`` 
-                        The number of seconds to deplay after publishing a configuration snapshot. This property can 
+                        The number of seconds to delay after publishing a configuration snapshot. This property can 
                         be used to allow time for the configuration to be replicated in the filesystem or for the 
                         configuration container to stabilize after publishing a snapshot.
 
@@ -166,6 +297,17 @@ these variables are set, they take priority over values set in configuration fil
                         The format to use for the log messages. Default is `%(asctime)s - %(levelname)s - %(message)s"`.
                         If the format is set to ``json`` then the messages logged will be JSON parsible.
 
+- ``IVIA_TRACK_API_FAILURES``
+                        If set to ``true``, the autoconf tool will track API failures and summarize them before the tool 
+                        exits. Default is ``true``.
+
+- ``ISVA_CONFIGURATOR_LOG_FORMAT``
+                        The format to use for the log messages. Default is `%(asctime)s - %(levelname)s - %(message)s"`.
+                        If the format is set to ``json`` then the messages logged will be JSON parsible.
+
+- ``IVIA_CONFIGURATOR_LOG_FILE``
+                        The path to the log file to write to. If not specified, logs will be written to stdout. This 
+                        should be a fully qualified path.
 
 
 Detailed information on configuration object structure can be found in the submodule documentation
