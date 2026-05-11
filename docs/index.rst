@@ -99,38 +99,38 @@ Example Output (Human-Readable Format)
 
 .. code-block:: bash
 
-================================================================================
-API FAILURE SUMMARY - 3 Failed Request(s)
-================================================================================
+    ================================================================================
+    API FAILURE SUMMARY - 3 Failed Request(s)
+    ================================================================================
 
-Module: access_control (2 failure(s))
---------------------------------------------------------------------------------
-  1. Operation: create_policy
-     Error: Policy name already exists
-     API Endpoint: /iam/access/v8/policies
-     Status Code: 409
-     Response: {'error': 'DUPLICATE_NAME', 'message': 'Policy name already exists'}
-     Request Data: {'name': 'MyPolicy', 'type': 'authorization'}
-     Timestamp: 2026-04-02T03:15:00.123Z
+    Module: access_control (2 failure(s))
+    --------------------------------------------------------------------------------
+      1. Operation: create_policy
+        Error: Policy name already exists
+        API Endpoint: /iam/access/v8/policies
+        Status Code: 409
+        Response: {'error': 'DUPLICATE_NAME', 'message': 'Policy name already exists'}
+        Request Data: {'name': 'MyPolicy', 'type': 'authorization'}
+        Timestamp: 2026-04-02T03:15:00.123Z
 
-  2. Operation: update_pip
-     Error: Connection timeout
-     API Endpoint: /iam/access/v8/pips/123
-     Status Code: 504
-     Response: {'error': 'GATEWAY_TIMEOUT'}
-     Timestamp: 2026-04-02T03:16:30.456Z
+      2. Operation: update_pip
+        Error: Connection timeout
+        API Endpoint: /iam/access/v8/pips/123
+        Status Code: 504
+        Response: {'error': 'GATEWAY_TIMEOUT'}
+        Timestamp: 2026-04-02T03:16:30.456Z
 
-Module: webseal (1 failure(s))
---------------------------------------------------------------------------------
-  1. Operation: create_junction
-     Error: Backend server unreachable
-     API Endpoint: /wga/reverseproxy/junctions
-     Status Code: 502
-     Response: {'error': 'BAD_GATEWAY', 'backend': 'https://backend.example.com'}
-     Request Data: {'junction_point': '/app', 'server': 'backend.example.com'}
-     Timestamp: 2026-04-02T03:18:00.012Z
+    Module: webseal (1 failure(s))
+    --------------------------------------------------------------------------------
+      1. Operation: create_junction
+        Error: Backend server unreachable
+        API Endpoint: /wga/reverseproxy/junctions
+        Status Code: 502
+        Response: {'error': 'BAD_GATEWAY', 'backend': 'https://backend.example.com'}
+        Request Data: {'junction_point': '/app', 'server': 'backend.example.com'}
+        Timestamp: 2026-04-02T03:18:00.012Z
 
-================================================================================
+    ================================================================================
 Example Output (JSON Format)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
