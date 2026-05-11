@@ -65,12 +65,12 @@ class IVIA_Configurator(object):
         return False
 
     def _deploy_if_needed(self):
-        r = None if self.needsRestart == True else \
-                self.factory.get_system_settings().configuration.get_pending_changes()
-        if not self.needsRestart and (r == None or not hasattr(r, 'success') or not hasattr(r, 'json')):
-            return
-        if self.needsRestart == True or \
-                        (r.success == True and r.json and 'changes' in r.json and len(r.json['changes']) > 0):
+        hasChanges = False
+        if not self.needsRestart:
+            r = self.factory.get_system_settings().configuration.get_pending_changes()
+            hasChanges = len(r.json['changes']) > 0 \
+                        if r.json and 'changes' in r.json else False
+        if self.needsRestart or hasChanges:
             deploy_pending_changes(self.factory, self.config)
             self.needsRestart = False
 
@@ -1173,9 +1173,9 @@ class IVIA_Configurator(object):
             self.configure_base()
             web, aac, fed = self.get_modules()
             self.global_config(aac, fed, web)
-            aac.configure()
-            fed.configure()
-            web.configure()
+            fed.configure() 
+            web.configure() # WRP config can rely on federations existing
+            aac.configure() # AAC config can rely on WRP instances
             #Configure the remote syslog after everything else as it might rely on config we create
             self.remote_syslog(self.config.get('appliance') if self.config.get('appliance') else self.config.get('container'))
             self._deploy_if_needed()

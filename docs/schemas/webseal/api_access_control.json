@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/api_access_control.json",
-  "description": "Configuration for API Access Control including authorization servers, resource servers, policies, and CORS settings. Properties to configure an API Authorization Server. An API authorization server typically defines one or more resource servers which have authentication requirements to permit access. This section can also be used to configure Cross-Origin Resource Sharing (CORS) policies. Configuration to connect to the user registry is read from the `webseal.runtime` entry.",
+  "description": "Configuration for API Access Control including authorization servers, resource servers, policies, and CORS settings. Properties to configure an API Authorization Server. An API authorization server typically defines one or more resource servers which have authentication requirements to permit access. This section can also be used to configure Cross-Origin Resource Sharing (CORS) policies. \n\n**⚠️ Note:** When configuring APIAC resource servers, a bind credential must be provided. The automated configuration tool uses the `webseal.runtime.admin_user` and `webseal.runtime.admin_password` properties to authenticate. Therefore both of these properties **must** exist when configuring resource servers",
   "type": "object",
   "properties": {
     "authorization_servers": {

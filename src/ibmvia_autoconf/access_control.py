@@ -245,7 +245,9 @@ class AAC_Configurator(object):
         resources = optional_list(self.aac.access_control.list_resources().json)
         resource_ids = []
         for resource in my_resources:
-            resource_ids += [filter_list('resourceUri', resource.uri, resources)[0]["id"]]
+            res = filter_list('resourceUri', resource.uri, resources)[0]
+            if "id" in res:
+                resource_ids += [res["id"]]
         rsp = self.aac.access_control.publish_multiple_policy_attachments(ids=resource_ids)
         if rsp.success == True:
             _logger.info("Successfully published the RBA resources")

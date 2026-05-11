@@ -755,6 +755,12 @@ class WEB_Configurator(object):
                             "isam_host": runtime.isam.host,
                             "isam_port": runtime.isam.prt
                         })
+            if runtime.override_config == True:
+                config.update({
+                    "clean_ldap": True,
+                    "ldap_force_clean": True,
+                    "ldap_clean_all": True
+                })
             rsp = self.web.runtime_component.configure(**config)
             if rsp.success == True:
                 _logger.info("Successfully configured Reverse Proxy Runtime Policy Server")

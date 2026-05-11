@@ -2,8 +2,10 @@
 This repository is used to configure IBM Verify Identity Access (IVIA), and IBM Security Verify Access (ISVA) using a 
 yaml file of the required configuration. 
 
-This project aims to be idempotent, ie if the configuration is run multiple times on the same appliance it should not 
-break and should pick up any configuration changes in the yaml configuration file.
+This project aims to allow administrators of a Verify Identity Access (IVIA) or IBM Security Verify Access (ISVA) 
+deployment. The configuration is applied using the pyivia python module, which in turn uses the rest API. The 
+[examples](https://lachlan-ibm.github.io/ibmvia_autoconf/examples.html) provides in-depth guides on how to use 
+this automation tool.
 
 
 ## Documentation
@@ -11,11 +13,18 @@ Documentation for using this library can be found on
 [Verify Identity Access Automated Configurator's GitHub pages](https://lachlan-ibm.github.io/ibmvia_autoconf/index.html).
 
 
-## Example deployments
-To get started several example deployments are available in the [Examples](examples/) directory. The example yaml files 
-must be updated with deployment specific parameters, usually this is network addresses and IVIA activation codes.
-
 # Setup
+## Optional Extras
+This library uses the pip extras feature to install the kubernetes or docker-compose dependencies if they are required. 
+The Kubernetes extra might be requyired if you are using the autoconf tool to restart the runtime containers, or if you 
+are using a Secrets object to store parts of the configuration.
+
+To install an extra, use the following syntax:
+```bash
+pip install ibmvia_autoconf[kubernetes]
+```
+
+
 ## Environment
 - `IVIA_CONFIG_BASE` :: directory which contains the YAML configuration file as well as any http template pages, PKI, 
                       mapping rules, ect.
@@ -101,110 +110,6 @@ docker run --volume /path/to/config/yaml:/config \
             --env IVIA_MGMT_BASE_URL="https://<mgmt address>:<mgmt port>" \
             --env "IVIA_MGMT_PASSWORD=Passw0rd1!" \
             verify-identity-access-configurator
-```
-
-## API Failure Tracking
-
-IBM Verify Identity Access Automated Configurator includes built-in tracking of failed API requests. When enabled 
-(default), the configurator will collect information about any API calls that fail during execution and print a 
-comprehensive summary at the end.
-
-Captures context for each failure:
-  - Module name and operation being performed
-  - Error message from the API response
-  - API endpoint that was called
-  - HTTP status code
-  - Full response content/data
-  - Request payload/parameters sent
-  - Timestamp of the failure
-- Outputs summary grouped by module
-- Supports both human-readable and JSON output formats
-- Can be disabled via environment variable
-
-### Configuration
-- **Enable/Disable**: Set `IVIA_TRACK_API_FAILURES=false` to disable tracking (enabled by default)
-- **JSON Output**: When `ISVA_CONFIGURATOR_LOG_FORMAT=json`, the summary will be output in JSON format
-
-### Example Output (Human-Readable Format)
-```
-================================================================================
-API FAILURE SUMMARY - 3 Failed Request(s)
-================================================================================
-
-Module: access_control (2 failure(s))
---------------------------------------------------------------------------------
-  1. Operation: create_policy
-     Error: Policy name already exists
-     API Endpoint: /iam/access/v8/policies
-     Status Code: 409
-     Response: {'error': 'DUPLICATE_NAME', 'message': 'Policy name already exists'}
-     Request Data: {'name': 'MyPolicy', 'type': 'authorization'}
-     Timestamp: 2026-04-02T03:15:00.123Z
-
-  2. Operation: update_pip
-     Error: Connection timeout
-     API Endpoint: /iam/access/v8/pips/123
-     Status Code: 504
-     Response: {'error': 'GATEWAY_TIMEOUT'}
-     Timestamp: 2026-04-02T03:16:30.456Z
-
-Module: webseal (1 failure(s))
---------------------------------------------------------------------------------
-  1. Operation: create_junction
-     Error: Backend server unreachable
-     API Endpoint: /wga/reverseproxy/junctions
-     Status Code: 502
-     Response: {'error': 'BAD_GATEWAY', 'backend': 'https://backend.example.com'}
-     Request Data: {'junction_point': '/app', 'server': 'backend.example.com'}
-     Timestamp: 2026-04-02T03:18:00.012Z
-
-================================================================================
-```
-
-### Example Output (JSON Format)
-When `ISVA_CONFIGURATOR_LOG_FORMAT=json`:
-```json
-{
-  "api_failure_summary": {
-    "total_failures": 3,
-    "by_module": {
-      "access_control": 2,
-      "webseal": 1
-    }
-  },
-  "failures": [
-    {
-      "timestamp": "2026-04-02T03:15:00.123Z",
-      "module": "access_control",
-      "operation": "create_policy",
-      "error_message": "Policy name already exists",
-      "api_endpoint": "/iam/access/v8/policies",
-      "status_code": 409,
-      "response_content": {"error": "DUPLICATE_NAME", "message": "Policy name already exists"},
-      "request_data": {"name": "MyPolicy", "type": "authorization"}
-    },
-    {
-      "timestamp": "2026-04-02T03:16:30.456Z",
-      "module": "access_control",
-      "operation": "update_pip",
-      "error_message": "Connection timeout",
-      "api_endpoint": "/iam/access/v8/pips/123",
-      "status_code": 504,
-      "response_content": {"error": "GATEWAY_TIMEOUT"},
-      "request_data": null
-    },
-    {
-      "timestamp": "2026-04-02T03:18:00.012Z",
-      "module": "webseal",
-      "operation": "create_junction",
-      "error_message": "Backend server unreachable",
-      "api_endpoint": "/wga/reverseproxy/junctions",
-      "status_code": 502,
-      "response_content": {"error": "BAD_GATEWAY", "backend": "https://backend.example.com"},
-      "request_data": {"junction_point": "/app", "server": "backend.example.com"}
-    }
-  ]
-}
 ```
 
 

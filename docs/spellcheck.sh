@@ -683,6 +683,7 @@ nAn
 nThe
 saas
 Xchange
+unconfigure
 unconfigured
 v1
 v10
@@ -963,6 +964,10 @@ sp800
 ACLs
 dyn
 POPs
+idempotency
+Idempotency
+hashSecrets
+newEmbeddedLdapPassw0rd
 EOF
 
 trap "rm -f $TEMP_DICT" EXIT
