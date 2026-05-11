@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "access_control.json",
-  "description": "Configuration for the Context Based Access (CBA) policy engine of a Verify Identity Access deployment including risk profiles, policies, and resource protection. Context Based Access policies are capable of defining conditional authentication requirements based on administrator defined logic (such as device registration status, ip reputation, authentication method enrollment for a user).",
+  "description": "Configuration for the Context Based Access (CBA) policy engine of a Verify Identity Access deployment including risk profiles, policies, and resource protection. Context Based Access policies are capable of defining conditional authentication requirements based on administrator defined logic (such as device registration status, ip reputation, authentication method enrollment for a user).\n\n**⚠️ Note:** When attaching policies to objects in the policy server namespace, a bind credential must be provided. The automated configuration tool uses the `webseal.runtime.admin_user` and `webseal.runtime.admin_password` properties to authenticate. Therefore both of these properties **must** exist when attaching CBA policies to Policy Server objects.",
   "type": "object",
   "properties": {
     "risk_profiles": {

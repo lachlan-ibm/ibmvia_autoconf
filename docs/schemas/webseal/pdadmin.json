@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/pdadmin.json",
-  "description": "Administrators can use the `pdadmin` tool to modify the configured User Registry and Policy Server. This tool isused to: create Access Control Lists (ACL's); create Protected Object Policies (POP's); create users or groups; as well as attaching ACL's or POP's to a reverse proxy instance's object space. Configuration to connect to the user registry is read from the webseal.runtime entry.",
+  "description": "Administrators can use the `pdadmin` tool to modify the configured User Registry and Policy Server. This tool isused to: create Access Control Lists (ACL's); create Protected Object Policies (POP's); create users or groups; as well as attaching ACL's or POP's to a reverse proxy instance's object space. Configuration to connect to the user registry is read from the webseal.runtime entry.\n\n**⚠️ Note:** When executing pdadmin commands, a bind credential must be provided. The automated configuration tool uses the `webseal.runtime.admin_user` and `webseal.runtime.admin_password` properties to authenticate. Therefore both of these properties **must** exist when executing PDAdmin commands.",
   "type": "object",
   "properties": {
     "users": {
