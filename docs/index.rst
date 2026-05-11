@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Welcome to ibmvia-autoconf documentation!
-==================================================
+##########################################
 ibmvia-autoconf is an automation layer written on top of pyIVIA. This library should be used to apply 
 YAML configuration files to a Verify Identity Access deployment.
 
@@ -14,7 +14,7 @@ Configuration is supplied in YAML syntax using a well-defined data structure (de
 
 
 Installation
-------------
+============
 You can install ``ibmvia-autoconf`` with ``pip``:
 
 .. code-block:: console
@@ -38,7 +38,20 @@ or
 
 
 
-.. _ibmvia_autoconf_modules:
+.. _ibmvia_autoconf_architecture:
+
+Architecture
+============
+
+Users should take care to ensure the configuration of these separate features are compatible (eg. conflicting ALC's
+in a WebSEAL reverse proxy). Administrators will also have to define the ``webseal.runtime`` entry for many configuration
+options even if the :ref:`WebSEAL Runtime Component<webseal_runtime_server>` is already configured.
+
+Example configurations can be found in the ``examples`` directory with additional documentation in the 
+`Examples / Getting Started <examples.html>`_ page.
+
+Strategies on how administrators can attempt idempotency are documented `here <idempotency.html>`_.
+
 
 Modules
 _______
@@ -58,20 +71,6 @@ order.
 
 More complex deployment architectures can be achieved by running sequential ``config.yaml`` descriptors.
 
-
-.. _ibmvia_autoconf_architecture:
-
-Architecture
-------------
-
-Users should take care to ensure the configuration of these separate features are compatible (eg. conflicting ALC's
-in a WebSEAL reverse proxy). Administrators will also have to define the ``webseal.runtime`` entry for many configuration
-options even if the :ref:`WebSEAL Runtime Component<webseal_runtime_server>` is already configured.
-
-Example configurations can be found in the ``examples`` directory with additional documentation in the 
-`Examples / Getting Started <examples.html>`_ page.
-
-Strategies on how administrators can attempt idempotency are documented `here <idempotency.html>`_.
 
 API Failure Tracking
 ____________________
@@ -185,7 +184,7 @@ When ``ISVA_CONFIGURATOR_LOG_FORMAT=json``:
 .. _ibmvia_autoconf_yaml_keywords:
 
 YAML configuration keywords
-___________________________
+============================
 
 Each module expects a YAML object describing the desired configuration state. There are a number of useful features 
 which can be used to make configuration files re-usable and version controlled. There are three keywords which 
@@ -215,7 +214,7 @@ can be used in configuration files:
 .. _ibmvia_autoconf_env_vars:
 
 Environment properties
-______________________
+======================
 
 In addition to the supplied YAML configuration, some properties can alternatively be set as environment variables. If
 these variables are set, they take priority over values set in configuration files.
