@@ -27,6 +27,10 @@
       "description": "The password for the sec_master user.",
       "format": "password"
     },
+    "admin_user": {
+      "type": "string",
+      "description": "The username for the admin user. Default is `sec_master`. This property is typically used for IVIA features which need to authenticate to the runtime policy server."
+    },
     "admin_cert_lifetime": {
       "type": "integer",
       "description": "The lifetime in days for the SSL server certificate.",
@@ -173,6 +177,7 @@
         },
         "clean_ldap": true,
         "domain": "Default",
+        "admin_user": "sec_master",
         "admin_password": "secmaster-passwd",
         "admin_cert_lifetime": 1460,
         "ssl_compliance": "FIPS 140-2",
@@ -198,8 +203,8 @@
     },
     {
       "runtime": {
-        "password": "newEmbeddedLdapPassw0rd",
-        "admin_id": "sec_master",
+        "embedded_root_password": "newEmbeddedLdapPassw0rd",
+        "admin_user": "sec_master",
         "admin_password": "newEmbeddedLdapPassw0rd"
       }
     }

@@ -1456,7 +1456,7 @@ class WEB_Configurator(object):
                           "auth_port": authz_server.auth_port,
                           "admin_port": authz_server.admin_port,
                           "domain": authz_server.domain,
-                          "admin_id": runtime.admin_id,
+                          "admin_id": runtime.admin_user,
                           "admin_pwd": runtime.admin_password,
                           "addresses": authz_server.addresses,
                           "ssl": authz_server.ssl,
