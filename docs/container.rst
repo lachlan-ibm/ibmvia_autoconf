@@ -24,7 +24,7 @@ Example
        users:
        - name: "cfgsvc"
          operation: "update"
-         password: !secrets/isva-secrets:cfgsvc-passwd
+         password: !secret default/isva-secrets:cfgsvc-passwd
      management_authorization:
        authorization_enforcement: True
        roles:
@@ -49,7 +49,7 @@ Example
        port: 5432
        type: "Postgresql"
        user: "postgres"
-       password: !secrets/isva-secrets:postgres-passwd
+       password: !secret default/isva-secrets:postgres-passwd
        ssl: True
        db_name: "isva"
 
