@@ -30,7 +30,7 @@ Example
                     ssl_compliance: "fips"
                   reverse_proxy:
                   - name: "default"
-                    host: "isvaruntime"
+                    host: "ivia-runtime"
                     http:
                       enabled: "no"
                     https:
@@ -42,13 +42,15 @@ Example
                       port: 636
                       key_file: "lmi_trust_store"
                     aac_configuration:
-                      hostname: "isvaruntime"
-                      port: 9443
+                      runtime:
+                        hostname: "ivia-runtime"
+                        port: 9443
+                        username: !secret default/isva_secrets:runtime_user
+                        password: !secret default/isva_secrets:runtime_pw
                       junction: "/mga"
-                      user: !secret default/isva_secrets:runtime_user
-                      password: !secret default/isva_secrets:runtime_pw
                       reuse_certs: True
                       reuse_acls: True
+                      load_certificate: True
                     stanza_configuration:
                     - stanza: "acnt-mgt"
                       entry_id: "enable-local-response-redirect"

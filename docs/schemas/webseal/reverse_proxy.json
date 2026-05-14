@@ -379,6 +379,14 @@
         "reuse_certs": {
           "type": "boolean",
           "description": "Re-use existing certificates in the SSL database."
+        },
+        "load_certificate": {
+          "type": "boolean",
+          "description": "Load the certificate from ``runtime.hostname`` at the time of configuration."
+        },
+        "fido2_pair": {
+          "$ref": "#/$defs/FIDO2_PAIR_Configuration",
+          "description": "Configuration items relating to the FIDO2 Platform Authenticator Inline Registration authentication scenario."
         }
       },
       "required": ["junction", "runtime", "reuse_acls", "reuse_certs"]
@@ -505,6 +513,30 @@
       },
       "required": ["operation", "stanza"]
     },
+    "FIDO2_PAIR_Configuration": {
+      "type": "object",
+      "description": "FIDO2 Pair scenario configuration.",
+      "properties": {
+        "remember_me": {
+          "type": "boolean",
+          "description": "A flag to indiciate that the Remember Me feature should be configured with FIDO2 PAIR specific fields. Default is false.",
+          "default": false
+        },
+        "key_label": {
+          "type": "string",
+          "description": "The key which will be used to secure the remember-session token. Only required if ``remember_me`` is true."
+        },
+        "set_template_page": {
+          "type": "boolean",
+          "description": "A flag to indicate the proxy should be configured to use  the ``fido2pair_login_success.html`` tempalte page in the management root as the login success page. Default is false.",
+          "default": false
+        },
+        "login_lrr": {
+          "type": "boolean",
+          "description": "A flag to indicate that the local response redirect feature should be enabled, and the login operation mapped to the FIDO2 PAIR policy URL."
+        }
+      }
+    },
     "Liberty_Server": {
       "type": "object",
       "description": "Liberty server connection properties.",
@@ -606,15 +638,16 @@
             }
           ],
           "aac_configuration": {
-            "hostname": "localhost",
-            "port": 443,
             "runtime": {
+              "hostname": "localhost",
+              "port": 443,
               "user": "runtime_user",
               "password": "runtime_password"
             },
             "junction": "/mga",
             "reuse_acls": true,
-            "reuse_certs": true
+            "reuse_certs": true,
+            "load_certificate": true
           }
         }
       ]

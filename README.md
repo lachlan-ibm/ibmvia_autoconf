@@ -23,6 +23,7 @@ To install an extra, use the following syntax:
 ```bash
 pip install ibmvia_autoconf[kubernetes]
 ```
+Valid optional extra targets include: `kubernetes`, `docker-compose`, and `all`
 
 
 ## Environment
@@ -71,11 +72,11 @@ pip install ibmvia_autoconf[kubernetes]
                       for management authentication. If external authentication has previously been configured, then
                       the credentials should be set as the `IVIA_MGMT_USER` and `IVIA_MGMT_PWD` properties.
 - `IVIA_EXT_PWD` :: The administrator password (or API token) to authenticate to the IVIA LMI as `IVIA_EXT_USER`.
-- `ISVA_CONFIGURATOR_LOG_LEVEL` :: The log level to use for the configurator. Default is `INFO`. Valid values are 
+- `IVIA_CONFIGURATOR_LOG_LEVEL` :: The log level to use for the configurator. Default is `INFO`. Valid values are 
                                   `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`
-- `ISVA_CONFIGURATOR_LOG_FILE` :: The path to the log file to write to. If not specified, logs will be written to 
+- `IVIA_CONFIGURATOR_LOG_FILE` :: The path to the log file to write to. If not specified, logs will be written to 
                                   stdout. This should be a fully qualified path.
-- `ISVA_CONFIGURATOR_LOG_FORMAT` :: The format to use for the log messages. Default is `%(asctime)s - %(levelname)s - %(message)s"`.
+- `IVIA_CONFIGURATOR_LOG_FORMAT` :: The format to use for the log messages. Default is `%(asctime)s - %(levelname)s - %(message)s"`.
                                 If the format is set to ``json`` then the messages logged will be JSON parsible.
 - `IVIA_TRACK_API_FAILURES` :: Enable or disable API failure tracking. Default is `true`. Set to `false` to disable.
                                When enabled, a summary of all failed API requests will be printed at the end of

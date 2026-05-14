@@ -22,7 +22,8 @@ You can install ``ibmvia-autoconf`` with ``pip``:
     $ pip install ibmvia-autoconf
 
 
-If you require the extra dependencies (for example using K8S secrets to store sensitive properties) you can install with:
+If you require the extra dependencies (for example using K8S secrets to store sensitive properties) you can 
+install the optional targets ``kubernetes``, ``docker-compose``, or ``all``:
 
 .. code-block:: console
 
@@ -133,7 +134,7 @@ Example Output (Human-Readable Format)
 Example Output (JSON Format)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When ``ISVA_CONFIGURATOR_LOG_FORMAT=json``:
+When ``IVIA_CONFIGURATOR_LOG_FORMAT=json``:
 
 .. code-block:: json
 
@@ -288,21 +289,17 @@ these variables are set, they take priority over values set in configuration fil
                         This variable set the logging level for the autoconf tool. The default log level is ``INFO``. Valid 
                         values are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
 
-- ``ISVA_CONFIGURATOR_LOG_FILE``
-                        The path to the log file to write to. If not specified, logs will be written to stdout. This 
-                        should be a fully qualified path.
+- ``IVIA_TRACK_API_FAILURES``
+                        If set to ``true``, the autoconf tool will track API failures and summarize them before the tool 
+                        exits. Default is ``true``.
 
-- ``ISVA_CONFIGURATOR_LOG_FORMAT``
+- ``IVIA_CONFIGURATOR_LOG_FORMAT``
                         The format to use for the log messages. Default is `%(asctime)s - %(levelname)s - %(message)s"`.
                         If the format is set to ``json`` then the messages logged will be JSON parsible.
 
 - ``IVIA_TRACK_API_FAILURES``
                         If set to ``true``, the autoconf tool will track API failures and summarize them before the tool 
                         exits. Default is ``true``.
-
-- ``ISVA_CONFIGURATOR_LOG_FORMAT``
-                        The format to use for the log messages. Default is `%(asctime)s - %(levelname)s - %(message)s"`.
-                        If the format is set to ``json`` then the messages logged will be JSON parsible.
 
 - ``IVIA_CONFIGURATOR_LOG_FILE``
                         The path to the log file to write to. If not specified, logs will be written to stdout. This 
