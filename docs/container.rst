@@ -44,6 +44,9 @@ Example
      - name: "rt_profile_keys"
        signer_certificates:
        - "postgres.crt"
+       personal_certificates:
+       - p12_file: "rt.mmfa.p12"
+         secret: !secret default/isva-secrets:rt-p12-passwd
      cluster:
        host: "postgresql"
        port: 5432

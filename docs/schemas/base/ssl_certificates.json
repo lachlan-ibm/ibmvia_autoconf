@@ -83,7 +83,7 @@
           "name": "lmi_trust_store",
           "personal_certificates": [
             {
-              "path": "ssl/lmi_trust_store/personal.p12",
+              "p12_file": "ssl/lmi_trust_store/personal.p12",
               "secret": "S3cr37"
             }
           ],

@@ -51,7 +51,7 @@
         },
         "ssl_keystore": {
           "type": "string",
-          "description": "SSL database to use to verify connections. Only valid if ssl == true."
+          "description": "SSL database to use to verify connections. Only valid if ssl is ``True`` and type is ``oracle``."
         },
         "user": {
           "type": "string",
@@ -183,9 +183,9 @@
     {
       "cluster": {
         "config_database": {
-          "type": "postgresql",
+          "type": "oracle",
           "host": "127.0.10.1",
-          "port": 1234,
+          "port": 2484,
           "user": "database_user",
           "password": "database_password",
           "ssl": true,

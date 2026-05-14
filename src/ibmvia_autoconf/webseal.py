@@ -88,7 +88,8 @@ class WEB_Configurator(object):
         methodArgs = {
                 "junction": aac_config.junction,
                 "reuse_certs": aac_config.reuse_certs,
-                "reuse_acls": aac_config.reuse_acls
+                "reuse_acls": aac_config.reuse_acls,
+                "load_certificate": aac_config.load_certificate
             }
         if aac_config.runtime:
             methodArgs.update({
@@ -97,6 +98,14 @@ class WEB_Configurator(object):
                                 "runtime_username": aac_config.runtime.username,
                                 "runtime_password": aac_config.runtime.password
                             })
+        if aac_config.fido2_pair:
+            f2cfg = aac_config.fido2_pair
+            methodArgs.update({
+                "fido2_remember_me": f2cfg.remember_me,
+                "fido2_key_label": f2cfg.key_label,
+                "fido2_set_template": f2cfg.set_template_page,
+                "fido2_login_lrr": f2cfg.login_lrr
+            })
         rsp = self.web.reverse_proxy.configure_aac(proxy_id, **methodArgs)
         if rsp.success == True:
             _logger.info("Successfully ran Advanced Access Control configuration wizard on {} proxy instance".format(proxy_id))
