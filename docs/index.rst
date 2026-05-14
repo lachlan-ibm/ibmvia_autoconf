@@ -297,6 +297,10 @@ these variables are set, they take priority over values set in configuration fil
                         The format to use for the log messages. Default is `%(asctime)s - %(levelname)s - %(message)s"`.
                         If the format is set to ``json`` then the messages logged will be JSON parsible.
 
+- ``IVIA_TRACK_API_FAILURES``
+                        If set to ``true``, the autoconf tool will track API failures and summarize them before the tool 
+                        exits. Default is ``true``.
+
 - ``IVIA_CONFIGURATOR_LOG_FILE``
                         The path to the log file to write to. If not specified, logs will be written to stdout. This 
                         should be a fully qualified path.

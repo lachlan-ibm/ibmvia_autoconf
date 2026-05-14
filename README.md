@@ -23,8 +23,8 @@ To install an extra, use the following syntax:
 ```bash
 pip install ibmvia_autoconf[kubernetes]
 ```
-
 Valid optional extra targets include: `kubernetes`, `docker-compose`, and `all`
+
 
 ## Environment
 - `IVIA_CONFIG_BASE` :: directory which contains the YAML configuration file as well as any http template pages, PKI, 
