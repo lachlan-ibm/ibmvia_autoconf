@@ -638,9 +638,9 @@
             }
           ],
           "aac_configuration": {
-            "hostname": "localhost",
-            "port": 443,
             "runtime": {
+              "hostname": "localhost",
+              "port": 443,
               "user": "runtime_user",
               "password": "runtime_password"
             },
