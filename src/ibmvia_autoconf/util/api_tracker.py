@@ -7,9 +7,12 @@ summary at the end of module execution.
 """
 
 from typing import List, Dict, Optional, Any
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import json
+import logging
+import socket
+import threading
 from . import constants as const
 
 
@@ -87,9 +90,21 @@ class APIFailureTracker:
         # Check if JSON format is requested
         use_json_format = os.environ.get(const.LOG_FORMAT, '').lower() == 'json'
         
+        # Only print summary if log level is INFO or more verbose (DEBUG)
+        current_log_level = logging.root.level
+        if current_log_level > logging.INFO:
+            return
+        
         if not self._failures:
             if use_json_format:
+                # Use IBM VIA compatible JSON format
                 output = {
+                    "type": "ibmvia-autoconf",
+                    "host": socket.gethostname(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "message": "No API failures recorded during execution",
+                    "ibm_threadId": str(threading.get_ident()),
+                    "loglevel": "3",
                     "api_failure_summary": {
                         "total_failures": 0,
                         "message": "No API failures recorded during execution"
@@ -109,9 +124,15 @@ class APIFailureTracker:
             by_module[module].append(failure)
         
         if use_json_format:
-            # Output JSON format
+            # Output JSON format with IBM VIA compatible structure
             module_counts = {module: len(failures) for module, failures in by_module.items()}
             output = {
+                "type": "ibmvia-autoconf",
+                "host": socket.gethostname(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "message": f"API Failure Summary - {len(self._failures)} failed request(s)",
+                "ibm_threadId": str(threading.get_ident()),
+                "loglevel": "1",  # Error level for failures
                 "api_failure_summary": {
                     "total_failures": len(self._failures),
                     "by_module": module_counts
