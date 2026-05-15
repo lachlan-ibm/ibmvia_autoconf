@@ -177,16 +177,14 @@ class CustomLoader(yaml.SafeLoader):
         
         Returns: Temp file path string
         """
-        # 1. Parse resource reference
         resource_ref = self.construct_scalar(node)
-        
         # Validate format
         if ':' not in resource_ref or '/' not in resource_ref.split(':')[0]:
             raise ValueError(f"Invalid {resource_type}:tofile format: {resource_ref}. Expected: namespace/name:key")
         
         namespaceName, key = resource_ref.split(':')
         
-        # 2. Retrieve K8s resource (use cache with resource_type prefix)
+        # use cache with resource_type prefix
         cache_key = f"{resource_type}:{namespaceName}"
         k8sResource = self.k8s_cache.get(cache_key, None)
         
