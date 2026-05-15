@@ -1,4 +1,4 @@
-#!/bin/python 
+#!/bin/python
 """
 @copyright: IBM
 """
@@ -8,6 +8,8 @@ import base64
 import pathlib
 import logging
 import sys
+import tempfile
+import atexit
 
 from copy import deepcopy
 from . import constants as const
@@ -104,6 +106,8 @@ class Map(dict):
 class CustomLoader(yaml.SafeLoader):
 
     k8s_cache = {}
+    _temp_files = []  # Track temp files for cleanup
+    _cleanup_registered = False
 
     def __init__(self, path):
         self.k8s_cache = {}
@@ -111,6 +115,8 @@ class CustomLoader(yaml.SafeLoader):
         super(CustomLoader, self).__init__(path)
         CustomLoader.add_constructor('!include', CustomLoader.include)
         CustomLoader.add_constructor('!secret', CustomLoader.k8s_secret)
+        CustomLoader.add_constructor('!secret:tofile', CustomLoader.k8s_secret_tofile)
+        CustomLoader.add_constructor('!configmap:tofile', CustomLoader.k8s_configmap_tofile)
         CustomLoader.add_constructor('!environment', CustomLoader.env_secret)
 
     def include(self, node):
@@ -142,6 +148,90 @@ class CustomLoader(yaml.SafeLoader):
         except KeyError as e:
             raise ValueError("Environment variable {} does not exist".format(
                                                 self.construct_scalar(node))) from e
+
+    def k8s_secret_tofile(self, node):
+        """
+        Load a Kubernetes Secret and write to temp file.
+        
+        Returns the temp file path string that can be passed to FILE_LOADER.read_file().
+        
+        Format: !secret:tofile namespace/name:key
+        """
+        return self._k8s_resource_tofile(node, resource_type='secret')
+
+    def k8s_configmap_tofile(self, node):
+        """
+        Load a Kubernetes ConfigMap and write to temp file.
+        
+        Format: !configmap:tofile namespace/name:key
+        """
+        return self._k8s_resource_tofile(node, resource_type='configmap')
+
+    def _k8s_resource_tofile(self, node, resource_type='secret'):
+        """
+        Internal method to load K8s Secret or ConfigMap and write to temp file.
+        
+        Args:
+            node: YAML node containing the resource reference
+            resource_type: Either 'secret' or 'configmap'
+        
+        Returns: Temp file path string
+        """
+        # 1. Parse resource reference
+        resource_ref = self.construct_scalar(node)
+        
+        # Validate format
+        if ':' not in resource_ref or '/' not in resource_ref.split(':')[0]:
+            raise ValueError(f"Invalid {resource_type}:tofile format: {resource_ref}. Expected: namespace/name:key")
+        
+        namespaceName, key = resource_ref.split(':')
+        
+        # 2. Retrieve K8s resource (use cache with resource_type prefix)
+        cache_key = f"{resource_type}:{namespaceName}"
+        k8sResource = self.k8s_cache.get(cache_key, None)
+        
+        if k8sResource is None:
+            namespace, name = namespaceName.split('/')
+            KUBE_CLIENT = get_kube_client()
+            if not KUBE_CLIENT:
+                raise RuntimeError("Kubernetes client not found")
+            if resource_type not in ('secret', 'configmap'):
+                raise ValueError(f"Unknown resource type: {resource_type}")
+            try:
+                k8sResource = {
+                    'secret': KUBE_CLIENT.CoreV1Api().read_namespaced_secret,
+                    'configmap': KUBE_CLIENT.CoreV1Api().read_namespaced_config_map
+                }[resource_type](name, namespace)
+            except Exception as e:
+                raise RuntimeError(f"{resource_type.capitalize()} not found: {namespaceName}") from e
+            self.k8s_cache[cache_key] = k8sResource
+        
+        # Extract from resource.data[key]
+        data = getattr(k8sResource, 'data', {})
+        if key not in data:
+            raise RuntimeError(f"Key '{key}' not found in {resource_type} {namespaceName}")
+        contents = base64.b64decode(data[key])
+        temp_dir = tempfile.gettempdir()
+        temp_path = os.path.join(temp_dir, key)
+        
+        with open(temp_path, 'wb') as f:
+            f.write(contents)
+        # Track for cleanup
+        CustomLoader._temp_files.append(temp_path)
+        # Register cleanup with atexit (only once)
+        if not CustomLoader._cleanup_registered:
+            atexit.register(CustomLoader._cleanup_temp_files)
+            CustomLoader._cleanup_registered = True 
+        return temp_path
+
+    @staticmethod
+    def _cleanup_temp_files():
+        """Clean up all temp files on exit."""
+        for path in CustomLoader._temp_files:
+            try:
+                os.unlink(path)
+            except (OSError, FileNotFoundError):
+                pass
 
 class FileLoader():
 
