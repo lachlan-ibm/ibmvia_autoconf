@@ -318,20 +318,7 @@ these variables are set, they take priority over values set in configuration fil
 
 - ``IVIA_CONFIGURATOR_LOG_FORMAT``
                         The format to use for the log messages. Default is `%(asctime)s - %(levelname)s - %(message)s"`.
-                        If the format is set to ``json`` then the messages logged will be JSON parsible in IBM Verify Access
-                        container format with the following fields:
-                        
-                        - ``type``: Always set to "ibmvia-autoconf"
-                        - ``host``: Hostname of the container/system
-                        - ``timestamp``: ISO 8601 formatted timestamp with timezone
-                        - ``message``: Log message
-                        - ``ibm_threadId``: Thread identifier
-                        - ``loglevel``: Numeric log level (0=Critical, 1=Error, 2=Warning, 3=Info, 5=Debug)
-                        - Any additional fields passed via the ``extra`` parameter
-                        
-                        Example JSON log output::
-                        
-                            {"type":"ibmvia-autoconf","host":"ivia-config-5ccc54dcf-nvxf5","timestamp":"2026-05-15T04:14:50.440Z","message":"Reading configuration file","ibm_threadId":"4150","loglevel":"3"}
+                        If the format is set to ``json`` then the messages logged will be JSON parsible.
 
 - ``IVIA_TRACK_API_FAILURES``
                         If set to ``true``, the autoconf tool will track API failures and summarize them before the tool 
