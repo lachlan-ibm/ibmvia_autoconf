@@ -25,9 +25,7 @@ from pathlib import Path
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
-BUILD_ID = os.environ.get('TRAVIS_BUILD_NUMBER', 0)
-if BUILD_ID == 0:
-    BUILD_ID = os.environ.get('GITHUB_RUN_NUMBER', 0)
+BUILD_ID = os.environ.get('GITHUB_RUN_NUMBER', 0)
 
 setup(
     name='ibmvia_autoconf',
