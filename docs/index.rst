@@ -187,12 +187,12 @@ When ``IVIA_CONFIGURATOR_LOG_FORMAT=json``:
 YAML configuration keywords
 ============================
 
-Each module expects a YAML object describing the desired configuration state. There are a number of useful features 
-which can be used to make configuration files re-usable and version controlled. There are three keywords which 
+Each module expects a YAML object describing the desired configuration state. There are a number of useful features
+which can be used to make configuration files re-usable and version controlled. There are five keywords which
 can be used in configuration files:
 
  - ``!include``
-    Used to include a YAML configuration file as the value of the given key. This file can be either an 
+    Used to include a YAML configuration file as the value of the given key. This file can be either an
     absolute path or relative to the ``IVIA_CONFIG_BASE`` environment variable. eg::
 
                                                                                     container: !include base_config.yaml
@@ -205,7 +205,30 @@ can be used in configuration files:
 
         admin_password: !secret default/isva-secrets:admin_secret
 
- - ``!environment``: 
+ - ``!secret:tofile``
+    Used to load binary or text files from Kubernetes Secrets. The file content is written to a temporary file
+    and the file path is returned. Use this for certificates, archives, mapping rules, templates, and any other
+    files that need to be loaded from Kubernetes Secrets. The temporary file is automatically cleaned up on exit.
+    Format: ``namespace/secret-name:key-name`` where the key name becomes the filename. eg::
+
+        lmi_certificate:
+          certificate: !secret:tofile default/lmi-ssl-certs:server.p12
+          password: !secret default/lmi-ssl-passwords:p12-password
+
+ - ``!configmap:tofile``
+    Used to load binary or text files from Kubernetes ConfigMaps. Works identically to ``!secret:tofile`` but
+    reads from ConfigMaps instead of Secrets. Use this for non-sensitive configuration files, templates, and
+    scripts. eg::
+
+        mapping_rules:
+          - type: SAML2
+            files:
+              - !configmap:tofile default/aac-config:saml_mapping.js
+
+        template_files:
+          - !configmap:tofile default/ui-templates:login.html
+
+ - ``!environment``:
     Used to set the value of the given key as the value read from the given environment variable,
     eg::
 

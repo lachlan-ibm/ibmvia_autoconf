@@ -15,9 +15,10 @@ Documentation for using this library can be found on
 
 # Setup
 ## Optional Extras
-This library uses the pip extras feature to install the kubernetes or docker-compose dependencies if they are required. 
-The Kubernetes extra might be requyired if you are using the autoconf tool to restart the runtime containers, or if you 
-are using a Secrets object to store parts of the configuration.
+This library uses the pip extras feature to install the kubernetes or docker-compose dependencies if they are required.
+The Kubernetes extra might be required if you are using the autoconf tool to restart the runtime containers, or if you
+are using Kubernetes Secrets or ConfigMaps to store parts of the configuration (including files like certificates,
+mapping rules, templates, etc.).
 
 To install an extra, use the following syntax:
 ```bash
