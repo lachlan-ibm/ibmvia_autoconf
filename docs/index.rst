@@ -139,6 +139,12 @@ When ``IVIA_CONFIGURATOR_LOG_FORMAT=json``:
 .. code-block:: json
 
     {
+      "type": "ibmvia-autoconf",
+      "host": "ivia-config-5ccc54dcf-nvxf5",
+      "timestamp": "2026-04-02T03:18:00.012Z",
+      "message": "API Failure Summary - 3 failed request(s)",
+      "ibm_threadId": "4150",
+      "loglevel": "1",
       "api_failure_summary": {
         "total_failures": 3,
         "by_module": {
@@ -207,12 +213,12 @@ can be used in configuration files:
 
  - ``!secret:tofile``
     Used to load binary or text files from Kubernetes Secrets. The file content is written to a temporary file
-    and the file path is returned. Use this for certificates, archives, mapping rules, templates, and any other
-    files that need to be loaded from Kubernetes Secrets. The temporary file is automatically cleaned up on exit.
-    Format: ``namespace/secret-name:key-name`` where the key name becomes the filename. eg::
+    Use this for certificates, archives, mapping rules, templates, and any other files that need to be loaded 
+    from Kubernetes Secrets. Format: ``namespace/secret-name:key-name`` where the key name becomes the 
+    filename. eg::
 
         lmi_certificate:
-          certificate: !secret:tofile default/lmi-ssl-certs:server.p12
+          p12: !secret:tofile default/lmi-ssl-certs:server.p12
           password: !secret default/lmi-ssl-passwords:p12-password
 
  - ``!configmap:tofile``
@@ -226,7 +232,7 @@ can be used in configuration files:
               - !configmap:tofile default/aac-config:saml_mapping.js
 
         template_files:
-          - !configmap:tofile default/ui-templates:login.html
+          - !configmap:tofile default/ui-templates:login.zip
 
  - ``!environment``:
     Used to set the value of the given key as the value read from the given environment variable,
