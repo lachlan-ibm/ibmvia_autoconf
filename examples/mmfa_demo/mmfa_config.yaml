@@ -7,6 +7,7 @@ container:
   - "ivia-mmfa-runtime"
   - "ivia-mmfa-browserwrp"
   - "ivia-mmfa-mobilewrp"
+  incremental_snapshot: True
   admin_cfg:
     session_timeout: 720
   management_authorization:

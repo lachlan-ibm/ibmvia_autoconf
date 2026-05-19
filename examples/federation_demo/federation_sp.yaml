@@ -2,6 +2,7 @@ mgmt_user: admin
 mgmt_pwd: !secret default/ivia-fed-autoconf-env:ISVA_MGMT_PWD
 mgmt_old_pwd: !secret default/ivia-fed-autoconf-env:ISVA_MGMT_OLD_PWD
 container:
+  incremental_snapshot: True
   admin_cfg:
     session_timeout: 720
   account_management:
