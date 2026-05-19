@@ -528,7 +528,7 @@
         },
         "set_template_page": {
           "type": "boolean",
-          "description": "A flag to indicate the proxy should be configured to use  the ``fido2pair_login_success.html`` tempalte page in the management root as the login success page. Default is false.",
+          "description": "A flag to indicate the proxy should be configured to use  the ``fido2pair_login_success.html`` template page in the management root as the login success page. Default is false.",
           "default": false
         },
         "login_lrr": {

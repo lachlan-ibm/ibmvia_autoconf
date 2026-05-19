@@ -71,7 +71,7 @@ configuration snapshots which can be subsequently fetched by other containers in
 Managing Container Deployments
 ==============================
 As configuration is applied to a Verify Identity Access deployment, a snapshot is generated and published to a well known
-endpoint, where it can be fetched and unpacked by the runtime containers. The runtime contaienrs are only able to unpack aac
+endpoint, where it can be fetched and unpacked by the runtime containers. The runtime containers are only able to unpack aac
 snapshot during first-boot; therefore they must be restarted in order to pick up a new configuration.
 
 The autoconf module has some capacity to manage the restarting of runtime containers so that configuration can be incremental. To
@@ -84,7 +84,7 @@ Snapshot Publishing
 --------------------
 The configuration snapshot is the asset used by Verify Identity Access runtime containers to deploy business logic. The process of publishing
 a new snapshot; pushing it to the runtime containers; and then restarting the contains can be a slow process. The autoconf module allows admins 
-to skip these publish steps for incremental snapshots (as successive pending changes are commited). This allows the autoconf tool to run faster
+to skip these publish steps for incremental snapshots (as successive pending changes are committed). This allows the autoconf tool to run faster
 at the cost of not having a snapshot available to runtime containers as the tool progresses.
 
 The default option is to not publish incremental snapshots: ``incremental_snapshot: False``. 
@@ -102,7 +102,7 @@ To publish incremental snapshots admins can include the following YAML:
     - iviadsc-replica
 
 
-This will push the updated snapsshot to each of the listed containers as successive pending changes are commited.
+This will push the updated snapshot to each of the listed containers as successive pending changes are committed.
 
 Kubernetes / OpenShift
 ----------------------
