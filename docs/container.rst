@@ -87,7 +87,7 @@ a new snapshot; pushing it to the runtime containers; and then restarting the co
 to skip these publish steps for incremental snapshots (as successive pending changes are committed). This allows the autoconf tool to run faster
 at the cost of not having a snapshot available to runtime containers as the tool progresses.
 
-The default option is to not publish incremental snapshots: ``incremental_snapshot: False``. 
+The default option is to not publish incremental snapshots; ``incremental_snapshot: False``. 
 To publish incremental snapshots admins can include the following YAML:
 
 .. code-block:: yaml
