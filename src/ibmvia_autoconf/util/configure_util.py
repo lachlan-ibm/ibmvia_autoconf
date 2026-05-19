@@ -263,6 +263,8 @@ def _publish_docker_configuration(factory, isvaConfig, max_attempts=5, force_pub
         if not force_publish:
             _logger.debug("Not publishing incremental snapshot")
             return False
+        else:
+            _logger.info("Force publish a configuration snapshot")
     for i in range(max_attempts):
         try:
             response = factory.get_system_settings().docker.publish()
