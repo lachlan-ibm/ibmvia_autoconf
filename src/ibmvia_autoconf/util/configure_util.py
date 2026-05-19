@@ -5,7 +5,7 @@
 import os, logging, sys, yaml, pyivia, datetime, subprocess, shutil, time, json
 from typing import Optional, Tuple
 from . import constants as const
-from .data_util import Map, FileLoader, CustomLoader, get_kube_client, KUBE_CLIENT_SLEEP, PUBLISH_SNAPSHOT_SLEEP
+from .data_util import Map, FileLoader, CustomLoader, get_kube_client, KUBE_CLIENT_SLEEP, PUBLISH_SNAPSHOT_SLEEP, get_k8s_pod_namespace
 from .logging_util import setup_logging
 
 setup_logging()
@@ -258,7 +258,10 @@ def _docker_restart_container(container, config):
         sys.exit(1)
 
 
-def _publish_docker_configuration(factory, max_attempts=5):
+def _publish_docker_configuration(factory, isvaConfig, max_attempts=5, force_publish=False):
+    if force_publish or isvaConfig.containers.get('incremental_snapshot', False) == False:
+        _logger.debug("Not publishing incremental snapshot")
+        return False
     for i in range(max_attempts):
         try:
             response = factory.get_system_settings().docker.publish()
@@ -280,8 +283,11 @@ def _wait_for_orchestration_recovery():
 
 
 def _restart_k8s_deployments(isvaConfig):
-    namespace = isvaConfig.container.k8s_deployments.namespace
-    deployments = isvaConfig.container.k8s_deployments.deployments
+    namespace = isvaConfig.container.k8s_namespace  
+    if not namespace: # Fall back to the namespace of the pod running the autoconf module
+        namespace = get_k8s_pod_namespace()
+    
+    deployments = isvaConfig.container.k8s_deployments
     for deployment in deployments:
         _kube_rollout_restart(namespace, deployment)
     for deployment in deployments:
@@ -298,12 +304,14 @@ def _restart_docker_containers(isvaConfig):
         _docker_restart_container(container, isvaConfig)
 
 
-def _restart_containers(isvaConfig):
+def _restart_containers(isvaConfig, restartContainers):
+    if not restartContainers or isvaConfig.container is None:
+        _logger.debug("Not asked to restart containers")
+        return
     container_config = isvaConfig.container
     restart_handlers = (
         (
-            container_config.k8s_deployments is not None and
-            container_config.k8s_deployments.deployments is not None,
+            container_config.k8s_deployments is not None,
             _restart_k8s_deployments
         ),
         (container_config.compose_services, _restart_compose_services),
@@ -330,11 +338,7 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
     if not factory.is_docker():
         return
 
-    if not _publish_docker_configuration(factory):
+    if not _publish_docker_configuration(factory, isvaConfig):
         return
 
-    if restartContainers and isvaConfig.container is not None:
-        _restart_containers(isvaConfig)
-        return
-
-    _logger.debug("Not asked to restart containers")
+    _restart_containers(isvaConfig, restartContainers)

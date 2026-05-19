@@ -17,7 +17,7 @@ from .access_control import AAC_Configurator as AAC
 from .webseal import WEB_Configurator as WEB
 from .federation import FED_Configurator as FED
 from .util.data_util import FILE_LOADER, optional_list, KUBE_CLIENT_SLEEP
-from .util.configure_util import deploy_pending_changes, creds, old_creds, ext_user_creds, mgmt_base_url, config_yaml
+from .util import configure_util as cfgutl
 from .util.constants import HEADERS
 from .util.logging_util import setup_logging
 from .util.api_tracker import track_failure, get_tracker
@@ -35,12 +35,12 @@ class IVIA_Configurator(object):
                                                 in ["true", "yes", "t", "1", "on"]
 
     def old_password(self, config_file):
-        old_cred = old_creds(config_file)
+        old_cred = cfgutl.old_creds(config_file)
         if not old_cred:
             return
         
         rsp = requests.get(
-                                    mgmt_base_url(config_file),
+                                    cfgutl.mgmt_base_url(config_file),
                                     auth=old_cred,
                                     headers=HEADERS,
                                     verify=self.tlsVerify)
@@ -50,7 +50,7 @@ class IVIA_Configurator(object):
 
 
     def lmi_responding(self, config_file):
-        url = mgmt_base_url(config_file)
+        url = cfgutl.mgmt_base_url(config_file)
         for _ in range(12):
             try:
                 rsp = requests.get(url, verify=self.tlsVerify, allow_redirects=False, timeout=6)
@@ -71,8 +71,14 @@ class IVIA_Configurator(object):
             hasChanges = len(r.json['changes']) > 0 \
                         if r.json and 'changes' in r.json else False
         if self.needsRestart or hasChanges:
-            deploy_pending_changes(self.factory, self.config)
+            cfgutl.deploy_pending_changes(self.factory, self.config)
             self.needsRestart = False
+
+
+    def _final_snapshot_publish(self):
+        if self.factory.is_docker():
+            cfgutl._publish_docker_configuration(self.factory, self.config, force_publish=True)
+            cfgutl._restart_containers(self.config, True)
 
     class Admin_Password(typing.TypedDict):
         '''
@@ -152,7 +158,7 @@ class IVIA_Configurator(object):
         if first_steps.json and first_steps.json.get("configured", True) == False:
             rsp = self.factory.get_system_settings().first_steps.set_setup_complete()
             assert rsp.status_code == 200, "Did not complete setup"
-            deploy_pending_changes(self.factory, self.config, restartContainers=False)
+            cfgutl.deploy_pending_changes(self.factory, self.config, restartContainers=False)
             _logger.info("Completed setup")
 
     def _wait_for_trial_activation(self):
@@ -911,7 +917,7 @@ class IVIA_Configurator(object):
             rsp = self.factory.get_system_settings().snapshot.upload(snapshotConfig.snapshot)
             if rsp.success == True:
                 _logger.info("Successfully applied snapshot [{}]".format(snapshotConfig.snapshot))
-                deploy_pending_changes(self.factory, self.config)
+                cfgutl.deploy_pending_changes(self.factory, self.config)
             else:
                 track_failure('system', 'snapshot', rsp, snapshotConfig)
                 _logger.error("Failed to apply snapshot [{}]\n{}".format(snapshotConfig.snapshot),
@@ -1078,9 +1084,9 @@ class IVIA_Configurator(object):
         self.management_authorization(base_config)
         self._deploy_if_needed() # This deploys any pending changes, which may include management_authentication and can 
         # cause an appliance to become un-contactable; maybe update the factory to fix this
-        if ext_user_creds(self.config) != creds(self.config):
+        if cfgutl.ext_user_creds(self.config) != cfgutl.creds(self.config):
             _logger.debug("Swapping to given external user credentials . . . ")
-            self.factory = pyivia.Factory(mgmt_base_url(self.config), *ext_user_creds(self.config))
+            self.factory = pyivia.Factory(cfgutl.mgmt_base_url(self.config), *cfgutl.ext_user_creds(self.config))
         d = deployment(self.config, self.factory)
         d.configure() # Set up HVDB before activating modules in container
         self.activate_appliance(base_config)
@@ -1140,16 +1146,16 @@ class IVIA_Configurator(object):
         self._deploy_if_needed()
 
     def first_setps(self):
-        old_credentials = old_creds(self.config)
+        old_credentials = cfgutl.old_creds(self.config)
         if old_credentials:
-            self.factory = pyivia.Factory(mgmt_base_url(self.config), *old_credentials)
+            self.factory = pyivia.Factory(cfgutl.mgmt_base_url(self.config), *old_credentials)
             self.accept_eula()
             self.fips(self.config)
             self.complete_setup()
-            self.set_admin_password(old_credentials, creds(self.config))
-            self.factory = pyivia.Factory(mgmt_base_url(self.config), *creds(self.config))
+            self.set_admin_password(old_credentials, cfgutl.creds(self.config))
+            self.factory = pyivia.Factory(cfgutl.mgmt_base_url(self.config), *cfgutl.creds(self.config))
         else:
-            self.factory = pyivia.Factory(mgmt_base_url(self.config), *creds(self.config))
+            self.factory = pyivia.Factory(cfgutl.mgmt_base_url(self.config), *cfgutl.creds(self.config))
             self.accept_eula()
             self.fips(self.config)
             self.complete_setup()
@@ -1163,7 +1169,7 @@ class IVIA_Configurator(object):
     def configure(self, config_file=None):
         try:
             _logger.info("Reading configuration file")
-            self.config = config_yaml(config_file)
+            self.config = cfgutl.config_yaml(config_file)
             _logger.info("Testing LMI connectivity")
             if self.lmi_responding(self.config) == False:
                 _logger.error("Unable to contact LMI, exiting")
@@ -1179,6 +1185,8 @@ class IVIA_Configurator(object):
             #Configure the remote syslog after everything else as it might rely on config we create
             self.remote_syslog(self.config.get('appliance') if self.config.get('appliance') else self.config.get('container'))
             self._deploy_if_needed()
+            if self.factory.is_docker():
+                self._final_snapshot_publish()
         finally:
             get_tracker().print_summary()
 

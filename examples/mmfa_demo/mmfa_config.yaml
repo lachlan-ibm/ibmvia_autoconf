@@ -2,12 +2,11 @@ mgmt_user: admin
 mgmt_pwd: !secret default/ivia-mmfa-autoconf-env:ISVA_MGMT_PWD
 mgmt_old_pwd: !secret default/ivia-mmfa-autoconf-env:ISVA_MGMT_OLD_PWD
 container:
+  k8s_namespace: "default"
   k8s_deployments:
-    namespace: "default"
-    deployments:
-    - "ivia-mmfa-runtime"
-    - "ivia-mmfa-browserwrp"
-    - "ivia-mmfa-mobilewrp"
+  - "ivia-mmfa-runtime"
+  - "ivia-mmfa-browserwrp"
+  - "ivia-mmfa-mobilewrp"
   admin_cfg:
     session_timeout: 720
   management_authorization:

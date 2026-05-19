@@ -213,13 +213,15 @@ can be used in configuration files:
 
  - ``!secret:tofile``
     Used to load binary or text files from Kubernetes Secrets. The file content is written to a temporary file
-    Use this for certificates, archives, mapping rules, templates, and any other files that need to be loaded 
-    from Kubernetes Secrets. Format: ``namespace/secret-name:key-name`` where the key name becomes the 
-    filename. eg::
+    Use this for certificates, archives, mapping rules, templates, and any other files that need to be loaded
+    from Kubernetes Secrets. If the namespace is not provided then autoconf assumes it is running in a container (pod)
+    and will use the namespace of the container it is running in.
+    
+    Example::
 
         lmi_certificate:
           p12: !secret:tofile default/lmi-ssl-certs:server.p12
-          password: !secret default/lmi-ssl-passwords:p12-password
+          password: !secret lmi-ssl-passwords:p12-password
 
  - ``!configmap:tofile``
     Used to load binary or text files from Kubernetes ConfigMaps. Works identically to ``!secret:tofile`` but
@@ -230,9 +232,8 @@ can be used in configuration files:
           - type: SAML2
             files:
               - !configmap:tofile default/aac-config:saml_mapping.js
-
         template_files:
-          - !configmap:tofile default/ui-templates:login.zip
+          - !configmap:tofile ui-templates:login.zip
 
  - ``!environment``:
     Used to set the value of the given key as the value read from the given environment variable,
