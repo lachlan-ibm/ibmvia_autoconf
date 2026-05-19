@@ -259,9 +259,10 @@ def _docker_restart_container(container, config):
 
 
 def _publish_docker_configuration(factory, isvaConfig, max_attempts=5, force_publish=False):
-    if force_publish or not isvaConfig.container or isvaConfig.container.get('incremental_snapshot', False) == False:
-        _logger.debug("Not publishing incremental snapshot")
-        return False
+    if not isvaConfig.container or isvaConfig.container.get('incremental_snapshot', False) == False:
+        if not force_publish:
+            _logger.debug("Not publishing incremental snapshot")
+            return False
     for i in range(max_attempts):
         try:
             response = factory.get_system_settings().docker.publish()
