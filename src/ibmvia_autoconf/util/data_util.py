@@ -18,6 +18,40 @@ from .logging_util import setup_logging
 setup_logging()
 _logger = logging.getLogger(__name__)
 
+
+def get_k8s_pod_namespace():
+    """
+    Get the default Kubernetes namespace from the serviceaccount file.
+    
+    Returns: Namespace string
+    
+    Raises:
+        RuntimeError: If namespace file cannot be read or is invalid
+    """
+    
+    namespace_file = '/var/run/secrets/kubernetes.io/serviceaccount/namespace'
+    try:
+        with open(namespace_file, 'r') as f:
+            namespace = f.read().strip()
+            if not namespace:
+                raise RuntimeError(
+                    f"Namespace file '{namespace_file}' is empty. "
+                    "Cannot determine default namespace for Kubernetes resources."
+                )
+            return namespace
+    except FileNotFoundError:
+        raise RuntimeError(
+            f"Namespace file '{namespace_file}' not found. "
+            "Cannot determine default namespace. "
+            "Use explicit format 'namespace/name:key' and ensure running in Kubernetes."
+        ) from None
+    except (IOError, OSError) as e:
+        raise RuntimeError(
+            f"Failed to read namespace file '{namespace_file}': {e}. "
+            "Cannot determine default namespace for Kubernetes resources."
+        ) from e
+
+
 def to_camel_case(snake_case):
     parts = snake_case.split('_')
     return parts[0] + ''.join(x.title() for x in parts[1:])
@@ -109,6 +143,7 @@ class CustomLoader(yaml.SafeLoader):
     _temp_files = []  # Track temp files for cleanup
     _temp_dirs = []  # Track temp directories for cleanup
     _cleanup_registered = False
+    _default_namespace = None  # Cache for default namespace
 
     def __init__(self, path):
         self.k8s_cache = {}
@@ -168,6 +203,21 @@ class CustomLoader(yaml.SafeLoader):
         return self._k8s_resource_tofile(node, resource_type='configmap')
 
 
+    def _get_default_namespace(self):
+        """
+        Get the default Kubernetes namespace from the serviceaccount file.
+        
+        Returns: Namespace string
+        
+        Raises:
+            RuntimeError: If namespace file cannot be read or is invalid
+        """
+        if CustomLoader._default_namespace is not None:
+            return CustomLoader._default_namespace
+        
+        CustomLoader._default_namespace = get_k8s_pod_namespace()
+        return CustomLoader._default_namespace
+
     def _validate_k8s_tofile_resource(self, resource_type, node):
         # Validate resource type early (fail-fast)
         VALID_RESOURCE_TYPES = ('secret', 'configmap')
@@ -182,11 +232,13 @@ class CustomLoader(yaml.SafeLoader):
         try:
             namespaceName, key = resource_ref.split(':', 1)
             if '/' not in namespaceName:
-                raise ValueError()
+                # No namespace provided, use default from container
+                default_ns = self._get_default_namespace()
+                namespaceName = f"{default_ns}/{namespaceName}"
         except ValueError:
             raise ValueError(
                 f"Invalid {resource_type}:tofile format: '{resource_ref}'. "
-                f"Expected: namespace/name:key"
+                f"Expected: 'namespace/name:key' or 'name:key' (uses container namespace)"
             ) from None
         return namespaceName, key
 
