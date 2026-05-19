@@ -168,7 +168,13 @@ class CustomLoader(yaml.SafeLoader):
         k8sSecret = self.k8s_cache.get(namespaceName, None)
         self._ensure_kube_client();assert self._kube_client is not None# Type narrowing: _ensure_kube_client raises if None
         if k8sSecret == None:
-            namespace, name = namespaceName.split('/')
+            # Check if namespace is explicitly provided (format: namespace/name)
+            # If not, use the pod's namespace (format: name)
+            if '/' in namespaceName:
+                namespace, name = namespaceName.split('/')
+            else:
+                namespace = get_k8s_pod_namespace()
+                name = namespaceName
             #Use k8s API to look up secret
             k8sSecret = self._kube_client.CoreV1Api().read_namespaced_secret(name, namespace)
             self.k8s_cache[namespaceName] = k8sSecret

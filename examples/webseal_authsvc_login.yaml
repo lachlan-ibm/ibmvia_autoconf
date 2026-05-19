@@ -1,4 +1,5 @@
 container:
+  incremental_snapshot: True
   compose_services:
     - "isvawrprp1"
     - "isvaruntime"
