@@ -75,11 +75,6 @@ class IVIA_Configurator(object):
             self.needsRestart = False
 
 
-    def _final_snapshot_publish(self):
-        if self.factory.is_docker():
-            cfgutl._publish_docker_configuration(self.factory, self.config, force_publish=True)
-            cfgutl._restart_containers(self.config, True)
-
     class Admin_Password(typing.TypedDict):
         '''
         Example:: 
@@ -1186,7 +1181,8 @@ class IVIA_Configurator(object):
             self.remote_syslog(self.config.get('appliance') if self.config.get('appliance') else self.config.get('container'))
             self._deploy_if_needed()
             if self.factory.is_docker():
-                self._final_snapshot_publish()
+                cfgutl._publish_docker_configuration(self.factory, self.config, force_publish=True)
+                cfgutl._restart_containers(self.config, True)
         finally:
             get_tracker().print_summary()
 
