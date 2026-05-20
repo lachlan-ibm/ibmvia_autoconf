@@ -84,7 +84,7 @@ class Appliance_Configurator(object):
                             "ipv4_address": address.address,
                             "ipv4_mask_or_prefix": address.mask_or_prefix,
                             "ipv4_broadcast_address": address.broadcast_address,
-                            "ipv4_allow_management": address.allow_mgmt,
+                            "ipv4_allow_management": address.allow_management,
                             "ipv4_enabled": address.enabled
                         })
             rsp = system.interfaces.update_interface(oldIface['uuid'], **methodArgs)
@@ -94,7 +94,7 @@ class Appliance_Configurator(object):
                             "address": address.address,
                             "mask_or_prefix": address.mask_or_prefix,
                             "enabled": address.enabled,
-                            "allow_management": address.allow_mgmt
+                            "allow_management": address.allow_management
                         }
                     rsp = system.interfaces.create_address(iface.label, **methodArgs)
 
@@ -184,12 +184,12 @@ class Appliance_Configurator(object):
                     - address": "192.168.42.101"
                       mask_or_prefix: "255.255.255.0"
                       broadcast_address: "192.168.42.10"
-                      allow_mgmt: true
+                      allow_management: true
                       enabled: true
                     - address: "192.168.42.102"
                       mask_or_prefix: "/24"
                       broadcast_address: "192.168.42.10"
-                      allow_mgmt: false
+                      allow_management: false
                       enabled: true
 
         '''
@@ -220,7 +220,7 @@ class Appliance_Configurator(object):
                     'IPv4 netmask or prefix to assign to address.'
                     broadcast_address: str
                     'IPv4 address to use for broadcasting.'
-                    allow_mgmt: bool
+                    allow_management: bool
                     'Use this address for the Local Management Interface.'
                     enabled: bool
                     'Enable this address.'
@@ -228,7 +228,7 @@ class Appliance_Configurator(object):
                 class IPv4DHCP(typing.TypedDict):
                     enabled: bool
                     'Enable DHCP on this interface.'
-                    allow_mgmt: bool
+                    allow_management: bool
                     'Use a DHCP address for the Local Management Interface.'
                     default_route: bool
                     'Use DHCP to determine the default network route.'

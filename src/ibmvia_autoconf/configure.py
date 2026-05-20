@@ -472,12 +472,12 @@ class IVIA_Configurator(object):
         'This is a space separated list of valid domains for IBM Security Verify. These domains are used by the IBM Security Verify wizard to ensure that only valid hostnames are used.'
 
     def admin_config(self, config):
-        if config.admin_config != None:
-            rsp = self.factory.get_system_settings().admin_settings.update(**config.admin_config)
+        if config.admin_cfg != None:
+            rsp = self.factory.get_system_settings().admin_settings.update(**config.admin_cfg)
             if rsp.success == True:
                 _logger.info("Successfully set admin config")
             else:
-                track_failure('system', 'admin_config', rsp, config.admin_config)
+                track_failure('system', 'admin_config', rsp, config.admin_cfg)
                 _logger.error("Failed to set admin config using:\n{}\n{}".format(
                     json.dumps(config.admin_config), rsp.data))
 
