@@ -160,7 +160,7 @@
         },
         "addresses": {
           "type": "array",
-          "description": "Static IPv4 addresses assigned to an interface.",
+          "description": "Static IPv4 addresses assigned to an interface. If more than once address is provided; then the first address must be the management address.",
           "items": {
             "$ref": "#/$defs/IPv4Address"
           }
@@ -211,7 +211,7 @@
           "description": "IPv4 address to use for broadcasting.",
           "format": "ipv4"
         },
-        "allow_mgmt": {
+        "allow_management": {
           "type": "boolean",
           "description": "Use this address for the Local Management Interface."
         },
@@ -224,7 +224,7 @@
         "address",
         "mask_or_prefix",
         "broadcast_address",
-        "allow_mgmt",
+        "allow_management",
         "enabled"
       ]
     },
@@ -305,14 +305,14 @@
                   "address": "192.168.42.101",
                   "mask_or_prefix": "255.255.255.0",
                   "broadcast_address": "192.168.42.10",
-                  "allow_mgmt": true,
+                  "allow_management": true,
                   "enabled": true
                 },
                 {
                   "address": "192.168.42.102",
                   "mask_or_prefix": "/24",
                   "broadcast_address": "192.168.42.10",
-                  "allow_mgmt": false,
+                  "allow_management": false,
                   "enabled": true
                 }
               ]
