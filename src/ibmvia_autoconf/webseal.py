@@ -858,6 +858,11 @@ class WEB_Configurator(object):
                 for network in pop.ip_auth.networks:
                     pdadminCommands += ["pop modify {} set ipauth {} {}".format(pop.name, network.network,
                         network.netmask, network.auth_level)]
+        if pop.qop:
+            pdadminCommands += ["pop modify {} set qop {}".format(pop.name, pop.qop)]
+        
+        if pop.warning:
+            pdadminCommands += ["pop modify {} set warning {}".format(pop.name, pop.warning)]
 
         rsp = self.web.policy_administration.execute(runtime.admin_user, runtime.admin_password, pdadminCommands)
         if rsp.success == True:

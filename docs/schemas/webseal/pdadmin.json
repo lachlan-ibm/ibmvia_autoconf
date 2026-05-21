@@ -200,12 +200,22 @@
         },
         "tod_access": {
           "type": "string",
-          "description": "Sets the time of day range for the specified protected object policy."
+          "description": "Sets the time of day range for the specified protected object policy. Set as ``forbidden`` to disable access."
         },
         "audit_level": {
           "type": "string",
           "description": "Sets the audit level for the specified POP.",
           "enum": ["none", "all", "permit", "deny", "admin", "error"]
+        },
+        "qop": {
+          "type": "string",
+          "description": "Sets the quality of protection for the specified POP.",
+          "enum": ["none", "integrity", "privacy"]
+        },
+        "warning": {
+          "type": "string",
+          "description": "Sets the warning flag for the specified POP.",
+          "enum": ["yes", "no"]
         },
         "ip_auth": {
           "type": "array",

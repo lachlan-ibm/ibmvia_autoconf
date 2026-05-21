@@ -105,6 +105,10 @@ container:
   - type: "InfoMap"
     files:
     - "mapping_rules/"
+  runtime_properties:
+    users:
+    - name: !secret default/ivia-mmfa-autoconf-env:RUNTIME_USER
+      password: !secret default/ivia-mmfa-autoconf-env:RUNTIME_PASSWORD
 webseal:
   runtime:
     policy_server: "ldap"

@@ -286,7 +286,7 @@ def _wait_for_orchestration_recovery():
 
 
 def _restart_k8s_deployments(isvaConfig):
-    namespace = isvaConfig.container.k8s_namespace  
+    namespace = isvaConfig.container.get('k8s_namespace', None) if isvaConfig.container else None
     if not namespace: # Fall back to the namespace of the pod running the autoconf module
         namespace = get_k8s_pod_namespace()
     
