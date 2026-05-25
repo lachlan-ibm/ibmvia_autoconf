@@ -43,9 +43,9 @@ setup(
                       'python-json-logger'
     ],
     extras_require={
-        'kubernetes': ['kubernetes>=12.0.0'],
+        'kubernetes': ['kubernetes>=12.0.0,!=36.0.0'],
         'docker-compose': ['docker'],
-        'all': ['kubernetes>=12.0.0', 'docker']
+        'all': ['kubernetes>=12.0.0,!=36.0.0', 'docker']
     },
     project_urls={
         'Homepage': 'https://github.com/lachlan-ibm/ibmvia_autoconf',

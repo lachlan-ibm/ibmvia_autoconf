@@ -276,7 +276,7 @@ class IVIA_Configurator(object):
                 parsed_file['name'], database, rsp.data))
 
 
-    def _load_signer_certificates(self, database, server, port, label):
+    def _fetch_signer_certificates(self, database, server, port, label):
         ssl = self.factory.get_system_settings().ssl_certificates
         rsp = ssl.load_signer(database, server, port, label)
         if rsp.success == True:
@@ -287,6 +287,108 @@ class IVIA_Configurator(object):
             track_failure('system', 'ssl/signer_certificate', rsp, {"certificate": str(server) + ":" + str(port)})
             _logger.error("Failed to load {} signer certificate to {}/n{}".format(
                 str(server) + ":" + str(port), database, rsp.data))
+
+
+    def _remove_signer_certificate(self, database, label):
+        rsp = self.factory.get_system_settings().ssl_certificates.delete_signer(database, label)
+        if rsp.success == True:
+            _logger.info("Successfully removed {} signer certificate from {}".format(
+                label, database))
+            self.needsRestart = True
+        else:
+            track_failure('system', 'ssl/signer_certificate', rsp, {"certificate": label})
+            _logger.error("Failed to remove {} signer certificate from {}\n{}".format(
+                label, database, rsp.data))
+
+
+    def _import_cert_files(self, database, file_path, label=None):
+        """
+        Helper method to import certificate files.
+        
+        Args:
+            database: Name of the SSL database
+            file_path: Path to certificate file(s)
+            label: Optional custom label (defaults to filename)
+        """
+        signer_parsed_files = FILE_LOADER.read_files(file_path)
+        for parsed_file in signer_parsed_files:
+            if label:
+                parsed_file['name'] = label
+            self._import_signer_certs(database, parsed_file)
+
+
+    def _handle_import_operation(self, database, cert_entry):
+        """Handle import operation for certificate."""
+        file_path = cert_entry.get('file')
+        if not file_path:
+            raise ValueError("Import operation requires 'file' parameter")
+        
+        label = cert_entry.get('label')
+        self._import_cert_files(database, file_path, label)
+
+
+    def _handle_fetch_operation(self, database, cert_entry):
+        """Handle fetch operation for certificate from URL."""
+        url = cert_entry.get('url')
+        label = cert_entry.get('label')
+        
+        if not url:
+            raise ValueError("Fetch operation requires both 'url' and 'label' parameters")
+        if not label:
+            label = url
+        # Parse url as "hostname:port" or just "hostname" (default port 443)
+        if ':' in url:
+            server, port_str = url.rsplit(':', 1)
+            port = int(port_str)
+        else:
+            server = url
+            port = 443
+        
+
+        self._fetch_signer_certificates(database, server, port, label)
+
+
+    def _handle_remove_operation(self, database, cert_entry):
+        """Handle remove operation for certificate."""
+        label = cert_entry.get('label')
+        if not label:
+            raise ValueError("Remove operation requires 'label' parameter")
+        
+        self._remove_signer_certificate(database, label)
+
+
+    def _process_signer_certificate(self, database, cert_entry):
+        """
+        Process a single signer certificate entry.
+        
+        Args:
+            database: Name of the SSL database
+            cert_entry: Either a string (file path) or dict with operation details
+            
+        Raises:
+            ValueError: If required parameters are missing or operation is invalid
+        """
+        if isinstance(cert_entry, str):
+            # String = file import with filename as label
+            self._import_cert_files(database, cert_entry)
+        else:
+            # Dict with explicit configuration
+            operation = cert_entry.get('operation', 'import')
+            
+            # Dispatch to appropriate handler
+            operation_handlers = {
+                'import': self._handle_import_operation,
+                'fetch': self._handle_fetch_operation,
+                'remove': self._handle_remove_operation
+            }
+            
+            handler = operation_handlers.get(operation)
+            if not handler:
+                raise ValueError(
+                    "Unknown operation: '{}'. Must be 'import', 'fetch', or 'remove'".format(operation)
+                )
+            
+            handler(database, cert_entry)
 
 
     def _import_personal_cert(self, db_name, cert):
@@ -304,18 +406,18 @@ class IVIA_Configurator(object):
             _logger.error("Failed to upload {} personal certificate to {}\n{}".format(
                personal_parsed_file['path'], db_name, rsp.data))
 
-    def _import_certificates(self, database): 
+    def _import_certificates(self, database):
         if database.personal_certificates:
-                    for cert in database.personal_certificates:
-                        self._import_personal_cert(database.name, cert)
+            for cert in database.personal_certificates:
+                self._import_personal_cert(database.name, cert)
         if database.signer_certificates:
-            for fp in database.signer_certificates:
-                signer_parsed_files = FILE_LOADER.read_files(fp)
-                for parsed_file in signer_parsed_files:
-                    self._import_signer_certs(database.name, parsed_file)
-        if database.load_certificates:
+            for cert_entry in database.signer_certificates:
+                self._process_signer_certificate(database.name, cert_entry)
+        # Maintain backward compatibility with deprecated load_certificates
+        if database.get('load_certificates'):
+            _logger.warning("'load_certificates' is deprecated. Use 'signer_certificates' with 'url' and 'label' instead.")
             for item in database.load_certificates:
-                self._load_signer_certificates(database.name, item.server, item.port, item.label)
+                self._fetch_signer_certificates(database.name, item.server, item.port, item.label)
 
     class SSL_Certificates(typing.TypedDict):
         '''
@@ -328,6 +430,8 @@ class IVIA_Configurator(object):
                       secret: "S3cr37"
                     signer_certificates:
                     - "ssl/lmi_trust_store/signer.pem"
+                    - url: "ldap.example.com:636"
+                      label: "ldap_server"
                   - name: "rt_profile_keys"
                     signer_certificates:
                     - "ssl/rt_profile_keys/signer.pem"
@@ -336,13 +440,15 @@ class IVIA_Configurator(object):
 
         '''
 
-        class Load_Certificate(typing.TypedDict): # type: ignore
-            server: str
-            'Domain name or address of web service.'
-            port: int
-            'Port Web service is listening on.'
+        class Signer_Certificate(typing.TypedDict, total=False): # type: ignore
+            file: str
+            'Path to certificate file to import.'
+            url: str
+            'URL endpoint in format "hostname:port" or just "hostname" (defaults to port 443).'
+            operation: typing.Literal['import', 'fetch', 'remove']
+            'Operation to perform: import (from file), fetch (from URL), or remove (from database).'
             label: str
-            'Name of retrieved X509 certificate alias in SSL database.'
+            'SSL database alias. Defaults to filename for imports. Required for fetch and remove operations.'
             
         class Personal_Certificate(typing.TypedDict):
             name: typing.Optional[str]
@@ -360,12 +466,10 @@ class IVIA_Configurator(object):
         'Path to the .kdb file to import as a SSL database. Required if importing a SSL KDB.'
         stash_file: typing.Optional[str]
         'Path to the .sth file for the specified ``kdb_file``. Required if ``kdb_file`` is set.'
-        signer_certificates: typing.Optional[typing.List[str]]
-        'List of file paths for signer certificates (PEM or DER) to import.'
+        signer_certificates: typing.Optional[typing.List[typing.Union[str, Signer_Certificate]]]
+        'List of signer certificates to import from files, fetch from URLs, or remove. Each entry can be a string (file path) or a dict with operation details.'
         personal_certificates: typing.Optional[typing.List[Personal_Certificate]]
         'List of file paths for personal certificates (PKCS#12) to import.'
-        load_certificates: typing.Optional[typing.List[Load_Certificate]]
-        'Load X509 certificates from a TCPS endpoints.'
 
     def import_ssl_certificates(self, config):
         ssl_config = config.ssl_certificates
@@ -960,6 +1064,7 @@ class IVIA_Configurator(object):
                     _logger.info("Successfully installed {} extension".format(extension.extension))
                     self.needsRestart = True
                 else:
+                    track_failure('system', 'extensions', rsp, extension)
                     _logger.error("Failed to install extension:\n{}\n{}".format(
                                             json.dumps(extension, indent=4), rsp.data))
 
@@ -1129,7 +1234,7 @@ class IVIA_Configurator(object):
             _logger.error("You must activate the Advanced Access Control or Federation modules to configure global properties.")
             return
         elif configRequired == False:
-            _logger.info("Skipping global configuration")
+            _logger.info("No global configuration found.")
             return
         aac.upload_files(config)
         aac.server_connections(config)

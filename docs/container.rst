@@ -41,6 +41,9 @@ Example
        signer_certificates:
        - "postgres.crt"
        - "ldap.crt"
+       - url: "ad.dc.example:636"
+         label: "ldap_server"
+         operation: "fetch"
      - name: "rt_profile_keys"
        signer_certificates:
        - "postgres.crt"

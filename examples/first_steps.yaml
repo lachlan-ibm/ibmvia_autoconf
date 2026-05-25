@@ -27,6 +27,9 @@ container:
     signer_certificates:
     - "pki/postgresql/postgres.crt"
     - "pki/openldap/ca.crt"
+    - url: "icr.io:443"
+      label: "icr_registry"
+      operation: "fetch"
   - name: "rt_profile_keys"
     signer_certificates:
     - "pki/postgresql/postgres.crt"

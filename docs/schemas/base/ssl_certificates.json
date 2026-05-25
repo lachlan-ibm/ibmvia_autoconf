@@ -20,10 +20,59 @@
     },
     "signer_certificates": {
       "type": "array",
-      "description": "List of file paths for signer certificates (PEM or DER) to import.",
+      "description": "List of signer certificates to import from files, fetch dynamically from URLs, or remove. Each entry can be a string (file path) or an object with operation details.",
       "items": {
-        "type": "string",
-        "pattern": ".*\\.(pem|der|crt|cer)$"
+        "oneOf": [
+          {
+            "title": "File Path [deprecated]",
+            "type": "string",
+            "description": "File path for certificate to import. Filename is used as label.",
+            "pattern": ".*\\.(pem|der|crt|cer)$"
+          },
+          {
+            "title": "Certificate Operation",
+            "type": "object",
+            "description": "Modify the contents of the signer certificates partition of a SSL database.",
+            "properties": {
+              "file": {
+                "type": "string",
+                "description": "Path to certificate file to import",
+                "pattern": ".*\\.(pem|der|crt|cer)$"
+              },
+              "url": {
+                "type": "string",
+                "description": "URL endpoint to fetch certificate from. Format: 'hostname:port' or just 'hostname' (defaults to port 443)"
+              },
+              "operation": {
+                "type": "string",
+                "enum": ["import", "fetch", "remove"],
+                "default": "import",
+                "description": "Operation to perform: import (from file), fetch (from URL), or remove (from database)"
+              },
+              "label": {
+                "type": "string",
+                "description": "SSL database alias. Defaults to filename for imports. Required for remove operations; optional for fetch and import operations."
+              }
+            },
+            "oneOf": [
+              {
+                "title": "Import from File",
+                "required": ["file"],
+                "properties": {"operation": {"const": "import"}}
+              },
+              {
+                "title": "Fetch from URL",
+                "required": ["url"],
+                "properties": {"operation": {"const": "fetch"}}
+              },
+              {
+                "title": "Remove Certificate",
+                "required": ["label"],
+                "properties": {"operation": {"const": "remove"}}
+              }
+            ]
+          }
+        ]
       }
     },
     "personal_certificates": {
@@ -49,31 +98,6 @@
         },
         "required": ["p12_file"]
       }
-    },
-    "load_certificates": {
-      "type": "array",
-      "description": "Load X509 certificates from TCPS endpoints.",
-      "items": {
-        "type": "object",
-        "properties": {
-          "server": {
-            "type": "string",
-            "description": "Domain name or address of web service.",
-            "format": "hostname"
-          },
-          "port": {
-            "type": "integer",
-            "description": "Port Web service is listening on.",
-            "minimum": 1,
-            "maximum": 65535
-          },
-          "label": {
-            "type": "string",
-            "description": "Name of retrieved X509 certificate alias in SSL database."
-          }
-        },
-        "required": ["server", "port", "label"]
-      }
     }
   },
   "examples": [
@@ -88,13 +112,27 @@
             }
           ],
           "signer_certificates": [
-            "ssl/lmi_trust_store/signer.pem"
+            "ssl/lmi_trust_store/signer.pem",
+            {
+              "url": "ldap.example.com:636",
+              "label": "ldap_server",
+              "operation": "fetch"
+            },
+            {
+              "url": "postgres.example.com",
+              "label": "postgres_server",
+              "operation": "fetch"
+            }
           ]
         },
         {
           "name": "rt_profile_keys",
           "signer_certificates": [
-            "ssl/rt_profile_keys/signer.pem"
+            "ssl/rt_profile_keys/signer.pem",
+            {
+              "file": "ssl/custom_ca.crt",
+              "label": "custom_ca"
+            }
           ]
         },
         {

@@ -98,9 +98,9 @@ class Docker_Configurator(object):
     """
 
     def __set_config_db(self, config_database):
-        database = copy.deepcopy(config_database.config_database)
+        database = copy.deepcopy(config_database)
         methodArgs = {'db_type': database.pop('type'), 'host': database.pop('host'), 'port': database.pop('port'),
-                        'secure': database.pop('ssl'), 'db_key_store': database.pop('ssl_keystore', None),
+                        'secure': database.pop('ssl'), 'db_key_store': database.pop('ssl_keystore', None), 'embedded': False,
                         'user': database.pop('user'), 'passwd': database.pop('password'), 'db_name': database.pop('db_name'),
                         'extra_config': database
             }
@@ -111,7 +111,7 @@ class Docker_Configurator(object):
         else:
             track_failure('container', 'config_database', rsp, database)
             _logger.error("Failed to configure config database with config:\n{}\n{}".format(
-                json.dumps(config_database.config_database, indent=4), rsp.data))
+                json.dumps(config_database, indent=4), rsp.data))
 
     def __set_runtime_db(self, runtime_database):
         database = copy.deepcopy(runtime_database)
@@ -127,17 +127,18 @@ class Docker_Configurator(object):
         else:
             track_failure('container', 'runtime_database', rsp, runtime_database)
             _logger.error("Failed to configure HVDB with config:\n{}\n{}".format(
-                json.dumps(runtime_database.runtime_database, indent=4), rsp.data))
+                json.dumps(runtime_database, indent=4), rsp.data))
 
     def configure_database_and_dsc(self, clusterConfig):
         if clusterConfig == None:
             _logger.info("Cannot find cluster configuration, in a docker environment this is probably bad")
             return
-        if clusterConfig.config_database != None:
-            self.__set_config_db(clusterConfig.config_database)
 
         if clusterConfig.runtime_database != None:
             self.__set_runtime_db(clusterConfig.runtime_database)
+
+        if clusterConfig.config_database != None:
+            self.__set_config_db(clusterConfig.config_database)
 
         if clusterConfig.dsc != None:
             rsp = self.factory.get_system_settings().dsc.set_dsc(**clusterConfig.dsc)
