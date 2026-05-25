@@ -119,8 +119,8 @@
               "operation": "fetch"
             },
             {
-              "url": "postgres.example.com",
-              "label": "postgres_server",
+              "url": "icr.io",
+              "label": "IBMContainerRegistry",
               "operation": "fetch"
             }
           ]
