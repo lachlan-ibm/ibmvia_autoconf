@@ -112,8 +112,7 @@ Date / Time settings
 Cluster Configuration
 =====================
 
-    .. note:: PKI required to connect to any servers should be defined in the `ssl_certificates` property using either file imports or URL loading in the `signer_certificates` list.
-
+    .. note:: PKI required to connect to any servers should be defined in the the `ssl_certificates` property.
 
 .. raw:: html
    :file: schema_html/appliance/cluster.html
