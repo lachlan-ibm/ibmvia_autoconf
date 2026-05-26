@@ -23,6 +23,17 @@
       "type": "boolean",
       "description": "Whether or not the authorization filter is enabled."
     },
+    "enablement_level": {
+      "type": "string",
+      "description": "The enablement level of SCIM.",
+      "enum": [
+        "NONE",
+        "ALL",
+        "SELF",
+        "ADMIN",
+        "MMFA"
+      ]
+    },
     "attribute_modes": {
       "type": "array",
       "description": "The customized attribute modes.",

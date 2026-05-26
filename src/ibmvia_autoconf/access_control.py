@@ -674,7 +674,7 @@ class AAC_Configurator(object):
                 for attrMode in aac_config.scim.attribute_modes:
                     self._scim_update_attr_mode(attrMode.schema, attrMode.modes)
             generalConfig = {}
-            for prop in ["admin_group", "enable_header_authentication", "enable_authz_filter", "max_user_response"]:
+            for prop in ["admin_group", "enable_header_authentication", "enable_authz_filter", "max_user_response", "enablement_level"]:
                 if prop in aac_config.scim:
                     generalConfig[prop] = aac_config.scim.prop
             if generalConfig:
