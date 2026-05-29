@@ -2238,11 +2238,11 @@ class AAC_Configurator(object):
                                                             json.dumps(parameter, ident=4), rsp.data))
 
             if aac_config.runtime_properties.endpoints: # Readable name to Verify Access uuid
-                iface_cfg = optional_list(self.factory.get_system_settings().interfaces.list_interfaces().json)
+                iface_cfg = self.factory.get_system_settings().interfaces.list_interfaces().json['interfaces']
                 for endpoint in aac_config.runtime_properties.endpoints:
                     iface_address_uuids = ""
                     for iface in iface_cfg:
-                        if iface['name'] == endpoint.interface:
+                        if iface['name'] == endpoint.interface or iface['label'] == endpoint.interface:
                             iface_address_uuids += iface['uuid']
                             if endpoint.dhcp4 == True:
                                 iface_address_uuids += ".dhcp.ipv4"
