@@ -311,7 +311,11 @@
           "type": "string",
           "description": "Only applicable for virtual junctions. Causes a second virtual junction to share the protected object space with the initial virtual junction."
         },
+<<<<<<< HEAD
+        "vhost_aliases": {
+=======
         "vhost_alias": {
+>>>>>>> stable
           "type": "string",
           "description": "Only applicable for virtual junctions. This field contains a comma separated list of hostname aliases for the virtual host junction."
         },
