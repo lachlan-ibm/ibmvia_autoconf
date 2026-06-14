@@ -221,6 +221,65 @@ class WEB_Configurator(object):
             _logger.error("Failed to import {} to {} proxy:\n{}".format(
                                         path, proxy_id, rsp.data))
 
+    def _attempt_remove_existing_instance(self, runtime, proxy):
+        '''
+        Try and delete the existing instance to build from known template.
+        '''
+        wrp_instances = optional_list(self.web.reverse_proxy.list_instances().json)
+        needs_create = True
+        for instance in wrp_instances:
+            if instance and instance['id'] == proxy.name:
+                needs_create = False
+                if runtime and runtime.admin_password:
+                    rsp = self.web.reverse_proxy.delete_instance(proxy.name,
+                            runtime.admin_user if runtime.admin_user else "sec_master",
+                            runtime.admin_password)
+                    if rsp.success != True:
+                        track_failure('webseal', 'proxy/delete', rsp, proxy)
+                        _logger.error("WebSEAL Reverse proxy {} already exists with config: \n{}\nand cannot be removed; subsequent configuration may fail".format(
+                            proxy.name, proxy))
+                        needs_create = False
+                break
+        return needs_create
+
+    def _create_wrp_instance(self, runtime, proxy):
+        _logger.debug("Attempting to create {} reverse proxy instance.", proxy.name)
+        methodArgs = {
+                        "inst_name":proxy.name,
+                        "host": proxy.host,
+                        "admin_id": runtime.admin_user if runtime and 'admin_user' in runtime else "sec_master",
+                        "admin_pwd": runtime.admin_password if runtime and 'admin_password' in runtime else 'MISSING',
+                        "nw_interface_yn":  proxy.nw_interface_yn,
+                        "ip_address": proxy.ip_address,
+                        "listening_port": proxy.listening_port,
+                        "domain": proxy.domain
+                }
+        if proxy.http != None:
+            methodArgs.update({
+                        "http_yn": proxy.http.enabled,
+                        "http_port": proxy.http.port,
+                        })
+        if proxy.https != None:
+            methodArgs.update({
+                        "https_yn": proxy.https.enabled,
+                        "https_port": proxy.https.port,
+                        })
+        if proxy.ldap != None:
+            methodArgs.update({
+                                "ssl_yn": proxy.ldap.ssl,
+                                "key_file": proxy.ldap.key_file,
+                                "cert_label": proxy.ldap.cert_file,
+                                "ssl_port": proxy.ldap.port,
+                        })
+        #_logger.debug("Configuring WRP with config {}".format(methodArgs))
+        rsp = self.web.reverse_proxy.create_instance(**methodArgs)
+        if rsp.success == True:
+            _logger.info("Successfully configured proxy {}".format(proxy.name))
+        else:
+            track_failure('webseal', 'proxy/create', rsp, proxy)
+            _logger.error("Configuration of {} proxy failed with config:\n{}\n{}".format(
+                proxy.name, json.dumps(proxy, indent=4), rsp.data))
+
     class Reverse_Proxy(typing.TypedDict):
         '''
         .. note:: Configuration to connect to the user registry is read from the ``webseal.runtime`` entry.
@@ -515,51 +574,9 @@ class WEB_Configurator(object):
         'List of files to import into WebSEAL hosted pages. Directory structure should be relative to the predefined top-level directories.'
 
     def wrp(self, runtime, proxy):
-        wrp_instances = optional_list(self.web.reverse_proxy.list_instances().json)
-        for instance in wrp_instances:
-            if instance and instance['id'] == proxy.name:
-                rsp = self.web.reverse_proxy.delete_instance(proxy.name,
-                        runtime.admin_user if runtime.admin_user else "sec_master",
-                        runtime.admin_password)
-                if rsp.success != True:
-                    _logger.error("WebSEAL Reverse proxy {} already exists with config: \n{}\nand cannot be removed".format(
-                        proxy.name, proxy))
-                    return
-        methodArgs = {
-                        "inst_name":proxy.name,
-                        "host": proxy.host,
-                        "admin_id": runtime.admin_user if runtime and 'admin_user' in runtime else "sec_master",
-                        "admin_pwd": runtime.admin_password if runtime and 'admin_password' in runtime else 'MISSING',
-                        "nw_interface_yn":  proxy.nw_interface_yn,
-                        "ip_address": proxy.ip_address,
-                        "listening_port": proxy.listening_port,
-                        "domain": proxy.domain
-                }
-        if proxy.http != None:
-            methodArgs.update({
-                        "http_yn": proxy.http.enabled,
-                        "http_port": proxy.http.port,
-                        })
-        if proxy.https != None:
-            methodArgs.update({
-                        "https_yn": proxy.https.enabled,
-                        "https_port": proxy.https.port,
-                        })
-        if proxy.ldap != None:
-            methodArgs.update({
-                                "ssl_yn": proxy.ldap.ssl,
-                                "key_file": proxy.ldap.key_file,
-                                "cert_label": proxy.ldap.cert_file,
-                                "ssl_port": proxy.ldap.port,
-                        })
-        #_logger.debug("Configuring WRP with config {}".format(methodArgs))
-        rsp = self.web.reverse_proxy.create_instance(**methodArgs)
-        if rsp.success == True:
-            _logger.info("Successfully configured proxy {}".format(proxy.name))
-        else:
-            track_failure('webseal', 'proxy', rsp, proxy)
-            _logger.error("Configuration of {} proxy failed with config:\n{}\n{}".format(
-                proxy.name, json.dumps(proxy, indent=4), rsp.data))
+        needs_create = self._attempt_remove_existing_instance(runtime, proxy)
+        if needs_create == True:
+            self._create_wrp_instance(runtime, proxy)
         if proxy.management_root != None:
             for zipPages in proxy.management_root:
                 self._import_management_root(proxy.name, zipPages)
