@@ -1,0 +1,155 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Idempotency &mdash; ibmvia-autoconf  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+      <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Overpass:300,400,600,800" />
+      <link rel="stylesheet" type="text/css" href="_static/schema_doc.css?v=e0b38099" />
+      <link rel="stylesheet" type="text/css" href="_static/schema_overrides.css?v=77d9d3e6" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+      <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+      <script src="https://use.fontawesome.com/facf9fa52c.js"></script>
+      <script src="_static/schema_doc.min.js?v=c68677a6"></script>
+      <script src="_static/schema_expand_collapse.js?v=66081a6f"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ibmvia-autoconf
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Example Verify Identity Access Configurations (Getting Started)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appliance.html">Appliance Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="container.html">Container Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="webseal.html">WebSEAL Reverse Proxy Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="access_control.html">Advanced Access Control Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="federations.html">Federations Configuration</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ibmvia-autoconf</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Idempotency</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/idempotency.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="idempotency">
+<h1>Idempotency<a class="headerlink" href="#idempotency" title="Link to this heading"></a></h1>
+<p>Idempotency is the concept of being able to rerun a configuration and only made modifications where
+the underlying configuration has changed, eg: renewing a X509 certificate; rolling an API key; updating an
+IP address for a backend service.</p>
+<p>This configuration tool intentionally does not try to achieve idempotency by itself. It will blindly attempt to
+apply the supplied configuration as it is written. However it is possible for administrators to achieve some
+level of idempotency themselves. The rest of this document will discuss various features/components of
+Verify Identity Access deployments and how configurations files cane be structured to achieve idempotency.</p>
+<section id="system-base-configuration">
+<h2>System / Base Configuration<a class="headerlink" href="#system-base-configuration" title="Link to this heading"></a></h2>
+<p>SSL Databases:
+Most of the automation logic for importing and managing certificates is idempotent without the autoconf tool.
+The tool will try to upload every certificate you list; if the certificate already exists it is not imported.</p>
+</section>
+<section id="reverse-proxy-and-runtime-policy-server">
+<h2>Reverse Proxy and Runtime Policy Server<a class="headerlink" href="#reverse-proxy-and-runtime-policy-server" title="Link to this heading"></a></h2>
+<p>Starting from IVIA v11.0.3, it is possible to force reconfigure the policy server. Before this, to re-configure the
+policy server administrators first had to unconfigure all of the webseal reverse proxy instances.</p>
+<section id="stanza-based-configuration-files">
+<h3>Stanza based configuration files<a class="headerlink" href="#stanza-based-configuration-files" title="Link to this heading"></a></h3>
+<p>IVIA makes use of stanza files quite extensively:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">stanza</span><span class="p">]</span>
+<span class="n">key</span> <span class="o">=</span> <span class="n">value</span>
+<span class="n">another</span> <span class="o">=</span> <span class="n">value</span>
+<span class="n">another</span> <span class="o">=</span> <span class="n">second_value</span>
+</pre></div>
+</div>
+<p>Being able to track and define this structure can be quite challenging. A simple approach is to use the ordering
+of a configuration file to enforce a state. If the first operation is to delete a <code class="docutils literal notranslate"><span class="pre">stanza</span></code> then the subsequent operation
+is to rebuild it with the values you want; then you ensure that the file only ever contains the key/value pairs you define.</p>
+</section>
+</section>
+<section id="advanced-access-control-and-federations">
+<h2>Advanced Access Control and Federations<a class="headerlink" href="#advanced-access-control-and-federations" title="Link to this heading"></a></h2>
+<section id="authentication-policies-and-mechanisms">
+<h3>Authentication policies and mechanisms<a class="headerlink" href="#authentication-policies-and-mechanisms" title="Link to this heading"></a></h3>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Lachlan Gleeson, IBM.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

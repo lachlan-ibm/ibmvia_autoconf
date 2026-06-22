@@ -1,0 +1,615 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to ibmvia-autoconf documentation! &mdash; ibmvia-autoconf  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+      <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Overpass:300,400,600,800" />
+      <link rel="stylesheet" type="text/css" href="_static/schema_doc.css?v=e0b38099" />
+      <link rel="stylesheet" type="text/css" href="_static/schema_overrides.css?v=77d9d3e6" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+      <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+      <script src="https://use.fontawesome.com/facf9fa52c.js"></script>
+      <script src="_static/schema_doc.min.js?v=c68677a6"></script>
+      <script src="_static/schema_expand_collapse.js?v=66081a6f"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Example Verify Identity Access Configurations (Getting Started)" href="examples.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            ibmvia-autoconf
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Example Verify Identity Access Configurations (Getting Started)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appliance.html">Appliance Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="container.html">Container Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="webseal.html">WebSEAL Reverse Proxy Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="access_control.html">Advanced Access Control Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="federations.html">Federations Configuration</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">ibmvia-autoconf</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Welcome to ibmvia-autoconf documentation!</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="welcome-to-ibmvia-autoconf-documentation">
+<h1>Welcome to ibmvia-autoconf documentation!<a class="headerlink" href="#welcome-to-ibmvia-autoconf-documentation" title="Link to this heading"></a></h1>
+<p>ibmvia-autoconf is an automation layer written on top of pyIVIA. This library should be used to apply
+YAML configuration files to a Verify Identity Access deployment.</p>
+<p>This library is designed to work with both Appliance and Container based deployments, and is not idempotent.</p>
+<p>Configuration is supplied in YAML syntax using a well-defined data structure (detailed in this doc).</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>You can install <code class="docutils literal notranslate"><span class="pre">ibmvia-autoconf</span></code> with <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>ibmvia-autoconf
+</pre></div>
+</div>
+<p>If you require the extra dependencies (for example using K8S secrets to store sensitive properties) you can
+install the optional targets <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code>, <code class="docutils literal notranslate"><span class="pre">docker-compose</span></code>, or <code class="docutils literal notranslate"><span class="pre">all</span></code>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>ibmvia-autoconf<span class="o">[</span>kubernetes<span class="o">]</span>
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>ibmvia-autoconf<span class="o">[</span>all<span class="o">]</span>
+</pre></div>
+</div>
+</section>
+<section id="architecture">
+<span id="ibmvia-autoconf-architecture"></span><h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading"></a></h2>
+<p>Users should take care to ensure the configuration of these separate features are compatible (eg. conflicting ALC’s
+in a WebSEAL reverse proxy). Administrators will also have to define the <code class="docutils literal notranslate"><span class="pre">webseal.runtime</span></code> entry for many configuration
+options even if the <a class="reference internal" href="webseal.html#webseal-runtime-server"><span class="std std-ref">WebSEAL Runtime Component</span></a> is already configured.</p>
+<p>Example configurations can be found in the <code class="docutils literal notranslate"><span class="pre">examples</span></code> directory with additional documentation in the
+<a class="reference external" href="examples.html">Examples / Getting Started</a> page.</p>
+<p>Strategies on how administrators can attempt idempotency are documented <a class="reference external" href="idempotency.html">here</a>.</p>
+<section id="modules">
+<h3>Modules<a class="headerlink" href="#modules" title="Link to this heading"></a></h3>
+<p>The configuration process is broken into six modules. Each module is responsible for configuring a subset of
+Verify Identity Access features. The order of configuration is:</p>
+<ul class="simple">
+<li><p>base (Licensing, SSL Databases, Cluster Settings)</p></li>
+<li><p>appliance (if applicable)</p></li>
+<li><p>container (if applicable)</p></li>
+<li><p>federations</p></li>
+<li><p>webseal</p></li>
+<li><p>access control</p></li>
+</ul>
+<p>This ordering has been chosen to allow for modules which depend on each-other to be deployed in the correct
+order.</p>
+<p>More complex deployment architectures can be achieved by running sequential <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> descriptors.</p>
+</section>
+<section id="api-failure-tracking">
+<h3>API Failure Tracking<a class="headerlink" href="#api-failure-tracking" title="Link to this heading"></a></h3>
+<p>IBM Verify Identity Access Automated Configurator includes built-in tracking of failed API requests. When enabled
+(default), the configurator will collect information about any API calls that fail during execution and print a
+comprehensive summary at the end.</p>
+<p>Captures context for each failure:</p>
+<ul class="simple">
+<li><p>Module name and operation being performed</p></li>
+<li><p>Error message from the API response</p></li>
+<li><p>API endpoint that was called</p></li>
+<li><p>HTTP status code</p></li>
+<li><p>Full response content/data</p></li>
+<li><p>Request payload/parameters sent</p></li>
+<li><p>Timestamp of the failure</p></li>
+<li><p>Outputs summary grouped by module</p></li>
+<li><p>Supports both human-readable and JSON output formats</p></li>
+<li><p>Can be disabled via environment variable</p></li>
+</ul>
+<section id="example-output-human-readable-format">
+<h4>Example Output (Human-Readable Format)<a class="headerlink" href="#example-output-human-readable-format" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">================================================================================</span>
+API<span class="w"> </span>FAILURE<span class="w"> </span>SUMMARY<span class="w"> </span>-<span class="w"> </span><span class="m">3</span><span class="w"> </span>Failed<span class="w"> </span>Request<span class="o">(</span>s<span class="o">)</span>
+<span class="o">================================================================================</span>
+
+Module:<span class="w"> </span>access_control<span class="w"> </span><span class="o">(</span><span class="m">2</span><span class="w"> </span>failure<span class="o">(</span>s<span class="o">))</span>
+--------------------------------------------------------------------------------
+<span class="w">  </span><span class="m">1</span>.<span class="w"> </span>Operation:<span class="w"> </span>create_policy
+<span class="w">    </span>Error:<span class="w"> </span>Policy<span class="w"> </span>name<span class="w"> </span>already<span class="w"> </span>exists
+<span class="w">    </span>API<span class="w"> </span>Endpoint:<span class="w"> </span>/iam/access/v8/policies
+<span class="w">    </span>Status<span class="w"> </span>Code:<span class="w"> </span><span class="m">409</span>
+<span class="w">    </span>Response:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;error&#39;</span>:<span class="w"> </span><span class="s1">&#39;DUPLICATE_NAME&#39;</span>,<span class="w"> </span><span class="s1">&#39;message&#39;</span>:<span class="w"> </span><span class="s1">&#39;Policy name already exists&#39;</span><span class="o">}</span>
+<span class="w">    </span>Request<span class="w"> </span>Data:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;name&#39;</span>:<span class="w"> </span><span class="s1">&#39;MyPolicy&#39;</span>,<span class="w"> </span><span class="s1">&#39;type&#39;</span>:<span class="w"> </span><span class="s1">&#39;authorization&#39;</span><span class="o">}</span>
+<span class="w">    </span>Timestamp:<span class="w"> </span><span class="m">2026</span>-04-02T03:15:00.123Z
+
+<span class="w">  </span><span class="m">2</span>.<span class="w"> </span>Operation:<span class="w"> </span>update_pip
+<span class="w">    </span>Error:<span class="w"> </span>Connection<span class="w"> </span>timeout
+<span class="w">    </span>API<span class="w"> </span>Endpoint:<span class="w"> </span>/iam/access/v8/pips/123
+<span class="w">    </span>Status<span class="w"> </span>Code:<span class="w"> </span><span class="m">504</span>
+<span class="w">    </span>Response:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;error&#39;</span>:<span class="w"> </span><span class="s1">&#39;GATEWAY_TIMEOUT&#39;</span><span class="o">}</span>
+<span class="w">    </span>Timestamp:<span class="w"> </span><span class="m">2026</span>-04-02T03:16:30.456Z
+
+Module:<span class="w"> </span>webseal<span class="w"> </span><span class="o">(</span><span class="m">1</span><span class="w"> </span>failure<span class="o">(</span>s<span class="o">))</span>
+--------------------------------------------------------------------------------
+<span class="w">  </span><span class="m">1</span>.<span class="w"> </span>Operation:<span class="w"> </span>create_junction
+<span class="w">    </span>Error:<span class="w"> </span>Backend<span class="w"> </span>server<span class="w"> </span>unreachable
+<span class="w">    </span>API<span class="w"> </span>Endpoint:<span class="w"> </span>/wga/reverseproxy/junctions
+<span class="w">    </span>Status<span class="w"> </span>Code:<span class="w"> </span><span class="m">502</span>
+<span class="w">    </span>Response:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;error&#39;</span>:<span class="w"> </span><span class="s1">&#39;BAD_GATEWAY&#39;</span>,<span class="w"> </span><span class="s1">&#39;backend&#39;</span>:<span class="w"> </span><span class="s1">&#39;https://backend.example.com&#39;</span><span class="o">}</span>
+<span class="w">    </span>Request<span class="w"> </span>Data:<span class="w"> </span><span class="o">{</span><span class="s1">&#39;junction_point&#39;</span>:<span class="w"> </span><span class="s1">&#39;/app&#39;</span>,<span class="w"> </span><span class="s1">&#39;server&#39;</span>:<span class="w"> </span><span class="s1">&#39;backend.example.com&#39;</span><span class="o">}</span>
+<span class="w">    </span>Timestamp:<span class="w"> </span><span class="m">2026</span>-04-02T03:18:00.012Z
+
+<span class="o">================================================================================</span>
+</pre></div>
+</div>
+</section>
+<section id="example-output-json-format">
+<h4>Example Output (JSON Format)<a class="headerlink" href="#example-output-json-format" title="Link to this heading"></a></h4>
+<p>When <code class="docutils literal notranslate"><span class="pre">IVIA_CONFIGURATOR_LOG_FORMAT=json</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ibmvia-autoconf&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;host&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ivia-config-5ccc54dcf-nvxf5&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-02T03:18:00.012Z&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;API Failure Summary - 3 failed request(s)&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;ibm_threadId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;4150&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;loglevel&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;api_failure_summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;total_failures&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;by_module&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;access_control&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;webseal&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;failures&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-02T03:15:00.123Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;module&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;access_control&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;operation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;create_policy&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;error_message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Policy name already exists&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_endpoint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/iam/access/v8/policies&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;status_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">409</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;response_content&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DUPLICATE_NAME&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Policy name already exists&quot;</span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;request_data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;MyPolicy&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;authorization&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-02T03:16:30.456Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;module&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;access_control&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;operation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;update_pip&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;error_message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Connection timeout&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_endpoint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/iam/access/v8/pips/123&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;status_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">504</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;response_content&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GATEWAY_TIMEOUT&quot;</span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;request_data&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-02T03:18:00.012Z&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;module&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;webseal&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;operation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;create_junction&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;error_message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Backend server unreachable&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;api_endpoint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/wga/reverseproxy/junctions&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;status_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">502</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;response_content&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BAD_GATEWAY&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;backend&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://backend.example.com&quot;</span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;request_data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;junction_point&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/app&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;server&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;backend.example.com&quot;</span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="yaml-configuration-keywords">
+<span id="ibmvia-autoconf-yaml-keywords"></span><h2>YAML configuration keywords<a class="headerlink" href="#yaml-configuration-keywords" title="Link to this heading"></a></h2>
+<p>Each module expects a YAML object describing the desired configuration state. There are a number of useful features
+which can be used to make configuration files re-usable and version controlled. There are five keywords which
+can be used in configuration files:</p>
+<blockquote>
+<div><ul>
+<li><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">!include</span></code></dt><dd><p>Used to include a YAML configuration file as the value of the given key. This file can be either an
+absolute path or relative to the <code class="docutils literal notranslate"><span class="pre">IVIA_CONFIG_BASE</span></code> environment variable. eg:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>container: !include base_config.yaml
+webseal: !include webseal.yaml
+access_control: !include aac.yaml
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">!secret</span></code></dt><dd><p>Used to set the value of the given key as a value read from the given Kubernetes Secret Namespace/Name,
+eg:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>admin_password: !secret default/isva-secrets:admin_secret
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">!secret:tofile</span></code></dt><dd><p>Used to load binary or text files from Kubernetes Secrets. The file content is written to a temporary file
+Use this for certificates, archives, mapping rules, templates, and any other files that need to be loaded
+from Kubernetes Secrets. If the namespace is not provided then autoconf assumes it is running in a container (pod)
+and will use the namespace of the container it is running in.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>lmi_certificate:
+  p12: !secret:tofile default/lmi-ssl-certs:server.p12
+  password: !secret lmi-ssl-passwords:p12-password
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">!configmap:tofile</span></code></dt><dd><p>Used to load binary or text files from Kubernetes ConfigMaps. Works identically to <code class="docutils literal notranslate"><span class="pre">!secret:tofile</span></code> but
+reads from ConfigMaps instead of Secrets. Use this for non-sensitive configuration files, templates, and
+scripts. eg:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>mapping_rules:
+  - type: SAML2
+    files:
+      - !configmap:tofile default/aac-config:saml_mapping.js
+template_files:
+  - !configmap:tofile ui-templates:login.zip
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">!environment</span></code>:</dt><dd><p>Used to set the value of the given key as the value read from the given environment variable,
+eg:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>admin_password: !environment IVIA_ADMIN_SECRET
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</section>
+<section id="environment-properties">
+<span id="ibmvia-autoconf-env-vars"></span><h2>Environment properties<a class="headerlink" href="#environment-properties" title="Link to this heading"></a></h2>
+<p>In addition to the supplied YAML configuration, some properties can alternatively be set as environment variables. If
+these variables are set, they take priority over values set in configuration files.</p>
+<ul>
+<li><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_CONFIG_BASE</span></code></dt><dd><p>This variable is the root directory of all configuration files for the given Verify Identity Access
+Deployment. This can include: YAML configuration files; HTML template pages; JavaScript mapping
+rules; XML configuration files.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If this environment variable is not set then the user’s <code class="docutils literal notranslate"><span class="pre">$HOME</span></code> directory is used.</p>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_CONFIG_YAML</span></code></dt><dd><p>This variable defines the YAML configuration file to deploy. This can be either relative
+to the <code class="docutils literal notranslate"><span class="pre">IVIA_CONFIG_BASE</span></code> directory or an absolute file path. If this variable is not defined
+then the configuration will look for a file called <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> in the <code class="docutils literal notranslate"><span class="pre">IVIA_CONFIG_BASE</span></code>
+directory.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_MGMT_BASE_URL</span></code></dt><dd><p>This variable is the URL address that Verify Identity Access Local Management Interface is responding
+on. This should contain: the https scheme; the domain or IP address; and a port if not the
+standard (443) port. eg: <code class="docutils literal notranslate"><span class="pre">https://127.0.0.2:9443</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_MGMT_USER</span></code></dt><dd><p>The user to perform configuration as. This user should have sufficient permissions to configure
+all of the features in your YAML configuration file. If a username is not supplied then the
+<code class="docutils literal notranslate"><span class="pre">IVIA_MGMT_PWD</span></code> value is used as a bearer API access token.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_MGMT_PWD</span></code></dt><dd><p>The password or API access token required to authenticate.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_MGMT_OLD_PWD</span></code></dt><dd><p>If a password change is required then this variable defines the password for <code class="docutils literal notranslate"><span class="pre">IVIA_MGMT_USER</span></code>
+before the configuration is applied.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_EXT_USER</span></code></dt><dd><p>If external (federated) authentication to the management interface is configured,
+this property can be used to define the external user to perform configuration as
+once the <code class="docutils literal notranslate"><span class="pre">management_authorization</span></code> feature has been configured.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_EXT_PWD</span></code></dt><dd><p>If external (federated) authentication to the management interface is configured,
+this property can be used to define the external password to authenticate with
+once the <code class="docutils literal notranslate"><span class="pre">management_authorization</span></code> feature has been configured.</p>
+</dd>
+</dl>
+</li>
+<li><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_PUBLISH_SNAPSHOT_SLEEP</span></code></dt><dd><p>The number of seconds to delay after publishing a configuration snapshot. This property can
+be used to allow time for the configuration to be replicated in the filesystem or for the
+configuration container to stabilize after publishing a snapshot.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</li>
+<li><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_KUBERNETES_YAML_CONFIG</span></code></dt><dd><p>This variable defines the Kubernetes cluster configuration file required to run <code class="docutils literal notranslate"><span class="pre">kubectl</span></code>
+commands. This configuration file should have sufficient permission in your cluster to restart
+deployments and pods in the namespace that Verify Identity Access is deployed to.
+The file path can either be absolute or relative to the <code class="docutils literal notranslate"><span class="pre">IVIA_CONFIG_BASE</span></code> variable.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is only applicable for Container deployments using Kubernetes orchestration.</p>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">KUBERNETES_CLIENT_SLEEP</span></code></dt><dd><p>The number of seconds to delay after requesting a restart of the runtime containers managed by
+the automated configuration tool. Use this property to allow time for the runtime containers
+to fetch the latest snapshot and apply the configuration.</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_DOCKER_COMPOSE_CONFIG</span></code></dt><dd><p>This variable defines the Docker-Compose deployment configuration file required to run
+<code class="docutils literal notranslate"><span class="pre">docker-compose</span></code> commands for your Verify Identity Access deployment. This file path can
+either be absolute or relative to the <code class="docutils literal notranslate"><span class="pre">IVIA_CONFIG_BASE</span></code> variable.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is only applicable for Container deployments using Docker-Compose orchestration.</p>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_CONFIGURATOR_LOG_LEVEL</span></code></dt><dd><p>This variable set the logging level for the autoconf tool. The default log level is <code class="docutils literal notranslate"><span class="pre">INFO</span></code>. Valid
+values are <cite>DEBUG</cite>, <cite>INFO</cite>, <cite>WARNING</cite>, <cite>ERROR</cite>, and <cite>CRITICAL</cite>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_TRACK_API_FAILURES</span></code></dt><dd><p>If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, the autoconf tool will track API failures and summarize them before the tool
+exits. Default is <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_CONFIGURATOR_LOG_FORMAT</span></code></dt><dd><p>The format to use for the log messages. Default is <cite>%(asctime)s - %(levelname)s - %(message)s”</cite>.
+If the format is set to <code class="docutils literal notranslate"><span class="pre">json</span></code> then the messages logged will be JSON parsible.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_TRACK_API_FAILURES</span></code></dt><dd><p>If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, the autoconf tool will track API failures and summarize them before the tool
+exits. Default is <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">IVIA_CONFIGURATOR_LOG_FILE</span></code></dt><dd><p>The path to the log file to write to. If not specified, logs will be written to stdout. This
+should be a fully qualified path.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Detailed information on configuration object structure can be found in the submodule documentation</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Example Verify Identity Access Configurations (Getting Started)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#first-steps-container-deployment">First Steps (container deployment)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#webseal-reverse-proxy-using-advanced-access-control-authentication">WebSEAL Reverse Proxy using Advanced Access Control authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#container-image-pipeline">Container image pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#installation-of-the-instana-monitoring-agent">Installation of the Instana monitoring agent</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#mobile-multi-factor-authentication-cookbook">Mobile Multi-Factor Authentication Cookbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#federation-cookbook">Federation Cookbook</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="appliance.html">Appliance Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#appliance-specific-configuration">Appliance specific configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#sla-first-steps">SLA / First steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#password-update">Password Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#administrator-configuration">Administrator Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#ssl-certificate-database">SSL Certificate Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#administrator-account-management">Administrator Account Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#management-authorization">Management Authorization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#management-authentication">Management Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#module-activation">Module Activation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#advanced-tuning-parameters">Advanced Tuning Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#configuration-snapshots">Configuration Snapshots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#extensions">Extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#remote-syslog">Remote Syslog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#managment-certificate">Managment Certificate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#fips-compliance">FIPS Compliance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#networking">Networking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#date-time-settings">Date / Time settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#cluster-configuration">Cluster Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#managed-containers">Managed Containers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#global-configuration">Global Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#access-policies">Access Policies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#attribute-sources">Attribute Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#advanced-configuration-properties">Advanced Configuration Properties</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#http-template-files">HTTP Template Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#javascript-mapping-rules">JavaScript Mapping Rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#point-of-contact-profile">Point Of Contact Profile</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#server-connections">Server Connections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appliance.html#runtime-server-configuration">Runtime Server Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="container.html">Container Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="container.html#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#container-specific-configuration">Container specific configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#managing-container-deployments">Managing Container Deployments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#database-and-distribued-session-cache-configuration">Database and Distribued Session Cache Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#sla-first-steps">SLA / First steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#password-update">Password Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#administrator-configuration">Administrator Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#ssl-certificate-database">SSL Certificate Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#administrator-account-management">Administrator Account Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#management-authorization">Management Authorization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#management-authentication">Management Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#module-activation">Module Activation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#advanced-tuning-parameters">Advanced Tuning Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#configuration-snapshots">Configuration Snapshots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#extensions">Extensions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#remote-syslog">Remote Syslog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#managment-certificate">Managment Certificate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#global-configuration">Global Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#access-policies">Access Policies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#attribute-sources">Attribute Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#advanced-configuration-properties">Advanced Configuration Properties</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#http-template-files">HTTP Template Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#javascript-mapping-rules">JavaScript Mapping Rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#point-of-contact-profile">Point Of Contact Profile</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#server-connections">Server Connections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="container.html#runtime-server-configuration">Runtime Server Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="webseal.html">WebSEAL Reverse Proxy Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#webseal-reverse-proxy-instances">WebSEAL Reverse Proxy Instances</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#policy-directory-admin">Policy Directory Admin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#client-certificate-mapping">Client Certificate Mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#junction-mapping">Junction Mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#url-mapping">URL Mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#user-mapping">User Mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#forms-based-single-sign-on">Forms Based Single Sign-On</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#http-transformation-rules">HTTP Transformation Rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#kerberos">Kerberos</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#password-strength-rules">Password Strength Rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#rsa-securid-authentication">RSA SecurID Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#runtime-component">Runtime Component</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webseal.html#api-access-control">API Access Control</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="access_control.html">Advanced Access Control Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#api-protection">API Protection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#attribute-sources">Attribute Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#authentication">Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#context-based-access">Context Based Access</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#obligations">Obligations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#point-of-contact">Point Of Contact</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#policy-information-points">Policy Information Points</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#http-template-files">HTTP Template Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#javascript-mapping-rules">JavaScript Mapping Rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#push-notification-service">Push Notification Service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#mobile-multi-factor-authentication">Mobile Multi-Factor Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#server-connections">Server Connections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#advanced-configuration-parameters">Advanced Configuration Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#scim">SCIM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#fido2">FIDO2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access_control.html#runtime-server-configuration">Runtime Server Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="federations.html">Federations Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="federations.html#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federations.html#point-of-contact">Point Of Contact</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federations.html#alias-service">Alias Service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federations.html#attribute-sources">Attribute Sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federations.html#access-policies">Access Policies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federations.html#security-token-service">Security Token Service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federations.html#federations">Federations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federations.html#advanced-configuration-parameters">Advanced Configuration Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federations.html#http-template-files">HTTP Template Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federations.html#javascript-mapping-rules">JavaScript Mapping Rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federations.html#server-connections">Server Connections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="federations.html#runtime-server-configuration">Runtime Server Configuration</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="examples.html" class="btn btn-neutral float-right" title="Example Verify Identity Access Configurations (Getting Started)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Lachlan Gleeson, IBM.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
