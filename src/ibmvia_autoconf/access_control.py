@@ -680,7 +680,7 @@ class AAC_Configurator(object):
             if generalConfig:
                 mergedGeneralConfig = self.aac.scim_config.get_general_config().json
                 mergedGeneralConfig.update(generalConfig)
-                rsp = self.aac.scim_config.update_config(**mergedGeneralConfig)
+                rsp = self.aac.scim_config.update_general_config(**mergedGeneralConfig)
                 if rsp.success == True:
                     self.needsRestart = True
                     _logger.info("Successfully updated the SCIM general configuration")

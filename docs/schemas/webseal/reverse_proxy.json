@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/reverse_proxy.json",
-  "description": "Properties to configure a WebSEAL Reverse Proxy instance. A reverse proxy instance typically defines one or more junctions to protected application servers. This section can also be used to define configuration for the `webseal.conf` file as well as run the integration wizards for MMFA, AAC and Federation capabilities from the Federated Runtime Server. Configuration to connect to the user registry is read from the webseal.runtime entry.",
+  "description": "Properties to configure a WebSEAL Reverse Proxy instance. A reverse proxy instance typically defines one or more junctions to protected application servers. This section can also be used to define configuration for the `webseal.conf` file as well as run the integration wizards for MMFA, AAC and Federation capabilities from the Federated Runtime Server. Configuration to connect to the user registry and policy server is read from the ``webseal.runtime`` entry. The module will attempt to delete an existing proxy instance before it create one defined in configuration. It will attempt this with the provided policy server ``runtime.admin_user`` and runtime.admin_password`` credentials. If admin credentials cannot be found then instance creation is skipped but configuration helpers and stanza modifications are still executed.",
   "type": "array",
   "items": {
     "type": "object",

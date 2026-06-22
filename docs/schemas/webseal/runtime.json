@@ -58,7 +58,7 @@
     },
     "override_config": {
       "type": "boolean",
-      "description": "Optional property to attempt to force a reconfiguration of the runtime component if it is already configured. This is not possible if there are reverse proxy objects on IVIA v11.0.2.0 and older. For v11.0.3.0 and newer this option will set the flags to clean the local policy server if the user registery is remote.",
+      "description": "Optional property to attempt to force a reconfiguration of the runtime component if it is already configured. This is not possible if there are reverse proxy objects on IVIA v11.0.2.0 and older. For v11.0.3.0 and newer this option will set the flags to clean the local policy server if the user registry is remote.",
       "default": false
     },
     "embedded_root_password": {
