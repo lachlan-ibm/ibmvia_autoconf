@@ -583,7 +583,7 @@ class IVIA_Configurator(object):
             else:
                 track_failure('system', 'admin_config', rsp, config.admin_cfg)
                 _logger.error("Failed to set admin config using:\n{}\n{}".format(
-                    json.dumps(config.admin_config), rsp.data))
+                    json.dumps(config.admin_cfg), rsp.data))
 
 
     def _system_users(self, users):

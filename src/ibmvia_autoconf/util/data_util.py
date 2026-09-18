@@ -17,6 +17,16 @@ from .logging_util import setup_logging
 setup_logging()
 _logger = logging.getLogger(__name__)
 
+def is_incremental_snapshot_false(self, falseTest=None):
+    if falseTest == None:
+        return True
+    elif isinstance(falseTest, str):
+        if len(falseTest) < 2:
+            return falseTest.upper() == "F"
+        else:
+            return falseTest.upper() == "FALSE"
+    else:
+        return falseTest == False
 
 def get_k8s_pod_namespace():
     """
@@ -154,6 +164,8 @@ class CustomLoader(yaml.SafeLoader):
         CustomLoader.add_constructor('!secret:tofile', CustomLoader.k8s_secret_tofile)
         CustomLoader.add_constructor('!configmap:tofile', CustomLoader.k8s_configmap_tofile)
         CustomLoader.add_constructor('!environment', CustomLoader.env_secret)
+        CustomLoader.add_constructor('!vault', CustomLoader.vault_secret)
+        CustomLoader.add_constructor('!vault:tofile', CustomLoader.vault_secret_tofile)
 
     def include(self, node):
         filename = os.path.join(self._root, self.construct_scalar(node))
@@ -188,6 +200,113 @@ class CustomLoader(yaml.SafeLoader):
         except KeyError as e:
             raise ValueError("Environment variable {} does not exist".format(
                                                 self.construct_scalar(node))) from e
+
+    def vault_secret(self, node):
+        """
+        Read a value from a HashiCorp Vault KV secret engine.
+
+        Format: ``!vault mount/path:key``
+        - ``mount``  — KV secrets engine mount point (e.g. ``secret``, ``kv``)
+        - ``path``   — secret path within the mount (may contain ``/``)
+        - ``key``    — data key to return from the secret
+
+        When the mount is omitted (i.e. ``path:key`` with no ``/`` before ``:``)
+        the default mount ``secret`` is used.
+
+        Requires ``IVIA_HASHIVAULT_BASE`` and ``IVIA_HASHIVAULT_TOKEN`` to be set.
+        """
+        secret_ref = self.construct_scalar(node)
+        mount_point, path, key = self._parse_vault_ref('!vault', secret_ref)
+        return self._vault_read_raw(secret_ref, mount_point, path, key)
+
+    def vault_secret_tofile(self, node):
+        """
+        Read a value from a HashiCorp Vault KV secret engine and write it to a temp file.
+
+        The value must be either:
+        - A base64-encoded binary blob (e.g. a .p12 cert stored via ``base64 -w0 file | vault kv put ...``)
+        - A plain UTF-8 string (written as-is)
+
+        Format: ``!vault:tofile mount/path:key`` or ``!vault:tofile path:key``
+
+        Returns the temp file path string.
+        """
+        secret_ref = self.construct_scalar(node)
+        mount_point, path, key = self._parse_vault_ref('!vault:tofile', secret_ref)
+        raw_value = self._vault_read_raw(secret_ref, mount_point, path, key)
+
+        # Decode base64 if the value is a base64-encoded binary; otherwise use raw bytes
+        try:
+            contents = base64.b64decode(raw_value)
+        except Exception:
+            contents = raw_value.encode('utf-8') if isinstance(raw_value, str) else bytes(raw_value)
+
+        cache_name = "{}/{}".format(mount_point, path)
+        temp_path = self._write_to_unique_temp_file(cache_name, key, contents)
+        self._register_temp_file_cleanup(temp_path)
+        return temp_path
+
+    @staticmethod
+    def _parse_vault_ref(tag, secret_ref):
+        """
+        Parse a Vault secret reference into (mount_point, path, key).
+
+        Accepted formats:
+        - ``mount/path:key``  — explicit mount point
+        - ``path:key``        — implicit mount point (defaults to ``secret``)
+        """
+        if ':' not in secret_ref:
+            raise ValueError(
+                "{} requires format 'mount/path:key' or 'path:key'; got '{}'".format(tag, secret_ref)
+            )
+        mount_path, key = secret_ref.rsplit(':', 1)
+        if '/' in mount_path:
+            mount_point, path = mount_path.split('/', 1)
+        else:
+            mount_point = 'secret'
+            path = mount_path
+        return mount_point, path, key
+
+    def _vault_read_raw(self, secret_ref, mount_point, path, key):
+        """
+        Read a single key from a Vault KV engine, trying v2 then v1.
+
+        Returns the raw value (string) from the secret data dict.
+
+        Raises:
+            RuntimeError: If the Vault client is unavailable or the read fails.
+        """
+        client = IVIA_Vault_Client.get_client()
+        if client is None:
+            raise RuntimeError(
+                "Vault client unavailable for '{}'. "
+                "Ensure {} and {} are set "
+                "and the hvac package is installed.".format(
+                    secret_ref, const.HASHIVAULT_BASE, const.HASHIVAULT_TOKEN)
+            )
+
+        # Try KV v2 first (Vault default since v1.1), fall back to KV v1
+        try:
+            response = client.secrets.kv.v2.read_secret_version(
+                path=path, mount_point=mount_point
+            )
+            return response['data']['data'][key]
+        except Exception as v2_err:
+            _logger.debug(
+                "KV v2 read failed for '%s' (mount=%s path=%s): %s — trying v1",
+                secret_ref, mount_point, path, v2_err
+            )
+
+        try:
+            response = client.secrets.kv.v1.read_secret(
+                path=path, mount_point=mount_point
+            )
+            return response['data'][key]
+        except Exception as v1_err:
+            raise RuntimeError(
+                "Failed to read Vault secret '{}' "
+                "(tried KV v2 and v1): {}".format(secret_ref, v1_err)
+            ) from v1_err
 
     def k8s_secret_tofile(self, node):
         """
@@ -454,6 +573,34 @@ class IVIA_Kube_Client:
 
 def get_kube_client():
     return IVIA_Kube_Client.get_client()
+
+class IVIA_Vault_Client:
+    _client = None
+    _caught = False
+
+    @classmethod
+    def get_client(cls):
+        if cls._client is None and not cls._caught:
+            try:
+                import hvac
+            except ImportError:
+                _logger.warning(
+                    "hvac package not installed; !vault tags will fail. "
+                    "Install with: pip install hvac"
+                )
+                cls._caught = True
+                return None
+            base = os.environ.get(const.HASHIVAULT_BASE)
+            token = os.environ.get(const.HASHIVAULT_TOKEN)
+            if not base or not token:
+                _logger.warning(
+                    "%s and %s must both be set to use !vault tags",
+                    const.HASHIVAULT_BASE, const.HASHIVAULT_TOKEN
+                )
+                cls._caught = True
+                return None
+            cls._client = hvac.Client(url=base, token=token)
+        return cls._client
 
 KUBE_CLIENT_SLEEP = 15
 try:

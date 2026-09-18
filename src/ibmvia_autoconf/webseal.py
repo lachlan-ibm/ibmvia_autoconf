@@ -8,7 +8,7 @@ import json
 import typing
 import copy
 
-from .util.configure_util import deploy_pending_changes, config_base_dir
+from .util.configure_util import config_base_dir, deploy_pending_changes
 from .util.data_util import prefix_keys, Map, FILE_LOADER, optional_list, filter_list
 
 from .util.api_tracker import track_failure

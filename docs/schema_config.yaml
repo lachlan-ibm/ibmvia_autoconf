@@ -20,8 +20,8 @@ examples_as_yaml: true
 # Don't show breadcrumbs to save space
 show_breadcrumbs: false
 
-# Create links to referenced schemas
-link_to_reused_ref: true
+# Always inline definitions, never cross-link to another tab's definition
+link_to_reused_ref: false
 
 # Show examples in the documentation
 show_examples: true

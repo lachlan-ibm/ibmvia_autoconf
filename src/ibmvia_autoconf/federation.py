@@ -281,7 +281,7 @@ class Federation_Common(typing.TypedDict):
     
         server_cert_validation: Server_Certificate_Validation
         'The server certificate validation data.'
-        client_auth_data: Client_Auth_Data
+        client_auth: Client_Auth_Data
         'The client authentication data.'
 
     class Runtime(typing.TypedDict):
@@ -1088,13 +1088,13 @@ class FED_Configurator(object):
                             
                         })
                 if partnerConfig and partnerConfig.soap_settings != None and \
-                                                        isinstance(partnerConfig.soap_settings.client_auth_data, Map):
+                                                        isinstance(partnerConfig.soap_settings.client_auth, Map):
                     methodArgs.update({
-                            "soap_client_auth_method": partnerConfig.soap_settings.client_auth_data.method,
-                            "soap_client_auth_ba_user": partnerConfig.soap_settings.client_auth_data.basic_auth_username,
-                            "soap_client_auth_ba_password": partnerConfig.soap_settings.client_auth_data.basic_auth_password,
-                            "soap_client_auth_key_store": partnerConfig.soap_settings.client_auth_data.client_key_store,
-                            "soap_client_auth_key_alias": partnerConfig.soap_settings.client_auth_data.client_key_alias
+                            "soap_client_auth_method": partnerConfig.soap_settings.client_auth.method,
+                            "soap_client_auth_ba_user": partnerConfig.soap_settings.client_auth.basic_auth_username,
+                            "soap_client_auth_ba_password": partnerConfig.soap_settings.client_auth.basic_auth_password,
+                            "soap_client_auth_key_store": partnerConfig.soap_settings.client_auth.client_key_store,
+                            "soap_client_auth_key_alias": partnerConfig.soap_settings.client_auth.client_key_alias
                         })
         rsp = self.fed.federations.create_saml_partner(fedId, **methodArgs)
         if rsp.success == True:

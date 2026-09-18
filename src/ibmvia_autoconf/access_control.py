@@ -1100,6 +1100,15 @@ class AAC_Configurator(object):
                 _logger.error("Failed to {} template file {}".format(verb, file_pointer['path']))
 
 
+    def delete_template_file(self, path):
+        rsp = self.aac.template_files.delete_file(path)
+        if rsp.success == True:
+            _logger.info("Successfully removed {} template file path".format(path))
+            self.needsRestart = True
+        else:
+            track_failure('access_control', 'template_files', rsp, {'delete': path})
+            _logger.error("Failed to remove template file {}".format(path))
+
     """
     class Mapping_Rules(typing.TypedDict):
         '''
@@ -1159,11 +1168,13 @@ class AAC_Configurator(object):
         _logger.info("Uploading Template Files and Mapping rules")
         if config.template_files != None:
             for entry in config.template_files:
-                #Convert list of files/directories to flattened list of files
-                #include directories if we are a directory
-                incDirs = os.path.isdir(os.path.join(str(config_base_dir()), entry))
-                parsed_files = FILE_LOADER.read_files(entry, include_directories=incDirs)
-                self.upload_template_files(parsed_files)
+                if entry.starts_with("DELETE:"):
+                    self.delete_template_file(entry.replace("DELETE:", ""))
+                else: #Convert list of files/directories to flattened list of files
+                    #include directories if we are a directory
+                    incDirs = os.path.isdir(os.path.join(str(config_base_dir()), entry))
+                    parsed_files = FILE_LOADER.read_files(entry, include_directories=incDirs)
+                    self.upload_template_files(parsed_files)
         if config.mapping_rules != None:
             for entry in config.mapping_rules:
                 parsed_files = []

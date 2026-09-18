@@ -7,6 +7,36 @@
     "$ref": "#/$defs/Federation"
   },
   "$defs": {
+    "OIDCRelyingPartyConfiguration": {
+      "$ref": "oidc_relying_party.json"
+    },
+    "SAML20IdentityProviderConfiguration": {
+      "$ref": "saml20_identity_provider.json"
+    },
+    "SAML20ServiceProviderConfiguration": {
+      "$ref": "saml20_service_provider.json"
+    },
+    "WSFedIdentityProviderConfiguration": {
+      "$ref": "wsfed_identity_provider.json"
+    },
+    "WSFedServiceProviderConfiguration": {
+      "$ref": "wsfed_service_provider.json"
+    },
+    "OIDCRelyingPartyPartner": {
+      "$ref": "oidc_relying_party_partner.json"
+    },
+    "SAML20IdentityProviderPartner": {
+      "$ref": "saml20_identity_provider_partner.json"
+    },
+    "SAML20ServiceProviderPartner": {
+      "$ref": "saml20_service_provider_partner.json"
+    },
+    "WSFedIdentityProviderPartner": {
+      "$ref": "wsfed_identity_provider_partner.json"
+    },
+    "WSFedServiceProviderPartner": {
+      "$ref": "wsfed_service_provider_partner.json"
+    },
     "Federation": {
       "type": "object",
       "description": "A federation configuration with protocol-specific settings and partners.",
@@ -42,24 +72,19 @@
           "description": "The protocol-specific configuration data. The contents will be different for each protocol and role combination.",
           "oneOf": [
             {
-              "description": "OIDC Relying Party configuration",
-              "$ref": "oidc_relying_party.json"
+              "$ref": "#/$defs/OIDCRelyingPartyConfiguration"
             },
             {
-              "description": "SAML 2.0 Identity Provider configuration",
-              "$ref": "saml20_identity_provider.json"
+              "$ref": "#/$defs/SAML20IdentityProviderConfiguration"
             },
             {
-              "description": "SAML 2.0 Service Provider configuration",
-              "$ref": "saml20_service_provider.json"
+              "$ref": "#/$defs/SAML20ServiceProviderConfiguration"
             },
             {
-              "description": "WS-Federation Identity Provider configuration",
-              "$ref": "wsfed_identity_provider.json"
+              "$ref": "#/$defs/WSFedIdentityProviderConfiguration"
             },
             {
-              "description": "WS-Federation Service Provider configuration",
-              "$ref": "wsfed_service_provider.json"
+              "$ref": "#/$defs/WSFedServiceProviderConfiguration"
             }
           ]
         },
@@ -69,24 +94,19 @@
           "items": {
             "oneOf": [
               {
-                "description": "OIDC Relying Party partner",
-                "$ref": "oidc_relying_party_partner.json"
+                "$ref": "#/$defs/OIDCRelyingPartyPartner"
               },
               {
-                "description": "SAML 2.0 Identity Provider partner",
-                "$ref": "saml20_identity_provider_partner.json"
+                "$ref": "#/$defs/SAML20IdentityProviderPartner"
               },
               {
-                "description": "SAML 2.0 Service Provider partner",
-                "$ref": "saml20_service_provider_partner.json"
+                "$ref": "#/$defs/SAML20ServiceProviderPartner"
               },
               {
-                "description": "WS-Federation Identity Provider partner",
-                "$ref": "wsfed_identity_provider_partner.json"
+                "$ref": "#/$defs/WSFedIdentityProviderPartner"
               },
               {
-                "description": "WS-Federation Service Provider partner",
-                "$ref": "wsfed_service_provider_partner.json"
+                "$ref": "#/$defs/WSFedServiceProviderPartner"
               }
             ]
           }

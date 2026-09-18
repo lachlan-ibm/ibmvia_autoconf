@@ -21,6 +21,15 @@
     "replay_validation": {
       "type": "boolean",
       "description": "Whether to enable one-time assertion use enforcement."
+    },
+    "endpoint": {
+      "type": "string",
+      "description": "The endpoint URL of the WS-Federation service provider.",
+      "format": "uri"
+    },
+    "realm": {
+      "type": "string",
+      "description": "The realm of the WS-Federation service provider."
     }
   },
   "required": ["company_name", "identity_mapping", "point_of_contact_url", "replay_validation"]

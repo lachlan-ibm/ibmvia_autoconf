@@ -160,7 +160,7 @@
   "examples": [
     {
       "admin_cfg": {
-        "session_timeout": 7200,
+        "session_timeout": 720,
         "sshd_client_alive": 300,
         "console_log_level": "AUDIT",
         "accept_client_certs": true
