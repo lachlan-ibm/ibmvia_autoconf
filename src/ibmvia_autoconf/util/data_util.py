@@ -13,6 +13,7 @@ import atexit
 from copy import deepcopy
 from . import constants as const
 from .logging_util import setup_logging
+from .api_tracker import get_tracker
 
 setup_logging()
 _logger = logging.getLogger(__name__)

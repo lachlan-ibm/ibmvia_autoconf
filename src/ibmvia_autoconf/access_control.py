@@ -1168,7 +1168,7 @@ class AAC_Configurator(object):
         _logger.info("Uploading Template Files and Mapping rules")
         if config.template_files != None:
             for entry in config.template_files:
-                if entry.starts_with("DELETE:"):
+                if isinstance(entry, str) and entry.startswith("DELETE:"):
                     self.delete_template_file(entry.replace("DELETE:", ""))
                 else: #Convert list of files/directories to flattened list of files
                     #include directories if we are a directory
