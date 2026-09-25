@@ -13,7 +13,7 @@
       "description": "Path to the .kdb file to import as a SSL database. Required if importing a SSL KDB.",
       "pattern": ".*\\.kdb$"
     },
-    "stash_file": {
+    "sth_file": {
       "type": "string",
       "description": "Path to the .sth file for the specified kdb_file. Required if kdb_file is set.",
       "pattern": ".*\\.sth$"
@@ -52,6 +52,11 @@
               "label": {
                 "type": "string",
                 "description": "SSL database alias. Defaults to filename for imports. Required for remove operations; optional for fetch and import operations."
+              },
+              "replace": {
+                "type": "boolean",
+                "description": "If enabled, the autoconf module will attempt to remove a personal certificate with the given ``label``. If ``label`` is not set, then this option is ignored. This option does not affect the \"remove\" ``operation``. If the label does not exist in the given ssl database then this will not log an error.",
+                "default": false
               }
             },
             "oneOf": [
@@ -94,9 +99,22 @@
             "type": "string",
             "description": "Optional secret to decrypt personal certificate.",
             "format": "password"
+          },
+          "replace": {
+            "type": "boolean",
+            "description": "If enabled, the autoconf module will attempt to remove a personal certificate with the given ``name``. If ``name`` is not set, then this option is ignored. If the name does not exist in the given ssl database then this will not log an error.",
+            "default": false
+          },
+          "remove": {
+            "type": "boolean",
+            "description": "If enabled, the autoconf module will attempt to remove the given label from the personal certificates partition of the ssl database.",
+            "default": false
           }
         },
-        "required": ["p12_file"]
+        "anyOf": [
+          { "required": ["p12_file", "secret"] },
+          { "required": ["name", "remove"] }
+        ]
       }
     }
   },
@@ -137,7 +155,7 @@
         },
         {
           "kdb_file": "my_keystore.kdb",
-          "stash_file": "my_keystore.sth"
+          "sth_file": "my_keystore.sth"
         }
       ]
     }

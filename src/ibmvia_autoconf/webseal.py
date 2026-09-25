@@ -759,7 +759,6 @@ class WEB_Configurator(object):
         if rte_status.json['status'] == "Unconfigured" or runtime.override_config == True:
             config = {"ps_mode": runtime.policy_server,
                     "user_registry": runtime.user_registry,
-                    "ldap_suffix": runtime.suffix,
                     "clean_ldap": runtime.clean_ldap,
                     "isam_domain": runtime.domain,
                     "admin_password": runtime.admin_password,

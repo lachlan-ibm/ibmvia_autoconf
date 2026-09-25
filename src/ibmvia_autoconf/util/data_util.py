@@ -531,15 +531,21 @@ class FileLoader():
             for file_pointer in os.listdir(path):
                 parsed_files += [*self.read_file(os.path.join(path, file_pointer))]
         else:
-            with open(path, 'rb') as _file:
-                contents = _file.read()
-                result = {"name": os.path.basename(path), "contents": contents, "path": path, "type": "file",
-                        "directory": os.path.dirname(path).replace(self.config_base_dir, '')}
-                try:
-                    result['text'] = contents.decode()
-                except Exception:
-                    result['text'] = 'undefined'
-                parsed_files += [result]
+            try:
+                with open(path, 'rb') as _file:
+                    contents = _file.read()
+                    result = {"name": os.path.basename(path), "contents": contents, "path": path, "type": "file",
+                            "directory": os.path.dirname(path).replace(self.config_base_dir, '')}
+                    try:
+                        result['text'] = contents.decode()
+                    except Exception:
+                        result['text'] = 'undefined'
+                    parsed_files += [result]
+            except FileNotFoundError as e:
+                import traceback
+                get_tracker().record_failure(
+                        '_config', 'file_not_found', str(e), path)
+                _logger.error(f"Failed to read {path}:{traceback.print_exc()}")
         return parsed_files 
 
 FILE_LOADER = FileLoader()

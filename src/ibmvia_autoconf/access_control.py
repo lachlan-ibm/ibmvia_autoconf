@@ -191,18 +191,20 @@ class AAC_Configurator(object):
             for pip in config.pips:
                 methodArgs = copy.deepcopy(pip)
                 if "properties" in methodArgs.keys():
-                    for k, v in methodArgs["properties"].items():
-                        if k == "read_only":
-                            methodArgs["properties"]["readOnly"] = methodArgs["properties"].pop("read_only")
+                    for entry in methodArgs["properties"]:
+                        if isinstance(entry, dict) and 'read_only' in entry:
+                            entry['readOnly'] = entry['read_only']
+                            del entry['read_only']
+
                 old = filter_list('name', pip.name, existing)
                 rsp = None
                 verb = None
                 if old:
                     old = old[0]
-                    rsp = self.aac.pip.update_pip(old['id'], **pip)
+                    rsp = self.aac.pip.update_pip(old['id'], **methodArgs)
                     verb = "updated" if rsp.success == True else "update"
                 else:
-                    rsp = self.aac.pip.create_pip(**pip)
+                    rsp = self.aac.pip.create_pip(**methodArgs)
                     verb = "created" if rsp.success == True else "create"
                 if rsp.success == True:
                     self.needsRestart = True
@@ -245,7 +247,7 @@ class AAC_Configurator(object):
         resources = optional_list(self.aac.access_control.list_resources().json)
         resource_ids = []
         for resource in my_resources:
-            res = filter_list('resourceUri', resource.uri, resources)[0]
+            res = optional_list(filter_list('resourceUri', resource.uri, resources))[0]
             if "id" in res:
                 resource_ids += [res["id"]]
         rsp = self.aac.access_control.publish_multiple_policy_attachments(ids=resource_ids)
@@ -259,7 +261,7 @@ class AAC_Configurator(object):
     def _cba_policy(self, old_policies, policy):
         policy_id = None
         for p in old_policies:
-            if p['name'] == policy.name:
+            if isinstance(p, dict) and 'name' in p and p['name'] == policy.name:
                 policy_id = p['id']
                 break
         methodArgs = {
@@ -431,7 +433,7 @@ class AAC_Configurator(object):
                 self._risk_profiles(cba.risk_profiles)
             if cba.policies != None:
                 old_policies = self.aac.access_control.list_policies().json
-                if old_policies == None: old_policies = []
+                if old_policies == None: old_policies = [{}]
                 for policy in cba.policies:
                     self._cba_policy(old_policies, policy)
             policies = self.aac.access_control.list_policies().json
@@ -450,7 +452,7 @@ class AAC_Configurator(object):
                     if rsp.success == True:
                         _logger.info("Successfully authentiated to pdadmin")
                     else:
-                        track_failure('access_control', 'context_based_access', rsp, cba)
+                        track_failure('access_control', 'context_based_access/pdadmin', rsp, cba)
                         _logger.error("Failed to authenticate to pdadmin")
                 for resource in cba.resources:
                     self._cba_resource(resource, policies, policy_sets, definitions)
@@ -1326,6 +1328,7 @@ class AAC_Configurator(object):
     def attributes_configuration(self, aac_config):
         if aac_config.attributes != None:
             existing = optional_list(self.aac.attributes.list_attributes().json)
+            matchers = optional_list(self.aac.attributes.list_attribute_matchers().json)
             for attribute in aac_config.attributes:
                 methodArgs = copy.deepcopy(attribute)
                 attr_id = optional_list(filter_list("uri", attribute.uri, existing))[0].get("id", None)
@@ -1336,7 +1339,11 @@ class AAC_Configurator(object):
                         old = methodArgs.pop(k)
                         for oldKey, value in old.items():
                             methodArgs[k + "_" + oldKey] = value
-
+                matcherCfg = optional_list(filter_list("uri", "urn:ibm:security:matcher:"+attribute.matcher, matchers))
+                if matcherCfg and matcherCfg[0]:
+                    methodArgs.update({
+                        "matcher": matcherCfg[0].get("id", -1)
+                    })
                 rsp = None
                 if attr_id:
                     rsp = self.aac.attributes.update_attribute(attr_id, **methodArgs)
@@ -1346,7 +1353,7 @@ class AAC_Configurator(object):
                     verb = "created" if rsp.success == True else "create"
                 if rsp.success == True:
                     self.needsRestart = True
-                    _logger.info("Successfully {} {} attribute.".format(verb, attribute.name))
+                    _logger.info("Successfully {} {} context based access attribute.".format(verb, attribute.name))
                 else:
                     track_failure('access_control', 'attributes', rsp, methodArgs)
                     _logger.error("Failed to {} attribute:\n{}\n{}".format(verb, json.dumps(

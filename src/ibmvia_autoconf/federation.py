@@ -8,6 +8,9 @@ import logging
 import typing
 import copy
 import time
+from typing import Any
+
+from pyivia.core.federation import federations
 
 from .util.configure_util import deploy_pending_changes, config_base_dir
 from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, to_camel_case, remap_keys, KUBE_CLIENT_SLEEP
@@ -940,6 +943,79 @@ class FED_Configurator(object):
             _logger.error("Failed to import Federation Partner:\n{}\n{}".format(
                                             json.dumps(partner, indent=4), rsp.data))
 
+    def _configure_ws_partner(self, fedId, partner):
+        methodArgs = {
+                "name": partner.name,
+                "enabled": partner.enabled,
+                "role": partner.role,
+                "template_name": partner.template_name
+            }
+        partnerConfig = None
+        if partner.configuration != None:
+            partnerConfig = partner.configuration
+            methodArgs.update({
+                    "max_request_lifetime": partner.configuration.max_request_lifetime,
+                    "endpoint": partner.configuration.endpoint,
+                    "realm": partner.configuration.realm,
+                    "subject_confirmation_method": partner.configuration.subject_confirmation_method,
+                    "use_inclusive_namespaces": partner.configuration.use_inclusive_namespaces,
+                    "attribute_types": partner.configuration.attribute_types
+                })
+            if partnerConfig and partnerConfig.identity_mapping != None:
+                idMap = partnerConfig.identity_mapping
+                methodArgs.update({ "identity_delegate_id": idMap.active_delegate_id })
+                if idMap.properties and idMap.properties.mapping_rule:
+                    methodArgs.update({
+                            "identity_rule_type": idMap.properties.rule_type if idMap.properties.rule_type else 'JAVASCRIPT',
+                            "identity_mr": self._mapping_rule_to_id(idMap.properties.mapping_rule, 
+                                                                                                rules=self.mapping_rules)
+                        })
+                elif idMap.properties:
+                    methodArgs.update({
+                        "identity_applies_to": idMap.properties.applies_to,
+                        "identity_auth_type": idMap.properties.auth_type,
+                        "identity_ba_user": idMap.properties.basic_auth_username,
+                        "identity_ba_password": idMap.properties.basic_auth_password,
+                        "identity_client_keystore": idMap.properties.client_key_store,
+                        "identity_client_key_alias": idMap.properties.client_key_alias,
+                        "identity_issuer_uri": idMap.properties.issuer_uri,
+                        "identity_mgs_fmt": idMap.properties.message_format,
+                        "identity_ssl_key_store": idMap.properties.ssl_key_store,
+                        "identity_uri": idMap.properties.uri
+                    })
+            if partnerConfig and partnerConfig.signature_settings:
+                sigSetting = partnerConfig.signature_settings
+                methodArgs.update({
+                    "sign_alg": sigSetting.signature_algorithm
+                    })
+                if sigSetting.key_info_elements:
+                    methodArgs.update({
+                        "sign_include_pubkey": sigSetting.key_info_elements.include_public_key,
+                        "sign_include_cert": sigSetting.key_info_elements.include_x509_certificate_data,
+                        "sign_include_issuer": sigSetting.key_info_elements.include_x509_issuer_details,
+                        "sign_include_ski": sigSetting.key_info_elements.include_x509_subject_key_identifier,
+                        "sign_include_subject": sigSetting.key_info_elements.include_x509_subject_name
+                    })
+                if sigSetting.signing_options:
+                    methodArgs.update({
+                        "sign_assertion": sigSetting.signing_options.sign_assertion
+                        })
+                if sigSetting.signing_key_identifier:
+                    methodArgs.update({
+                        "sign_key_store": sigSetting.signing_key_identifier.store,
+                        "sign_key_label": sigSetting.signing_key_identifier.label
+                    })
+
+        rsp = self.fed.federations.create_ws_partner(fedId, **methodArgs)
+        if rsp.success == True:
+            _logger.info("Successfully created {} {} WSFED Partner".format(
+                partner.name, partner.role))
+            self.needsRestart = True
+        else:
+            track_failure('federation', 'federation/partner_ws', rsp, partner)
+            _logger.error("Failed to create {} WSFED Partner with config:\n{}\n{}".format(
+                                        partner.name, json.dumps(partner, indent=4), rsp.data))
+
 
     def _configure_saml_partner(self, fedId, partner):
         methodArgs = {
@@ -966,7 +1042,7 @@ class FED_Configurator(object):
                 "default_target_url": partner.configuration.default_target_url,
                 "anon_user_name": partner.configuration.anonymous_user_name,
                 "force_authn_to_federate": partner.configuration.force_authn_to_federate,
-                "map_unknown_alias": partner.configuration.map_unknown_aliases
+                "map_unknown_alias": partner.configuration.map_unknown_aliases,
                 })
             if partnerConfig and partnerConfig.authn_req_mapping != None:
                 methodArgs.update({
@@ -1002,13 +1078,13 @@ class FED_Configurator(object):
             if partnerConfig and partnerConfig.identity_mapping != None:
                 idMap = partnerConfig.identity_mapping
                 methodArgs.update({ "identity_delegate_id": idMap.active_delegate_id })
-                if idMap.properties.mapping_rule:
+                if idMap.properties and idMap.properties.mapping_rule:
                     methodArgs.update({
                             "identity_rule_type": idMap.properties.rule_type if idMap.properties.rule_type else 'JAVASCRIPT',
                             "identity_mr": self._mapping_rule_to_id(idMap.properties.mapping_rule, 
                                                                                                 rules=self.mapping_rules)
                         })
-                else:
+                elif idMap.properties:
                     methodArgs.update({
                         "identity_applies_to": idMap.properties.applies_to,
                         "identity_auth_type": idMap.properties.auth_type,
@@ -1102,7 +1178,7 @@ class FED_Configurator(object):
                 partner.name, partner.role))
             self.needsRestart = True
         else:
-            track_failure('federation', 'federation/partner_oidc', rsp, partner)
+            track_failure('federation', 'federation/partner_saml', rsp, partner)
             _logger.error("Failed to create {} SAML Partner with config:\n{}\n{}".format(
                                         partner.name, json.dumps(partner, indent=4), rsp.data))
 
@@ -1155,7 +1231,7 @@ class FED_Configurator(object):
                             "identity_msg_fmt": config.identity_mapping.properties.message_format,
                             "identity_ssl_keystore": config.identity_mapping.properties.ssl_keystore,
                             "identity_uri": config.identity_mapping.properties.uri
-                        })                    
+                        })
 
             if config.advance_configuration != None:
                 methodArgs.update({
@@ -1176,11 +1252,11 @@ class FED_Configurator(object):
             _logger.error("Failed to create {} OIDC RP Partner with config:\n{}/n{}".format(
                 partner.name, json.dumps(partner, indent=4), rsp.data))
 
-    def _configure_federation_partner(self, fed_id, partner):
-        method = {"ip": self._configure_saml_partner,
-                  "sp": self._configure_saml_partner,
-                  "rp": self._configure_oidc_partner
-                }.get(partner.role, None)
+    def _configure_federation_partner(self, protocol, fed_id, partner):
+        method = {"OIDC": self._configure_oidc_partner,
+                  "SAML_20": self._configure_saml_partner,
+                  "WSFED": self._configure_ws_partner,
+                }.get(protocol, None)
         if method == None:
             track_failure('federation', 'federation/partner', None, partner)
             _logger.error("Federation partner {} does not specify a valid configuration: {}\n\tskipping . . .".format(
@@ -1345,7 +1421,7 @@ class FED_Configurator(object):
         fed_id = optional_list(filter_list("name", federation.name, old_feds))[0].get("id", "MISSING_ID")
         if federation.partners != None:
             for partner in federation.partners:
-                self._configure_federation_partner(fed_id, partner)
+                self._configure_federation_partner(federation.protocol, fed_id, partner)
 
 
     def _configure_oidc_federation(self, federation):
@@ -1393,13 +1469,61 @@ class FED_Configurator(object):
                 track_failure('federation', 'federation/oidc', rsp, methodArgs)
                 _logger.error("Failed to create {} OIDC RP Federation with config:\n{}\n{}".format(
                         federation.name, json.dumps(federation, indent=4), rsp.data))
-        old_feds = optional_list(self.fed.federations.list_federations().json)
+        old_feds: list[Any] | list[dict[Any, Any]] = optional_list(self.fed.federations.list_federations().json)
         fed_id = optional_list(filter_list("name", federation.name, old_feds))[0].get("id", "MISSING_ID")
         if federation.partners != None:
             for partner in federation.partners:
-                self._configure_federation_partner(fed_id, partner)
+                self._configure_federation_partner(federation.protocol, fed_id, partner)
 
-
+    def _configure_ws_federation(self, federation):
+        if federation.role:
+            methodArgs = {
+                    "name": federation.name,
+                    "role": federation.role,
+                    "template_name": federation.template
+                }
+            if federation.configuration != None:
+                config = federation.configuration
+                methodArgs.update({
+                    "endpoint": config.endpoint,
+                    "realm": config.realm,
+                    "poc_url": config.point_of_contact_url,
+                    "company_name": config.company_name
+                })
+                if config.assert_settings != None:
+                    methodArgs.update({
+                            "assertion_valid_before": config.assert_settings.assertion_valid_before,
+                            "assertion_valid_after": config.assert_settings.assertion_valid_after
+                        })
+                if config.identity_mapping:
+                    methodArgs["identity_delegate_id"] = config.identity_mapping.active_delegate_id
+                    if config.identity_mapping.properties:
+                        methodArgs.update({
+                                "identity_mapping_rule": self._mapping_rule_to_id(
+                                            config.identity_mapping.properties.mapping_rule, rules=self.mapping_rules),
+                                "identity_auth_type": config.identity_mapping.properties.auth_type,
+                                "identity_ba_user": config.identity_mapping.properties.basic_auth_username,
+                                "identity_ba_password": config.identity_mapping.properties.basic_auth_password,
+                                "identity_client_keystore": config.identity_mapping.properties.client_key_store,
+                                "identity_client_key_alias": config.identity_mapping.properties.client_key_alias,
+                                "identity_issuer_uri": config.identity_mapping.properties.issuer_uri,
+                                "identity_msg_fmt": config.identity_mapping.properties.message_format,
+                                "identity_ssl_keystore": config.identity_mapping.properties.ssl_keystore,
+                                "identity_uri": config.identity_mapping.properties.uri
+                            })
+            rsp = self.fed.federations.create_ws_federation(**methodArgs)
+            if rsp.success == True:
+                _logger.info("Successfully created {} OIDC RP Federation".format(federation.name))
+                self.needsRestart = True
+            else:
+                track_failure('federation', 'federation/ws', rsp, methodArgs)
+                _logger.error("Failed to create {} OIDC RP Federation with config:\n{}\n{}".format(
+                        federation.name, json.dumps(federation, indent=4), rsp.data))
+        old_feds: list[Any] | list[dict[Any, Any]] = optional_list(self.fed.federations.list_federations().json)
+        fed_id = optional_list(filter_list("name", federation.name, old_feds))[0].get("id", None)
+        if fed_id and federation.partners != None:
+            for partner in federation.partners:
+                self._configure_federation_partner(federation.protocol, fed_id, partner)
     """
     class Federations(typing.TypedDict):
         '''
@@ -1786,7 +1910,8 @@ class FED_Configurator(object):
             self.mapping_rules = optional_list(self.factory.get_access_control().mapping_rules.list_rules().json)
             for federation in federation_config.federations:
                 method = {"SAML2_0": self._configure_saml_federation,
-                          "OIDC10": self._configure_oidc_federation
+                          "OIDC10": self._configure_oidc_federation,
+                          "WSFED": self._configure_ws_federation,
                           }.get(federation.protocol, None)
                 if method == None:
                     _logger.error("Federation {} does not specify a valid configuration: {}\n\tskipping create federation. . .".format(

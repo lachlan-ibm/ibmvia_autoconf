@@ -64,6 +64,11 @@
           "type": "boolean",
           "description": "Use all available metadata documents for this relying party."
         },
+        "metadata_soft_fail": {
+          "type": "boolean",
+          "description": "Permit attestation which does not match any metadata docuemnts. **NOTE** If a attestation matches a metadata statement then it **must** verify accoring to the policy defined in the statement.",
+          "default": true
+        },
         "mediator": {
           "type": "string",
           "description": "Mediator mapping rule to configure for this relying party."
@@ -90,7 +95,8 @@
       "required": [
         "name",
         "rp_id",
-        "origins"
+        "origins",
+        "impersonation_group"
       ]
     },
     "Attestation": {
