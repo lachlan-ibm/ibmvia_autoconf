@@ -149,8 +149,8 @@ Example
 Point Of Contact
 ================
 
-To configure Point of Contact profiles, see the entry in the `Appliance <appliance.html#point-of-contact>`_ or 
-`Container <container.html#point-of-contact>`_ documentation.
+To configure Point of Contact profiles, see the entry in the `Appliance <appliance.html#point-of-contact-profile>`_ or 
+`Container <container.html#point-of-contact-profile>`_ documentation.
 
 
 Alias Service

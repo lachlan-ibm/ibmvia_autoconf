@@ -18,6 +18,7 @@ Example
    mgmt_user: "admin"
    mgmt_pwd: "Passw0rd"
    container:
+     incremental_snapshot: False
      admin_cfg:
        session_timeout: 720
      account_management:

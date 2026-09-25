@@ -11,6 +11,11 @@ level of idempotency themselves. The rest of this document will discuss various 
 Verify Identity Access deployments and how configurations files cane be structured to achieve idempotency.
 
 
+Users should take care to ensure the configuration of these separate features are compatible (eg. conflicting ALC's
+in a WebSEAL reverse proxy). Administrators will also have to define the ``webseal.runtime`` entry for many configuration
+options even if the :ref:`WebSEAL Runtime Component<webseal_runtime_server>` is already configured.
+
+
 System / Base Configuration
 ============================
 SSL Databases:

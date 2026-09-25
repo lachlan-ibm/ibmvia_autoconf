@@ -45,7 +45,8 @@ setup(
     extras_require={
         'kubernetes': ['kubernetes>=12.0.0,!=36.0.0'],
         'docker-compose': ['docker'],
-        'all': ['kubernetes>=12.0.0,!=36.0.0', 'docker']
+        'vault': ['hvac'],
+        'all': ['kubernetes>=12.0.0,!=36.0.0', 'docker', 'hvac']
     },
     project_urls={
         'Homepage': 'https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator',

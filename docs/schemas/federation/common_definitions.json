@@ -232,9 +232,12 @@
         "encrypt_assertion_attributes": {
           "type": "boolean",
           "description": "Whether to encrypt assertion attributes."
+        },
+        "include_cert_data": {
+          "type": "boolean",
+          "description": "Whether to include the BASE64 encoded certificate data with the signature."
         }
-      },
-      "required": ["key_store", "key_alias", "encrypt_name_id", "encrypt_assertion", "encrypt_assertion_attributes"]
+      }
     },
     "IdentityMapping": {
       "type": "object",
@@ -243,7 +246,7 @@
         "active_delegate_id": {
           "type": "string",
           "description": "The active mapping module instance. Valid values are ``skip-identity-map``, ``default-map`` and ``default-http-custom-map``.",
-          "enum": ["skip-identity-map", "default-map", "default-http-custom-map"]
+          "enum": ["skip-identity-mapping", "default-map", "default-http-custom-map"]
         },
         "properties": {
           "type": "object",
@@ -321,7 +324,7 @@
           "description": "A reference to an ID or name of an extension mapping rule."
         }
       },
-      "required": ["active_delegate_id", "mapping_rule"]
+      "required": ["active_delegate_id"]
     },
     "AuthnReqMapping": {
       "type": "object",
@@ -337,7 +340,7 @@
           "description": "A reference to an ID or name of an authentication request mapping rule."
         }
       },
-      "required": ["active_delegate_id", "mapping_rule"]
+      "required": ["active_delegate_id"]
     },
     "ServiceData": {
       "type": "object",
@@ -524,8 +527,7 @@
           "$ref": "#/$defs/KeyIdentifier",
           "description": "The certificate to use to validate the signatures on incoming SAML assertions and messages."
         }
-      },
-      "required": ["signature_algorithm", "digest_algorithm"]
+      }
     },
     "SingleSignOnService": {
       "type": "object",
@@ -583,7 +585,7 @@
           },
           "required": ["store"]
         },
-        "client_auth_data": {
+        "client_auth": {
           "type": "object",
           "description": "Client authentication configuration.",
           "properties": {
@@ -613,7 +615,7 @@
           "required": ["method"]
         }
       },
-      "required": ["server_cert_validation", "client_auth_data"]
+      "required": ["client_auth"]
     },
     "Runtime": {
       "type": "object",

@@ -70,8 +70,6 @@
   "required": [
     "policy_server",
     "user_registry",
-    "clean_ldap",
-    "isam_domain",
     "admin_password",
     "admin_cert_lifetime",
     "ssl_compliance",
@@ -103,7 +101,7 @@
         },
         "suffix": {
           "type": "string",
-          "description": "SecAuthority suffix."
+          "description":  "The LDAP suffix that is used to hold the Verify Identity Access secAuthority data."
         },
         "key_file": {
           "type": "string",

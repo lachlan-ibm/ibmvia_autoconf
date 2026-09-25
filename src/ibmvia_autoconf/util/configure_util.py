@@ -344,4 +344,5 @@ def deploy_pending_changes(factory=None, isvaConfig=None, restartContainers=True
     if not _publish_docker_configuration(factory, isvaConfig):
         return
 
-    _restart_containers(isvaConfig, restartContainers)
+    if isinstance(isvaConfig.container, dict) and isvaConfig.container.get('incremental_snapshot', False) == True:
+        _restart_containers(isvaConfig, restartContainers)

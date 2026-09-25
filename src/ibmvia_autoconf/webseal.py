@@ -8,7 +8,7 @@ import json
 import typing
 import copy
 
-from .util.configure_util import deploy_pending_changes, config_base_dir
+from .util.configure_util import config_base_dir, deploy_pending_changes
 from .util.data_util import prefix_keys, Map, FILE_LOADER, optional_list, filter_list
 
 from .util.api_tracker import track_failure
@@ -759,7 +759,6 @@ class WEB_Configurator(object):
         if rte_status.json['status'] == "Unconfigured" or runtime.override_config == True:
             config = {"ps_mode": runtime.policy_server,
                     "user_registry": runtime.user_registry,
-                    "ldap_suffix": runtime.suffix,
                     "clean_ldap": runtime.clean_ldap,
                     "isam_domain": runtime.domain,
                     "admin_password": runtime.admin_password,

@@ -4,6 +4,26 @@
   "description": "Administrators can use the `pdadmin` tool to modify the configured User Registry and Policy Server. This tool isused to: create Access Control Lists (ACL's); create Protected Object Policies (POP's); create users or groups; as well as attaching ACL's or POP's to a reverse proxy instance's object space. Configuration to connect to the user registry is read from the webseal.runtime entry.\n\n**⚠️ Note:** When executing pdadmin commands, a bind credential must be provided. The automated configuration tool uses the `webseal.runtime.admin_user` and `webseal.runtime.admin_password` properties to authenticate. Therefore both of these properties **must** exist when executing PDAdmin commands.",
   "type": "object",
   "properties": {
+    "import": {
+      "type" :"object",
+      "description": "Federated users and groups to import as 'lite' ISAM users.",
+      "properties": {
+        "users": {
+          "type": "array",
+          "description": "List of federated users to import.",
+          "items": {
+            "$ref": "#/$defs/FederatedUser"
+          }
+        },
+        "groups": {
+          "type": "array",
+          "description": "List of federated groups to import.",
+          "items": {
+            "$ref": "#/$defs/FederatedGroup"
+          }
+        }
+      }
+    },
     "users": {
       "type": "array",
       "description": "List of users to add to the User Registry. These will be created as 'full' Verify Identity Access users.",
@@ -48,6 +68,48 @@
     }
   },
   "$defs": {
+    "FederatedUser": {
+      "type": "object",
+      "description": "Users from an external User Registry who will be imported as 'lite' ISAM users.",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "The name the user will authenticate as."
+        },
+        "dn": {
+          "type": "string",
+          "description": "The DN LDAP attribute for this user."
+        },
+        "groups": {
+          "type": "array.string",
+          "description": "List of ISAM groups to add the user to."
+        },
+        "gso_user": {
+          "type": "boolean",
+          "descripton": "Enable this user as a GSO user."
+        }
+      },
+      "required": ["username", "dn", "gso_user"]
+    },
+    "FederatedGroup": {
+      "type": "object",
+      "description": "Groups from an external User Registry which will be imported as 'lite' ISAM groups.",
+      "properties": {
+        "groupname": {
+          "type": "string",
+          "description": "Name of the group to import."
+        },
+        "dn": {
+          "type": "string",
+          "description": "The DN LDAP attribute for this group."
+        },
+        "object_class": {
+          "type": "string",
+          "description": "Alternative LDAP ObjectClass to use for this group."
+        }
+      },
+      "required": ["groupname", "dn"]
+    },
     "User": {
       "type": "object",
       "description": "User account configuration.",

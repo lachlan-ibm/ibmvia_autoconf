@@ -80,6 +80,7 @@ html_css_files = [
     'https://fonts.googleapis.com/css?family=Overpass:300,400,600,800',
     'schema_doc.css',
     'schema_overrides.css',
+    'table_nowrap.css'
 ]
 
 html_static_path = ['_static', 'schema_html']

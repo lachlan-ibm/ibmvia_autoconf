@@ -1,18 +1,30 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "template_files.json",
-  "description": "Upload files or directories containing HTML files which are compatible with the AAC and Federation templating engine. The directory structure of any directories to upload should follow the default top level directories. If you are defining a directory it should contain a trailing ``/``.",
+  "description": "Upload or DELETE files or directories containing HTML which is compatible with the AAC and Federation templating engine. The directory structure of any directories to upload should follow the default top level directories. If you are defining a directory it should contain a trailing ``/``. If you add the ``DELETE:`` prefix to a path, then the file or directory will be removed from the IVIA template file system.",
   "type": "array",
   "items": {
     "type": "string",
-    "description": "File path to an HTML template file or ZIP archive containing multiple templates."
+    "description": "File path to an HTML template file ZIP archive; or a ``DELETE:`` prefixed string defining a folder/file to delete."
   },
   "examples": [
     {
       "template_files": [
         "aac/isva_template_files.zip",
-        "login.html",
-        "2fa.html"
+        "DELETE:C/saml20",
+        "DELETE:cs",
+        "DELETE:de",
+        "DELETE:es",
+        "DELETE:fr",
+        "DELETE:hu",
+        "DELETE:it",
+        "DELETE:ja",
+        "DELETE:ko",
+        "DELETE:pl",
+        "DELETE:pt_BR",
+        "DELETE:ru",
+        "DELETE:zh_CN",
+        "DELETE:zh_TW"
       ]
     }
   ]

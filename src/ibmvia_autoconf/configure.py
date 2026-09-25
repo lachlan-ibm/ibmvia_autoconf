@@ -372,6 +372,12 @@ class IVIA_Configurator(object):
             # String = file import with filename as label
             self._import_cert_files(database, cert_entry)
         else:
+            # See if we should should remove it first
+            if cert_entry.get('replace', False) == True \
+                    and isinstance(cert_entry.get('label', None), str):
+                rsp = self.factory.get_system_settings().ssl_certificates.delete_signer(
+                        database, cert_entry.get('label'))
+                _logger.debug(f"ssl_certificate: remove {cert_entry.get('label')} response: {rsp.data}")
             # Dict with explicit configuration
             operation = cert_entry.get('operation', 'import')
             
@@ -390,7 +396,6 @@ class IVIA_Configurator(object):
             
             handler(database, cert_entry)
 
-
     def _import_personal_cert(self, db_name, cert):
         ssl = self.factory.get_system_settings().ssl_certificates
         personal_parsed_file = optional_list(FILE_LOADER.read_file(cert.p12_file))[0]
@@ -406,10 +411,30 @@ class IVIA_Configurator(object):
             _logger.error("Failed to upload {} personal certificate to {}\n{}".format(
                personal_parsed_file['path'], db_name, rsp.data))
 
+    def _process_personal_cert(self, db_name, cert):
+        ssl = self.factory.get_system_settings().ssl_certificates
+        if cert.get("remove") or cert.get("replace"):
+            if cert.name:
+                rsp = ssl.delete_personal(db_name, cert.name)
+                _logger.debug(f"Attempted removal of personal certificate '{cert.name}' from {db_name}: {rsp.data}")
+                if rsp.success == True:
+                    self.needsRestart = True
+                if cert.get("remove"):
+                    if rsp.success == True:
+                        _logger.info(f"Successfully removed {cert.name} personal certificate from {db_name} ssl database")
+                    else:
+                        track_failure('system', 'ssl/personal_certificate', rsp, {"DELETE": f"{db_name}/{cert.name}"})
+                        _logger.error(f"Failed to remove {cert.name} personal certificate from {db_name}\n{rsp.data}")
+
+            if cert.get("remove"):
+                return
+        if cert.get("p12_file"):
+            self._import_personal_cert(db_name, cert)
+
     def _import_certificates(self, database):
         if database.personal_certificates:
             for cert in database.personal_certificates:
-                self._import_personal_cert(database.name, cert)
+                self._process_personal_cert(database.name, cert)
         if database.signer_certificates:
             for cert_entry in database.signer_certificates:
                 self._process_signer_certificate(database.name, cert_entry)
@@ -583,7 +608,7 @@ class IVIA_Configurator(object):
             else:
                 track_failure('system', 'admin_config', rsp, config.admin_cfg)
                 _logger.error("Failed to set admin config using:\n{}\n{}".format(
-                    json.dumps(config.admin_config), rsp.data))
+                    json.dumps(config.admin_cfg), rsp.data))
 
 
     def _system_users(self, users):

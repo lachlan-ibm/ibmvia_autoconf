@@ -24,79 +24,107 @@
       "type": "string",
       "description": "An identifier for the template on which to base this partner."
     },
-    "access_policy": {
-      "type": "string",
-      "description": "The access policy that should be applied during single sign-on."
-    },
-    "artifact_resolution_services": {
-      "$ref": "common_definitions.json#/$defs/ArtifactResolutionService",
-      "description": "Partner's endpoints where artifacts are exchanged for actual SAML messages. Required if artifact binding is enabled."
-    },
-    "assertion_consumer_services": {
-      "type": "array",
-      "description": "Partner's endpoints that receive SAML assertions.",
-      "items": {
-        "$ref": "common_definitions.json#/$defs/AssertionConsumerService"
+    "configuration": {
+      "type": "object",
+      "description": "The protocol-specific configuration for this partner.",
+      "required": ["provider_id", "assertion_consumer_services", "assertion_settings", "extension_mapping"],
+      "properties": {
+        "access_policy": {
+          "type": "string",
+          "description": "The access policy that should be applied during single sign-on."
+        },
+        "authn_request_mapping": {
+          "$ref": "common_definitions.json#/$defs/AuthnReqMapping",
+          "description": "The authentication request mapping data."
+        },
+        "artifact_resolution_services": {
+          "type": "array",
+          "description": "Partner's endpoints where artifacts are exchanged for SAML messages. Required if artifact binding is enabled.",
+          "items": {
+            "$ref": "common_definitions.json#/$defs/ArtifactResolutionService"
+          }
+        },
+        "assertion_consumer_services": {
+          "type": "array",
+          "description": "Partner's endpoints that receive SAML assertions.",
+          "items": {
+            "$ref": "common_definitions.json#/$defs/AssertionConsumerService"
+          }
+        },
+        "assertion_settings": {
+          "$ref": "common_definitions.json#/$defs/AssertionSettings",
+          "description": "The assertion settings."
+        },
+        "attribute_mappings": {
+          "$ref": "common_definitions.json#/$defs/AttributeMapping",
+          "description": "The attribute mapping data."
+        },
+        "encryption_settings": {
+          "$ref": "common_definitions.json#/$defs/EncryptionSettings",
+          "description": "The encryption and decryption configurations for SAML messages."
+        },
+        "identity_mapping": {
+          "$ref": "common_definitions.json#/$defs/IdentityMapping",
+          "description": "The identity mapping data."
+        },
+        "extension_mapping": {
+          "$ref": "common_definitions.json#/$defs/ExtensionMapping",
+          "description": "The extension mapping data."
+        },
+        "include_fed_id_in_alias_partner_id": {
+          "type": "boolean",
+          "description": "A setting that specifies whether to append federation ID to partner ID when mapping user aliases. The default value is false.",
+          "default": false
+        },
+        "force_authn_to_federate": {
+          "type": "boolean",
+          "description": "A setting that specifies whether to force user to authenticate before linking the account."
+        },
+        "logout_request_lifetime": {
+          "type": "integer",
+          "description": "A setting that specifies Logout request lifetime in number of seconds. If not provided, the default value is 120.",
+          "default": 120,
+          "minimum": 1
+        },
+        "manage_name_id_services": {
+          "type": "array",
+          "description": "Partner's endpoints that accept SAML name ID management requests or responses.",
+          "items": {
+            "$ref": "common_definitions.json#/$defs/ServiceData"
+          }
+        },
+        "name_id_format": {
+          "$ref": "common_definitions.json#/$defs/NameIdFormat",
+          "description": "The name identifier format configurations."
+        },
+        "provider_id": {
+          "type": "string",
+          "description": "A unique identifier that identifies the partner."
+        },
+        "signature_settings": {
+          "$ref": "common_definitions.json#/$defs/SignatureSettings",
+          "description": "The signing and validation configurations for SAML messages and assertions."
+        },
+        "single_sign_on_services": {
+          "type": "array",
+          "description": "Partner's endpoints that accept SAML authentication requests.",
+          "items": {
+            "$ref": "common_definitions.json#/$defs/SingleSignOnService"
+          }
+        },
+        "single_logout_service": {
+          "type": "array",
+          "description": "Partner's endpoints that accept SAML logout requests or responses.",
+          "items": {
+            "$ref": "common_definitions.json#/$defs/ServiceData"
+          }
+        },
+        "soap_settings": {
+          "$ref": "common_definitions.json#/$defs/SOAPSettings",
+          "description": "A setting that specifies the connection parameters for the SOAP endpoints."
+        }
       }
-    },
-    "assertion_settings": {
-      "$ref": "common_definitions.json#/$defs/AssertionSettings",
-      "description": "The assertion settings."
-    },
-    "attribute_mappings": {
-      "$ref": "common_definitions.json#/$defs/AttributeMapping",
-      "description": "The attribute mapping data."
-    },
-    "encryption_settings": {
-      "$ref": "common_definitions.json#/$defs/EncryptionSettings",
-      "description": "The encryption and decryption configurations for SAML messages."
-    },
-    "identity_mapping": {
-      "$ref": "common_definitions.json#/$defs/IdentityMapping",
-      "description": "The identity mapping data."
-    },
-    "extension_mapping": {
-      "$ref": "common_definitions.json#/$defs/ExtensionMapping",
-      "description": "The extension mapping data."
-    },
-    "include_fed_id_in_alias_partner_id": {
-      "type": "boolean",
-      "description": "A setting that specifies whether to append federation ID to partner ID when mapping user aliases. The default value is false.",
-      "default": false
-    },
-    "logout_request_lifetime": {
-      "type": "integer",
-      "description": "A setting that specifies Logout request lifetime in number of seconds. If not provided, the default value is 120.",
-      "default": 120,
-      "minimum": 1
-    },
-    "manage_name_id_services": {
-      "type": "array",
-      "description": "Partner's endpoints that accept SAML name ID management requests or responses.",
-      "items": {
-        "$ref": "common_definitions.json#/$defs/ServiceData"
-      }
-    },
-    "name_id_format": {
-      "$ref": "common_definitions.json#/$defs/NameIdFormat",
-      "description": "The name identifier format configurations."
-    },
-    "provider_id": {
-      "type": "string",
-      "description": "A unique identifier that identifies the partner."
-    },
-    "signature_settings": {
-      "$ref": "common_definitions.json#/$defs/SignatureSettings",
-      "description": "The signing and validation configurations for SAML messages and assertions."
-    },
-    "single_logout_service": {
-      "$ref": "common_definitions.json#/$defs/ServiceData",
-      "description": "Partner's endpoints that accept SAML logout requests or responses."
-    },
-    "soap_settings": {
-      "$ref": "common_definitions.json#/$defs/SOAPSettings",
-      "description": "A setting that specifies the connection parameters for the SOAP endpoints."
     }
   },
-  "required": ["name", "provider_id", "assertion_consumer_services", "assertion_settings", "extension_mapping"]
+  "required": ["name", "role", "configuration"]
 }
