@@ -1254,7 +1254,7 @@ class FED_Configurator(object):
 
     def _configure_federation_partner(self, protocol, fed_id, partner):
         method = {"OIDC": self._configure_oidc_partner,
-                  "SAML_20": self._configure_saml_partner,
+                  "SAML2_0": self._configure_saml_partner,
                   "WSFED": self._configure_ws_partner,
                 }.get(protocol, None)
         if method == None:
