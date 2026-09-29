@@ -9,7 +9,7 @@ import os
 import copy
 
 from .util.configure_util import config_base_dir, deploy_pending_changes
-from .util.data_util import Map, FILE_LOADER, optional_list, filter_list
+from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, remap_keys
 from .util.api_tracker import track_failure
 
 _logger = logging.getLogger(__name__)
@@ -678,7 +678,7 @@ class AAC_Configurator(object):
             generalConfig = {}
             for prop in ["admin_group", "enable_header_authentication", "enable_authz_filter", "max_user_response", "enablement_level"]:
                 if prop in aac_config.scim:
-                    generalConfig[prop] = aac_config.scim.prop
+                    generalConfig[prop] = aac_config.scim.get(prop)
             if generalConfig:
                 mergedGeneralConfig = self.aac.scim_config.get_general_config().json
                 mergedGeneralConfig.update(generalConfig)
@@ -687,9 +687,9 @@ class AAC_Configurator(object):
                     self.needsRestart = True
                     _logger.info("Successfully updated the SCIM general configuration")
                 else:
-                    track_failure('access_control', 'scim/general', rsp, generalConfig)
+                    track_failure('access_control', 'scim/general', rsp, mergedGeneralConfig)
                     _logger.error("Failed to update SCIM general configuration:\n{}\n{}".format(
-                                                        json.dumps(generalConfig, indent=4), rsp.data))
+                                                        json.dumps(mergedGeneralConfig, indent=4), rsp.data))
             for schema in aac_config.scim.schemas:
                 rsp = self.aac.scim_config.get_schema(schema.uri)
                 if rsp.success == False:
@@ -1053,6 +1053,7 @@ class AAC_Configurator(object):
                 if method == None:
                     _logger.error("Unable to create a connection for type {} with config:\n{}".format(
                         connection.type, json.dumps(connection, indent=4)))
+                    track_failure('access_control', 'server_connection', None, connection)
                 else:
                     rsp = method(connection)
                     if rsp.success == True:
@@ -1624,20 +1625,45 @@ class AAC_Configurator(object):
     def _scim_sc_name_to_id(self, sc_name):
         scim_sc = optional_list(filter_list('name', sc_name, 
                                             self.aac.server_connections.list_web_service().json))[0]
-        return scim_sc.get('uuid', "-1")
+        return scim_sc.get('uuid', sc_name)
 
-    def _configure_mechanism(self, mechTypes, existing_mechanisms, mechanism):
-        typeId = optional_list(filter_list('type', mechanism.type, mechTypes))[0].get('id', None)
-        if not typeId:
-            _logger.error("Mechanism [{}] specified an invalid type, skipping.".format(mechanism))
-            return
+    def _smtp_sc_name_to_id(self, sc_name):
+        smtp_sc =  optional_list(filter_list('name', sc_name, 
+                                            self.aac.server_connections.list_smtp().json))[0]
+        return smtp_sc.get('uuid', sc_name)
+
+    def _ldap_sc_name_to_id(self, sc_name):
+        ldap_sc = optional_list(filter_list('name', sc_name, 
+                                            self.aac.server_connections.list_ldap().json))[0]
+        return ldap_sc.get('uuid', sc_name)
+
+    def _ci_sc_name_to_id(self, sc_name):
+        ci_sc = optional_list(filter_list('name', sc_name, 
+                                            self.aac.server_connections.list_ldap().json))[0]
+        return ci_sc.get('uuid', sc_name)
+
+    def _update_mechanism_properties(self, mechanism):
         props = None
         if mechanism.properties != None and isinstance(mechanism.properties, dict):
             props = []
             for k, v in mechanism.properties.items():
                 if k == 'ScimConfig.serverConnection':
                     v = self._scim_sc_name_to_id(v)
+                elif k == "EmailMessage.serverConnection":
+                    v = self._smtp_sc_name_to_id(v)
+                elif k == "basicldapuserAuthentication.serverConnectionID":
+                    v = self._ldap_sc_name_to_id(v)
+                elif k == "CI.serverConnection":
+                    v = self._ci_sc_name_to_id(v)
                 props += [{"key": k, "value": v}]
+        return props
+
+    def _configure_mechanism(self, mechTypes, existing_mechanisms, mechanism):
+        typeId = optional_list(filter_list('type', mechanism.type, mechTypes))[0].get('id', None)
+        if not typeId:
+            _logger.error("Mechanism [{}] specified an invalid type, skipping.".format(mechanism))
+            return
+        props = self._update_mechanism_properties(mechanism)
         old_mech = optional_list(filter_list('uri', mechanism.uri, existing_mechanisms))[0]
         rsp = None
         if old_mech:
@@ -1655,12 +1681,20 @@ class AAC_Configurator(object):
             _logger.error("Failed to set configuration for {} mechanism with:\n{}\n{}".format(
                 mechanism.name, json.dumps(mechanism, indent=4), rsp.data))
 
+    def _update_policy_properties(self):
+        return
+
+
     def _configure_policy(self, existing_policies, policy):
         rsp = None
         old_policy = optional_list(filter_list('uri', policy.uri, existing_policies))[0]
         if old_policy:
-            rsp = self.aac.authentication.update_policy(old_policy['id'], name=policy.name, policy=policy.policy, uri=policy.uri,
-                    description=policy.description, predefined=old_policy['predefined'], enabled=policy.enabled)
+            methodArgs= self.aac.authentication.get_policy(old_policy.get("id", "-1")).json
+            methodArgs = remap_keys(methodArgs, {'userlastmodified': 'user_last_modified',
+                    'datecreated': 'date_created', 'lastmodified': 'last_modified'})
+            methodArgs.update(policy)
+            del methodArgs['id']
+            rsp = self.aac.authentication.update_policy(old_policy['id'], **methodArgs)
         else:
             rsp = self.aac.authentication.create_policy(name=policy.name, policy=policy.policy, 
                                 uri=policy.uri, description=policy.description, enabled=policy.enabled)
@@ -1830,9 +1864,7 @@ class AAC_Configurator(object):
                 deploy_pending_changes(self.factory, self.config) # Mechanisms must be deployed before they are usable in policies
                 self.needsRestart = False
             if aac_config.authentication.policies != None:
-                existing_policies = self.aac.authentication.list_policies().json
-                if existing_policies == None:
-                    existing_policies = []
+                existing_policies = optional_list(self.aac.authentication.list_policies().json)
                 for policy in aac_config.authentication.policies:
                     self._configure_policy(existing_policies, policy)
 
@@ -1913,15 +1945,16 @@ class AAC_Configurator(object):
 
 
     def _upload_metadata(self, metadata):
-        metadata_list = optional_list(FILE_LOADER.read_files(metadata))[0]
+        metadata_list = optional_list(FILE_LOADER.read_files(metadata))
         for metadata_file in metadata_list:
-            rsp = self.aac.fido2_config.create_metadata(filename=metadata_list['path'])
+            rsp = self.aac.fido2_config.create_metadata(filename=metadata_file['path'])
             if rsp.success == True:
                 self.needsRestart = True
-                _logger.info("Successfully created {} FIDO metadata".format(metadata_file['name']))
+                _logger.info(f"Successfully imported {metadata_file['name']} FIDO metadata")
             else:
-                track_failure('access_control', 'fido2/metadata', rsp, {'name': metadata_file['name']})
-                _logger.error("Failed to create {} FIDO metadata".format(metadata_file["name"]))
+                track_failure('access_control', 'fido2/metadata', rsp, {'name': metadata,
+                    "path": metadata_file['path']})
+                _logger.error("Failed to import {} FIDO metadata".format(metadata_file["name"]))
 
 
     def _create_mds(self, mds):
@@ -1948,17 +1981,18 @@ class AAC_Configurator(object):
 
     def _create_relying_party(self, rp):
         rp_metadata = rp.get("metadata", []) # Need empty list instead of None
-        if rp.metadata:
+        if isinstance(rp.metadata, list) and len(rp.metadata) > 0:
             metadata_list = optional_list(self.aac.fido2_config.list_metadata().json)
             for pos, metadata in enumerate(rp.metadata):
-                for uploaded_metadata in metadata_list:
-                    if uploaded_metadata['filename'] == metadata:
-                        rp_metadata[pos] = uploaded_metadata['id']
+                for md_docs in metadata_list:
+                    if isinstance(md_docs, dict) and 'filename' in md_docs \
+                            and md_docs['filename'] == metadata:
+                        rp_metadata[pos] = str(md_docs['id'])
                         break
         if rp.use_all_metadata:
             metadata_list = optional_list(self.aac.fido2_config.list_metadata().json)
             for uploaded_metadata in metadata_list:
-                rp_metadata += [uploaded_metadata['id']]
+                rp_metadata += [str(uploaded_metadata['id'])]
 
         rp_mds = rp.get("metadata_services", [])
         if rp.metadata_services:

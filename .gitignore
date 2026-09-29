@@ -15,3 +15,4 @@ pyenv
 *.whl
 docs/schema_html
 docs/_build/*
+.bob

@@ -150,13 +150,15 @@ class Map(dict):
 class CustomLoader(yaml.SafeLoader):
 
     k8s_cache = {}
+    vault_cache = {}
     _temp_files = []  # Track temp files for cleanup
     _temp_dirs = []  # Track temp directories for cleanup
     _cleanup_registered = False
     _default_namespace = None  # Cache for default namespace
 
     def __init__(self, path):
-        self.k8s_cache = {}
+        #self.k8s_cache = {}
+        #self.vault_cache = {}
         self._root = os.path.split(path.name)[0]
         self._kube_client = None
         super(CustomLoader, self).__init__(path)
@@ -285,29 +287,33 @@ class CustomLoader(yaml.SafeLoader):
                 "and the hvac package is installed.".format(
                     secret_ref, const.HASHIVAULT_BASE, const.HASHIVAULT_TOKEN)
             )
-
-        # Try KV v2 first (Vault default since v1.1), fall back to KV v1
-        try:
-            response = client.secrets.kv.v2.read_secret_version(
-                path=path, mount_point=mount_point
-            )
-            return response['data']['data'][key]
-        except Exception as v2_err:
-            _logger.debug(
-                "KV v2 read failed for '%s' (mount=%s path=%s): %s — trying v1",
-                secret_ref, mount_point, path, v2_err
-            )
-
-        try:
-            response = client.secrets.kv.v1.read_secret(
-                path=path, mount_point=mount_point
-            )
-            return response['data'][key]
-        except Exception as v1_err:
-            raise RuntimeError(
-                "Failed to read Vault secret '{}' "
-                "(tried KV v2 and v1): {}".format(secret_ref, v1_err)
-            ) from v1_err
+        cache_key = "{}/{}".format(mount_point, path)
+        kv_data = self.vault_cache.get(cache_key)
+        if kv_data is None:
+            # Try KV v2 first (Vault default since v1.1), fall back to KV v1
+            try:
+                response = client.secrets.kv.v2.read_secret_version(
+                    path=path, mount_point=mount_point
+                )
+                kv_data = response['data']['data']
+            except Exception as v2_err:
+                _logger.debug(
+                    "KV v2 read failed for '%s' (mount=%s path=%s): %s — trying v1",
+                    secret_ref, mount_point, path, v2_err
+                )
+            if kv_data is None:
+                try:
+                    response = client.secrets.kv.v1.read_secret(
+                        path=path, mount_point=mount_point
+                    )
+                    kv_data = response['data']
+                except Exception as v1_err:
+                    raise RuntimeError(
+                        "Failed to read Vault secret '{}' "
+                        "(tried KV v2 and v1): {}".format(secret_ref, v1_err)
+                    ) from v1_err
+            self.vault_cache[cache_key] = kv_data
+        return kv_data[key]
 
     def k8s_secret_tofile(self, node):
         """
@@ -545,7 +551,7 @@ class FileLoader():
                 import traceback
                 get_tracker().record_failure(
                         '_config', 'file_not_found', str(e), path)
-                _logger.error(f"Failed to read {path}:{traceback.print_exc()}")
+                _logger.error(f"Failed to read {path}:{traceback.format_exc()}")
         return parsed_files 
 
 FILE_LOADER = FileLoader()

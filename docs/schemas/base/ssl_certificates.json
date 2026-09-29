@@ -55,7 +55,7 @@
               },
               "replace": {
                 "type": "boolean",
-                "description": "If enabled, the autoconf module will attempt to remove a personal certificate with the given ``label``. If ``label`` is not set, then this option is ignored. This option does not affect the \"remove\" ``operation``. If the label does not exist in the given ssl database then this will not log an error.",
+                "description": "If enabled, the autoconf module will attempt to remove a signer certificate with the given ``label``. If ``label`` is not set, then this option is ignored. This option does not affect the \"remove\" ``operation``. If the label does not exist in the given ssl database then this will not log an error.",
                 "default": false
               }
             },

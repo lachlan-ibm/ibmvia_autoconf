@@ -959,6 +959,7 @@ class FED_Configurator(object):
                     "realm": partner.configuration.realm,
                     "subject_confirmation_method": partner.configuration.subject_confirmation_method,
                     "use_inclusive_namespaces": partner.configuration.use_inclusive_namespaces,
+                    "want_multiple_attribute_statements": partner.configuration.want_multiple_attribute_statements,
                     "attribute_types": partner.configuration.attribute_types
                 })
             if partnerConfig and partnerConfig.identity_mapping != None:
@@ -1253,7 +1254,7 @@ class FED_Configurator(object):
                 partner.name, json.dumps(partner, indent=4), rsp.data))
 
     def _configure_federation_partner(self, protocol, fed_id, partner):
-        method = {"OIDC": self._configure_oidc_partner,
+        method = {"OIDC10": self._configure_oidc_partner,
                   "SAML2_0": self._configure_saml_partner,
                   "WSFED": self._configure_ws_partner,
                 }.get(protocol, None)
@@ -1488,7 +1489,8 @@ class FED_Configurator(object):
                     "endpoint": config.endpoint,
                     "realm": config.realm,
                     "poc_url": config.point_of_contact_url,
-                    "company_name": config.company_name
+                    "company_name": config.company_name,
+                    "replay_validation": config.replay_validation
                 })
                 if config.assert_settings != None:
                     methodArgs.update({
