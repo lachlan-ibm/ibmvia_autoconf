@@ -170,6 +170,7 @@ LTPA Keyfiles
 Kerberos
 ========
 
+.. note:: This property is DEPRECIATED. Use the `Appliance <appliance.html#kerberos-configuration>`_ or `Container <container.html#kerberos-configuration>`_ property.
 
 .. raw:: html
    :file: schema_html/webseal/kerberos.html

@@ -133,3 +133,11 @@ Managment Certificate
    :file: schema_html/base/lmi_certificate.html
 
 |br|
+
+Kerberos Configuration
+======================
+
+.. note:: This property overrides the Web Reverse Proxy property
+
+.. raw:: html
+   :file: schema_html/webseal/kerberos.html

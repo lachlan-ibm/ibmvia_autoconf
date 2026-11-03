@@ -2045,8 +2045,8 @@ class WEB_Configurator(object):
         if websealConfig.ltpa_keyfiles != None:
             self.ltpa_keyfiles(websealConfig.ltpa_keyfiles)
 
-        if websealConfig.kerberos != None:
-            self.kerberos(websealConfig.kerberos)
+        #if websealConfig.kerberos != None: done in configure.py configure base
+        #    self.kerberos(websealConfig.kerberos)
 
         if websealConfig.password_strength != None:
             self.password_strength(websealConfig.password_strength)

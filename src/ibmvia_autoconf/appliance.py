@@ -10,10 +10,11 @@ from .util.constants import HEADERS
 from .util.configure_util import config_yaml, deploy_pending_changes
 from .util.data_util import Map, optional_list, filter_list, prefix_keys, FILE_LOADER
 from .util.api_tracker import track_failure
+from .deployment_base import DeploymentBase
 
 _logger = logging.getLogger(__name__)
 
-class Appliance_Configurator(object):
+class Appliance_Configurator(DeploymentBase):
 
     config = Map()
     #appliance = None
@@ -679,12 +680,16 @@ class Appliance_Configurator(object):
             self._container_images(config.managed_containers)
             self._container_deployments(config.managed_containers)
 
-
     def configure(self):
         self.update_network(self.config.appliance)
         self.date_time(self.config.appliance)
+        self.kerberos_config(self.config.appliance, self.config.webseal, 
+                self.appliance.get_web_settings()) # before HVDB setup; after network settings
         self.cluster(self.config.appliance)
 
 
 if __name__ == "__main__":
-    Appliance_Configurator(config_yaml(), None).configure()
+    import sys
+    from pyivia import Factory
+    Appliance_Configurator(config_yaml(), 
+            Factory(sys.argv[1], sys.argv[2], sys.argv[3])).configure()

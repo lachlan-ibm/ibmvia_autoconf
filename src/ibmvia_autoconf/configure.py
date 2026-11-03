@@ -1189,6 +1189,7 @@ class IVIA_Configurator(object):
                 _logger.error("Failed to update the LMI certificate with PKCS12 file:: {}\n{}".format(
                                                                                         lmiP12, rsp.data))
 
+
     def configure_base(self):
         base_config = None
         deployment = None

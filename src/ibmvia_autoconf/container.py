@@ -13,10 +13,11 @@ from .util.constants import HEADERS
 from .util.configure_util import deploy_pending_changes
 from .util.data_util import Map
 from .util.api_tracker import track_failure
+from .deployment_base import DeploymentBase
 
 _logger = logging.getLogger(__name__)
 
-class Docker_Configurator(object):
+class Docker_Configurator(DeploymentBase):
 
     config = Map()
     #factory = None
@@ -150,13 +151,12 @@ class Docker_Configurator(object):
                 _logger.error("Failed to configure DSC with config:\n{}\n{}".format(
                     json.dumps(clusterConfig.dsc, indent=4), rsp.data))
 
-
-
     def configure(self):
         containerConfig = self.config.container
         if containerConfig == None:
             _logger.info("Unable to find container specific configuration")
             return
+        self.kerberos_config(self.config.container, self.config.webseal, self.factory.get_web_settings())
         self.configure_database_and_dsc(containerConfig.cluster)
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config, restartContainers=False)
@@ -165,6 +165,6 @@ if __name__ == "__main__":
     from .util.configure_util import config_yaml
     from pyivia import Factory
     import sys
-    c = Docker_Configurator(
-                Factory(sys.argv[1], sys.argv[2], sys.argv[3]), config_yaml())
-    c.configure()
+    Docker_Configurator(
+            config_yaml(), Factory(
+            sys.argv[1], sys.argv[2], sys.argv[3])).configure()
