@@ -1457,13 +1457,13 @@ class FED_Configurator(object):
                             "identity_ssl_keystore": config.identity_mapping.properties.ssl_key_store,
                             "identity_uri": config.identity_mapping.properties.uri
                         })
-                if config.advance_configuration != None:
+                if config.advanced_configuration != None:
                     methodArgs.update({
-                            "adv_delegate_id": config.advance_configuration.active_delegate_id,
-                            "adv_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule, 
+                            "adv_delegate_id": config.advanced_configuration.active_delegate_id,
+                            "adv_mapping_rule": self._mapping_rule_to_id(config.advanced_configuration.mapping_rule, 
                                                                                                 rules=self.mapping_rules),
-                            "adv_rule_type": config.advance_configuration.rule_type if \
-                                                        config.advance_configuration.rule_type != None else "JAVASCRIPT"
+                            "adv_rule_type": config.advanced_configuration.rule_type if \
+                                                        config.advanced_configuration.rule_type != None else "JAVASCRIPT"
                         })
             rsp = self.fed.federations.create_oidc_federation(**methodArgs)
             if rsp.success == True:
