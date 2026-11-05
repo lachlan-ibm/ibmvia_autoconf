@@ -2059,12 +2059,12 @@ class WEB_Configurator(object):
         if websealConfig.reverse_proxy != None:
             for proxy in websealConfig.reverse_proxy:
                 self.wrp(websealConfig.runtime, proxy)
-
-        if websealConfig.pdadmin != None:
-            self.pdadmin(websealConfig.runtime, websealConfig.pdadmin)
         
         if websealConfig.api_access_control != None:
             self.api_access_control(websealConfig.runtime, websealConfig.api_access_control)
+
+        if websealConfig.pdadmin != None:
+            self.pdadmin(websealConfig.runtime, websealConfig.pdadmin)
 
 if __name__ == "__main__":
     import sys
