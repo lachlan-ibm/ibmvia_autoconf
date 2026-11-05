@@ -1237,13 +1237,13 @@ class FED_Configurator(object):
                             "identity_uri": config.identity_mapping.properties.uri
                         })
 
-            if config.advance_configuration != None:
+            if config.advanced_configuration != None:
                 methodArgs.update({
-                        "adv_config_delegate_id": config.advance_configuration.active_delegate_id,
-                        "adv_config_mapping_rule": self._mapping_rule_to_id(config.advance_configuration.mapping_rule, 
+                        "adv_config_delegate_id": config.advanced_configuration.active_delegate_id,
+                        "adv_config_mapping_rule": self._mapping_rule_to_id(config.advance_advanced_configurationconfiguration.mapping_rule, 
                                                                                                 rules=self.mapping_rules),
-                        "adv_config_rule_type": config.advance_configuration.rule_type if \
-                                                                config.advance_configuration.rule_type else "JAVASCRIPT"
+                        "adv_config_rule_type": config.advanced_configuration.rule_type if \
+                                                                config.advanced_configuration.rule_type else "JAVASCRIPT"
                     })
 
         rsp = self.fed.federations.create_oidc_rp_partner(fedId, **methodArgs)
@@ -1809,7 +1809,7 @@ class FED_Configurator(object):
                 'The attribute mapping data.'
                 identity_mapping: typing.Optional[Federation_Common.Identity_Mapping]
                 'The identity mapping data.'
-                advance_configuration: typing.Optional[Federation_Common.Advanced_Configuration]
+                advanced_configuration: typing.Optional[Federation_Common.Advanced_Configuration]
                 'The advance configuration data. '
 
             class WSFed_Identity_Provider(typing.TypedDict):

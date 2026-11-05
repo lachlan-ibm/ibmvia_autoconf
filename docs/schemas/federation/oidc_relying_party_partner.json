@@ -102,7 +102,7 @@
           "$ref": "common_definitions.json#/$defs/IdentityMapping",
           "description": "The identity mapping data."
         },
-        "advance_configuration": {
+        "advanced_configuration": {
           "$ref": "common_definitions.json#/$defs/AdvancedConfiguration",
           "description": "The advance configuration data."
         }
