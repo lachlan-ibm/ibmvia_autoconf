@@ -1240,7 +1240,7 @@ class FED_Configurator(object):
             if config.advanced_configuration != None:
                 methodArgs.update({
                         "adv_config_delegate_id": config.advanced_configuration.active_delegate_id,
-                        "adv_config_mapping_rule": self._mapping_rule_to_id(config.advance_advanced_configurationconfiguration.mapping_rule, 
+                        "adv_config_mapping_rule": self._mapping_rule_to_id(config.advanced_configuration.mapping_rule, 
                                                                                                 rules=self.mapping_rules),
                         "adv_config_rule_type": config.advanced_configuration.rule_type if \
                                                                 config.advanced_configuration.rule_type else "JAVASCRIPT"
