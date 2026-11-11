@@ -684,7 +684,7 @@ class Appliance_Configurator(DeploymentBase):
         self.update_network(self.config.appliance)
         self.date_time(self.config.appliance)
         self.kerberos_config(self.config.appliance, self.config.webseal, 
-                self.appliance.get_web_settings()) # before HVDB setup; after network settings
+                self.appliance) # before HVDB setup; after network settings
         self.cluster(self.config.appliance)
 
 

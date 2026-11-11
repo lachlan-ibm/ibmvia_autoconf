@@ -156,7 +156,7 @@ class Docker_Configurator(DeploymentBase):
         if containerConfig == None:
             _logger.info("Unable to find container specific configuration")
             return
-        self.kerberos_config(self.config.container, self.config.webseal, self.factory.get_web_settings())
+        self.kerberos_config(self.config.container, self.config.webseal, self.factory)
         self.configure_database_and_dsc(containerConfig.cluster)
         if self.needsRestart == True:
             deploy_pending_changes(self.factory, self.config, restartContainers=False)
