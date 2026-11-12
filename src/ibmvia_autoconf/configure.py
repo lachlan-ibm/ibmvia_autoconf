@@ -138,8 +138,8 @@ class IVIA_Configurator(object):
     def fips(self, config):
         if config != None and config.appliance and config.appliance.fips and \
                 config.appliance.fips.fips_enabled == True:
-            fips_settings = self.factory.get_system_settings().fips.get_settings().json
-            if fips_settings and fips_settings.get("fipsEnabled", False) == False:
+            fips_settings = self.factory.get_system_settings().fips.get_settings().json or {}
+            if fips_settings.get("fipsEnabled", False) == False:
                 response = self.factory.get_system_settings().fips.update_settings(**config.appliance.fips)
                 if response.success == True:
                     _logger.info("Successfully enabled FIPS mode.")

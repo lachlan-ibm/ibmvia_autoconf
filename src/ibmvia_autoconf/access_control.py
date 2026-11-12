@@ -7,6 +7,7 @@ import logging
 import json
 import os
 import copy
+from typing import Any
 
 from .util.configure_util import config_base_dir, deploy_pending_changes
 from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, remap_keys
@@ -186,8 +187,7 @@ class AAC_Configurator(object):
 
     def pip_configuration(self, config):
         if config.pips:
-            existing = self.aac.pip.list_pips().json
-            if not existing: existing = []
+            existing = optional_list(self.aac.pip.list_pips().json)
             for pip in config.pips:
                 methodArgs = copy.deepcopy(pip)
                 if "properties" in methodArgs.keys():
@@ -432,13 +432,12 @@ class AAC_Configurator(object):
             if cba.risk_profiles != None:
                 self._risk_profiles(cba.risk_profiles)
             if cba.policies != None:
-                old_policies = self.aac.access_control.list_policies().json
-                if old_policies == None: old_policies = [{}]
+                old_policies = optional_list(self.aac.access_control.list_policies().json)
                 for policy in cba.policies:
                     self._cba_policy(old_policies, policy)
-            policies = self.aac.access_control.list_policies().json
-            policy_sets = self.aac.access_control.list_policy_sets().json
-            definitions = self.aac.api_protection.list_definitions().json
+            policies = optional_list(self.aac.access_control.list_policies().json)
+            policy_sets = optional_list(self.aac.access_control.list_policy_sets().json)
+            definitions = optional_list(self.aac.api_protection.list_definitions().json)
             if cba.resources != None:
                 #Auth to pdadmin
                 adminUser = self.config.get("webseal", {}).get("runtime", {}).get("admin_user", None)
@@ -760,7 +759,7 @@ class AAC_Configurator(object):
         return rsp
 
     def _remove_server_connection(self, connection):
-        configured_connections = self.aac.server_connections.list_all().json
+        configured_connections = self.aac.server_connections.list_all().json or {}
         for connectionType in configured_connections:
             for c in configured_connections[connectionType]:
                 if c.get('name') == connection.name and c.get('locked') == True:
@@ -780,6 +779,7 @@ class AAC_Configurator(object):
                           "ws": self.aac.server_connections.delete_web_service}.get(
                                                                     connection.type, default_fcn)(c['uuid'])
                     return False if rsp == None else rsp.success
+        _logger.debug(f"Connection not found in current configured list :: {configured_connections}")
         return True
 
 
@@ -1240,8 +1240,7 @@ class AAC_Configurator(object):
 
     def obligation_configuration(self, aac_config):
         if aac_config.obligations != None:
-            existing = self.aac.access_control.list_obligations().json
-            if existing == None: existing = []
+            existing = optional_list(self.aac.access_control.list_obligations().json)
             for obligation in aac_config.obligations:
                 obg_id = optional_list(filter_list(
                     "obligationURI", obligation.uri, existing))[0].get('id', None)
@@ -1689,7 +1688,7 @@ class AAC_Configurator(object):
         rsp = None
         old_policy = optional_list(filter_list('uri', policy.uri, existing_policies))[0]
         if old_policy:
-            methodArgs= self.aac.authentication.get_policy(old_policy.get("id", "-1")).json
+            methodArgs= self.aac.authentication.get_policy(old_policy.get("id", "-1")).json or {}
             methodArgs = remap_keys(methodArgs, {'userlastmodified': 'user_last_modified',
                     'datecreated': 'date_created', 'lastmodified': 'last_modified'})
             methodArgs.update(policy)
@@ -1855,9 +1854,7 @@ class AAC_Configurator(object):
                 if mech_types == None:
                     _logger.error("Faield to get list of mechanism types")
                     return
-                existing_mechanisms = self.aac.authentication.list_mechanisms().json
-                if existing_mechanisms == None:
-                    existing_mechanisms = []
+                existing_mechanisms = optional_list(self.aac.authentication.list_mechanisms().json)
                 for mechanism in aac_config.authentication.mechanisms:
                     self._configure_mechanism(mech_types, existing_mechanisms, mechanism)
             if self.needsRestart == True:
@@ -1926,7 +1923,7 @@ class AAC_Configurator(object):
         if aac_config.mmfa != None:
             methodArgs = copy.deepcopy(aac_config.mmfa)
             if aac_config.api_protection != None and aac_config.api_protection.clients != None:
-                api_clients = self.aac.api_protection.list_clients().json
+                api_clients = optional_list(self.aac.api_protection.list_clients().json)
                 for client in api_clients:
                     if client['name'] == aac_config.mmfa.client_id:
                         methodArgs['client_id'] = client['clientId']
@@ -2004,7 +2001,7 @@ class AAC_Configurator(object):
                         break
 
         if rp.mediator:
-            mediator_list = self.aac.fido2_config.list_mediator().json
+            mediator_list = optional_list(self.aac.fido2_config.list_mediator().json)
             for mediator in mediator_list:
                 if mediator['fileName'] == rp.mediator:
                     rp.mediator = mediator['id']
