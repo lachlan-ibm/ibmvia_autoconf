@@ -7,6 +7,7 @@ import logging
 import json
 import typing
 import copy
+import os
 
 from .util.configure_util import config_base_dir, deploy_pending_changes
 from .util.data_util import prefix_keys, Map, FILE_LOADER, optional_list, filter_list
@@ -1355,15 +1356,32 @@ class WEB_Configurator(object):
                 track_failure('webseal', 'ltpa_keyfile', rsp, {"file": keyfile})
                 _logger.error(f"Faield to import the {keyfile} LTPA keyfile:\n{rsp.data}")
 
+    def __get_krb5_prop_name(self, _id, subsection, name):
+        key = _id
+        if name and subsection:
+            key = f"{_id}/{subsection}"
+
+        return key
 
     def __create_kerberos_property(self, _id, subsection, name, value):
-        rsp = self.web.kerberos.create(_id=_id, name=name, value=value)
+        key = self.__get_krb5_prop_name(_id, subsection, name)
+        rsp = self.web.kerberos.create(section_id=key, subsection=subsection, name=name, value=value)
         if rsp.success == True:
             _logger.info("Successfully configured Kerberos property")
         else:
             track_failure('webseal', 'kerberos/properties', rsp, request_data={'id': _id, 'name': name, 'value': value})
-            _logger.error("Failed to configure Kerberos property:\nsubsection: {} name: {} value:{}\n{}".format(
-                            subsection, name, value, rsp.data))
+            _logger.error(f"Failed to configure Kerberos property :: prop: {key} value:{value}\n{rsp.data}")
+
+    def __update_kerberos_property(self, _id, subsection, name, value):
+        key = self.__get_krb5_prop_name(_id, subsection, name)
+        if name:
+            key += f"/{name}"
+        rsp = self.web.kerberos.update(section_id=key, value=value)
+        if rsp.success == True:
+            _logger.info("Successfully updated Kerberos property")
+        else:
+            track_failure('webseal', 'kerberos/properties', rsp, request_data={'id': _id, 'name': name, 'value': value})
+            _logger.error(f"Failed to update Kerberos property :: prop: {key} value:{value}\n{rsp.data}")
 
 
     class Kerberos(typing.TypedDict):
@@ -1410,12 +1428,19 @@ class WEB_Configurator(object):
 
     def kerberos(self, config):
         if config.libdefault != None:
-            for kerbdef, value in config.libdefault: self.__create_kerberos_property('libdefault', kerbdef, kerbdef, value)
+            for kerbprop, value in config.libdefault.items():       
+                exists = self.web.kerberos.get(f"libdefaults/{kerbprop}").success
+                _logger.info(f"exits :: {exists}")
+                if exists == True:
+                    self.__update_kerberos_property('libdefaults', None, kerbprop, value)
+                else:
+                    self.__create_kerberos_property('libdefaults', None, kerbprop, value)
         if config.realms != None:
             for realm in config.realms:
                 self.__create_kerberos_property("realms", realm.name, None, None)
                 if realm.properties != None:
-                    for k, v in realm.properties: self.__create_kerberos_property("realms/" + realm.name, None, k, v)
+                    for entry in realm.properties:
+                        for k, v in entry.items(): self.__create_kerberos_property("realms/" + realm.name, None, k, v)
         if config.domain_realms != None:
             for domain_realm in config.domain_realms: self.__create_kerberos_property("domain_realm", None,
                     domain_realm.name, domain_realm.dns)
@@ -1428,7 +1453,7 @@ class WEB_Configurator(object):
         if config.keytabs != None:
             for kf in config.keytabs:
                 if not kf.startswith('/'):
-                    kf = config_base_dir() + kf
+                    kf = os.path.join(str(config_base_dir()), str(kf))
                 rsp = self.web.kerberos.import_keytab(kf)
                 if rsp.success == True:
                     _logger.info("Successfully imported Kerberos Keytab file")
