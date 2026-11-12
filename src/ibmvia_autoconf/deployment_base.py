@@ -20,4 +20,5 @@ class DeploymentBase(object):
             _logger.warning("Kerberos property in web reverse proxy is depreciated. Use appliance or container top level key.")
             if not krb5_cfg:
                 krb5_cfg = wrp_config.kerberos
-        WEB(None, factory).kerberos(krb5_cfg)
+        if krb5_cfg:
+            WEB(None, factory).kerberos(krb5_cfg)
