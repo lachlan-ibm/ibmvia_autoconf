@@ -1430,7 +1430,6 @@ class WEB_Configurator(object):
         if config.libdefault != None:
             for kerbprop, value in config.libdefault.items():       
                 exists = self.web.kerberos.get(f"libdefaults/{kerbprop}").success
-                _logger.info(f"exits :: {exists}")
                 if exists == True:
                     self.__update_kerberos_property('libdefaults', None, kerbprop, value)
                 else:
