@@ -680,7 +680,7 @@ class AAC_Configurator(object):
                 if prop in aac_config.scim:
                     generalConfig[prop] = aac_config.scim.get(prop)
             if generalConfig:
-                mergedGeneralConfig = self.aac.scim_config.get_general_config().json
+                mergedGeneralConfig = self.aac.scim_config.get_general_config().json or {}
                 mergedGeneralConfig.update(generalConfig)
                 rsp = self.aac.scim_config.update_general_config(**mergedGeneralConfig)
                 if rsp.success == True:

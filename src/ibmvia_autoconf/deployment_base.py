@@ -6,7 +6,7 @@ from .webseal import WEB_Configurator as WEB
 _logger = logging.getLogger(__name__)
 
 '''
-Container for common methods that must occur during the deployment model setup.
+Class for common methods that must occur during the deployment model specific setup.
 
 Kerberos: must occur after SSL, network setup;  must occur before HVDB setup
 '''
