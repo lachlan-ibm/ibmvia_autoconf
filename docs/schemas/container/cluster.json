@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "cluster.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/container/cluster.json",
   "description": "Configuration for config and runtime database connections; and distributed session cache settings in container deployments.",
   "type": "object",
   "properties": {

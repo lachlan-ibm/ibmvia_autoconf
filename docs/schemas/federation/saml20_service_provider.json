@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "saml20_service_provider.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/federation/saml20_service_provider.json",
   "title": "SAML 2.0 Service Provider Configuration",
   "description": "Configuration for a SAML 2.0 Service Provider federation.",
   "type": "object",

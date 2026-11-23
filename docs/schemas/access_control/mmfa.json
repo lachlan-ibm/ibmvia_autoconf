@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "mmfa.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/access_control/mmfa.json",
   "description": "Configuration for IBM Verify mobile multi-factor authentication (MMFA) integration. These properties are used as a discovery mechanism for mobile devices which have been registered for a user; and is capable of initiating or completing an \"out of band\" authentication or authorization challenge.",
   "type": "object",
   "properties": {

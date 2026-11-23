@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/client_cert_mapping.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/webseal/client_cert_mapping.json",
   "description": "Configuration for client certificate mapping using XSLT files to match X509 certificates from incoming connections to entities in the User Registry.",
   "type": "array",
   "items": {

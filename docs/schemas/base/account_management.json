@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/account_management.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/base/account_management.json",
   "description": "Administrator accounts, groups for the local management interface. Groups are created before users; therefore if a user is being created and added to a group then this should be done in the user configuration entry.",
   "type": "object",
   "properties": {

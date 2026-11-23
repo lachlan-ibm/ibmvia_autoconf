@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "authentication.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/access_control/authentication.json",
   "description": "Configuration for authentication mechanisms and policies used in the Authentication policy engine. Authentication policies can be used in risk-based access or context-based access policies to conditionally enforce additional authentication/authorization requirements. Authentication policies can also be attached to WebSEAL objects in the policy server.",
   "type": "object",
   "properties": {

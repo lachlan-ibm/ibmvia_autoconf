@@ -1,9 +1,9 @@
 # IBM Verify Identity Access Configuration Automation
-This repository is used to configure IBM Verify Identity Access (IVIA), and IBM Security Verify Access (ISVA) using a 
+This python module is used to configure IBM Verify Identity Access (IVIA), and IBM Security Verify Access (ISVA) using a 
 yaml file of the required configuration. 
 
 This project aims to allow administrators of a Verify Identity Access (IVIA) or IBM Security Verify Access (ISVA) 
-deployment. The configuration is applied using the pyivia python module, which in turn uses the rest API. The 
+deployment to automate configuration. The configuration is applied using the pyivia python module, which in turn uses the rest API. The 
 [examples](https://ibm-verify.github.io/ibm-verify-identity-access-automated-configurator/examples.html) provides in-depth guides on how to use 
 this automation tool.
 
@@ -24,7 +24,7 @@ To install an extra, use the following syntax:
 ```bash
 pip install ibmvia_autoconf[kubernetes]
 ```
-Valid optional extra targets include: `kubernetes`, `docker-compose`, and `all`
+Valid optional extra targets include: `kubernetes`, `docker-compose`, `vault` and `all`
 
 
 ## Environment
@@ -121,9 +121,9 @@ IBM Verify Identity Access Automated Configurator can be run from within a Kuber
 are routing issues between the deployment host and the kubernetes external addresses this option will allow for 
 configuration using the kubernetes internal network.
 
-Here is an example Kubernetes batch" object which deploys a container to apply a configuration to a cluster.
+Here is an example Kubernetes Job, which deploys a container to apply a configuration to a cluster.
 > note This requires a user to create the `verify-config` ConfigMap object with the required configuration files plus 
-any additional Secrets which are referenced as environment variables.
+  any additional Secrets which are referenced as environment variables.
 
 ```
 apiVersion: batch/v1
@@ -196,4 +196,5 @@ pip install setuptools
 pip install --no-build-isolation ibmvia_autoconf
 ```
 
-
+# Issues
+If you find that something is not working as expected, please [open an issue](/https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/issues) describing your use case.

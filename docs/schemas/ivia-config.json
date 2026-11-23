@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/ivia-config.json",
+  "description": "Configuration schema for IBM Verify Identiy Access",
+  "type": "object",
+  "properties": {
+    "access_control": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/aac.json" },
+    "federation": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/fed.json" },
+    "webseal":{ "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/wrp.json" },
+    "container": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/container.json" },
+    "appliance": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/appliance.json" },
+    "mgmt_base_url": {
+        "type": "string",
+        "description": "The URL used to connect to the IVIA management interface. This can also be set via an environment property."
+    },
+    "mgmt_user": {
+        "type": "string",
+        "description": "The administrator account which will be used to apply the defined configuration. This can also be set via an environment property."
+    },
+    "mgmt_pwd": {
+        "type": "string",
+        "description": "The secret used to authenticate as the provided administrator account. This can be either a password or an access token. If an access token is set, then the `mgmt_user` property must not be defined. This can also be set via an environment property."
+    },
+    "mgmt_old_pwd": {
+        "type": "string",
+        "description": "If a password change for the provided admin account is required, this is the current password for that account, which will be updated to `mgmt_pwd` as part of the configuration steps. This can also be set via an environment property."
+    }
+  },
+  "unevaluatedProperties": false
+}

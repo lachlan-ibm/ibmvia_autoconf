@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "security_token_service.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/federation/security_token_service.json",
   "description": "Configuration for Security Token Service (STS) chain templates and chains for security token transformation and validation.",
   "type": "object",
   "properties": {

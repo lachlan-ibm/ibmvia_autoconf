@@ -55,6 +55,8 @@ The module supports using external secret providers (like Kubernetes or Hashicor
 
 A number of `environment properties <envvars.html>`_ are also available to set log level and destination.
 
+See the `schema validation <schemavalidation.html>`_ doc for steps to configure an IDE ot validate the YAML properties for the autoconf module.
+
 
 Modules
 _______
@@ -91,7 +93,7 @@ Detailed information on configuration object structure can be found in the submo
    access_control
    federations
 
-
+|br|
 
 API Failure Tracking
 ____________________

@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "federations.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/federation/federations.json",
   "description": "Configuration for federation providers and partners supporting SAML 2.0, OIDC, and WS-Federation protocols.",
   "type": "array",
   "items": {

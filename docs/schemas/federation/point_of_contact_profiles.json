@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "point_of_contact_profiles.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/federation/point_of_contact_profiles.json",
   "title": "Point of Contact Profiles Configuration",
   "description": "Configuration for Point of Contact (PoC) profiles that define callback modules for federation authentication flows.",
   "type": "object",

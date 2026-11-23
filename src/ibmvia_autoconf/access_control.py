@@ -9,8 +9,8 @@ import os
 import copy
 from typing import Any
 
-from .util.configure_util import config_base_dir, deploy_pending_changes
-from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, remap_keys
+from .util.configure_util import deploy_pending_changes
+from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, remap_keys, config_base_dir
 from .util.api_tracker import track_failure
 
 _logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "mapping_rules.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/access_control/mapping_rules.json",
   "description": "Configuration for uploading JavaScript mapping rules used in authentication and authorization flows. These rules are typically used to implement custom business logic for a particular integration requirement.",
   "type": "array",
   "items": {

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/base.json",
+  "description": "Configuration properties common to the Advanced Access Control and Federation modules, as well as system properties.",
+  "type": "object",
+  "properties": {
+    "admin_cfg": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/base/admin_config.json" },
+    "ssl_certificates": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/base/ssl_certificates.json" },
+    "account_management": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/base/account_management.json" },
+    "management_authorization": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/base/management_authorization.json" },
+    "management_authentication": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/base/management_authentication.json" },
+    "activation": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/base/module_activations.json" },
+    "advanced_tuning_parameters": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/base/advanced_tuning_parameter.json" },
+    "snapshots": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/base/snapshot.json" },
+    "extensions": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/base/extensions.json" },
+    "remote_syslog": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/base/remote_syslog.json" },
+    "lmi_certificate": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/base/lmi_certificate.json" },
+    "access_policies": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/federation/access_policies.json" },
+    "attribute_sources": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/federation/attribute_sources.json" },
+    "advanced_configuration": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/advanced_configuration.json" },
+    "template_files": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/template_files.json" },
+    "mapping_rules": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/mapping_rules.json" },
+    "point_of_contact": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/federation/point_of_contact_profiles.json" },
+    "server_connections": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/server_connections.json" },
+    "runtime_configuration": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/runtime_configuration.json" },
+    "kerberos": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/kerberos.json" }
+  },
+  "unevaluatedProperties": false
+}

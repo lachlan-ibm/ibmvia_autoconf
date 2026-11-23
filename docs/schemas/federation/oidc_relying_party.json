@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "oidc_relying_party.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/federation/oidc_relying_party.json",
   "title": "OIDC Relying Party Configuration",
   "description": "Configuration for an OpenID Connect Relying Party federation.",
   "type": "object",

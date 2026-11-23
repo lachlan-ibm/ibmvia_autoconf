@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/federation/common_definitions.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/federation/common_definitions.json",
   "title": "Federation Common Definitions",
   "description": "Reusable schema components shared across different federation types (SAML 2.0, OIDC, WS-Federation). These definitions can be referenced from other federation schemas using $ref.",
   "$defs": {

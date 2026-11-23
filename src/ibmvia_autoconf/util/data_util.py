@@ -98,6 +98,16 @@ def optional_list(x):
 def filter_list(attribute, value, _list):
     return list(filter(lambda x: attribute in x and x[attribute] == value, _list))
 
+
+def config_base_dir():
+    if const.CONFIG_BASE_DIR in os.environ.keys():
+        return str(os.environ.get(const.CONFIG_BASE_DIR))
+    elif const.LEGACY_CONFIG_BASE_DIR in os.environ.keys():
+        _logger.warning("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd " 
+                     "properties instead".format(const.LEGACY_CONFIG_BASE_DIR))
+        return str(os.environ.get(const.LEGACY_CONFIG_BASE_DIR))
+    return os.path.expanduser("~") #Default is home directory
+
 class Map(dict):
     def __init__(self, *args, **kwargs):
         super(Map, self).__init__(*args, **kwargs)
@@ -159,7 +169,7 @@ class CustomLoader(yaml.SafeLoader):
     def __init__(self, path):
         #self.k8s_cache = {}
         #self.vault_cache = {}
-        self._root = os.path.split(path.name)[0]
+        self._root = config_base_dir()
         self._kube_client = None
         super(CustomLoader, self).__init__(path)
         CustomLoader.add_constructor('!include', CustomLoader.include)

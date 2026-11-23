@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/remote_syslog.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/base/remote_syslog.json",
   "description": "The remote system logging capabilities of Verify Identity Access deployments. Administrators are able to define external servers where logs for Verify Identity Access sub-components should be forwarded to.",
   "type": "array",
   "items": {

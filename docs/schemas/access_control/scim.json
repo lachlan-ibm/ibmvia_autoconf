@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "scim.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/access_control/scim.json",
   "description": "System for Cross-domain Identity Management (SCIM) configuration. SCIM can be configured with a LDAP or a Verify Identity Access User Registry (WebSEAL runtime component) server connection. SCIM allows administrators to create and manage users, as well as provide attributes to other Verify Identity Access authentication components.",
   "type": "object",
   "properties": {

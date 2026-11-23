@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "alias_service.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/federation/alias_service.json",
   "description": "The alias service stores and retrieves aliases that are related to a federated identity. Persistent name identifier format allows you to link a user at the identity provider with a user at the service provider. Verify Identity Access stores these account linkages in a high-volume database or an LDAP database.",
   "type": "object",
   "properties": {

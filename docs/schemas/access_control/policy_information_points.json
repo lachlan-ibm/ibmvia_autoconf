@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "policy_information_points.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/access_control/policy_information_points.json",
   "description": "Policy Information Points (PIPs) allow administrators to integrate third party information sources to provide additional context to an authorization policy before making a decision to permit or deny access.",
   "type": "array",
   "items": {

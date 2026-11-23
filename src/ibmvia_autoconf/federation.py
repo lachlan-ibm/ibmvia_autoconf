@@ -12,8 +12,8 @@ from typing import Any
 
 from pyivia.core.federation import federations
 
-from .util.configure_util import deploy_pending_changes, config_base_dir
-from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, to_camel_case, remap_keys, KUBE_CLIENT_SLEEP
+from .util.configure_util import deploy_pending_changes
+from .util.data_util import Map, FILE_LOADER, optional_list, filter_list, remap_keys, config_base_dir
 from .util.api_tracker import track_failure
 
 _logger = logging.getLogger(__name__)

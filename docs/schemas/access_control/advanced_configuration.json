@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "advanced_configuration.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/access_control/advanced_configuration.json",
   "description": "Advanced Configuration Parameters define system wide properties for authentication and authorization components. The list of available properties is dependent on the target version of Verify Identity Access being configured. Administrators are able to use either the Verify Identity Access assigned identifier or the name of the property.",
   "type": "array",
   "items": {

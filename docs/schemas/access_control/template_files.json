@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "template_files.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/access_control/template_files.json",
   "description": "Upload or DELETE files or directories containing HTML which is compatible with the AAC and Federation templating engine. The directory structure of any directories to upload should follow the default top level directories. If you are defining a directory it should contain a trailing ``/``. If you add the ``DELETE:`` prefix to a path, then the file or directory will be removed from the IVIA template file system.",
   "type": "array",
   "items": {

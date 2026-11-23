@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/aac.json",
+  "description": "Advanced Access Control module configuration properties.",
+  "type": "object",
+  "properties": {
+    "api_protection": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/api_protection.json" },
+    "authentication": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/authentication.json" },
+    "context_based_access": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/access_control.json" },
+    "attributes": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/attributes.json" },
+    "obligations": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/obligations.json" },
+    "pips": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/policy_information_points.json" },
+    "push_notification_providers": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/push_notification_provider.json" },
+    "mmfa": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/mmfa.json" },
+    "scim": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/scim.json" },
+    "fido2": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/access_control/fido2.json" }
+  },
+  "unevaluatedProperties": false
+}

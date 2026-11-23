@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "wsfed_identity_provider.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/federation/wsfed_identity_provider.json",
   "title": "WS-Federation Identity Provider Configuration",
   "description": "Configuration for a WS-Federation Identity Provider federation.",
   "type": "object",

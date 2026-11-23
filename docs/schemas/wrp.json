@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/wrp.json",
+  "description": "WebSEAL Reverse Proxy module configuration properties",
+  "type": "object",
+  "properties": {
+    "webseal": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/reverse_proxy.json" },
+    "pdadmin": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/pdadmin.json" },
+    "client_cert_mapping": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/client_cert_mapping.json" },
+    "junction_mapping": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/junction_mapping.json" },
+    "url_mapping": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/url_mapping.json" },
+    "user_mapping": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/user_mapping.json" },
+    "fsso": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/fsso.json" },
+    "http_transforms": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/http_transformations.json" },
+    "ltpa_keyfiles": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/ltpa.json" },
+    "password_strength": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/password_strength.json" },
+    "rsa_config": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/rsa.json" },
+    "runtime": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/runtime.json" },
+    "api_access_control": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/webseal/api_access_control.json" }
+  },
+  "unevaluatedProperties": false
+}

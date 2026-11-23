@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/container.json",
+  "description": "Configuration properties for the container deployment model.",
+  "type": "object",
+  "allOf": [
+    { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/base.json" }
+  ],
+  "properties": {
+    "cluster": { "$ref": "https://raw.githubusercontent.com/ibm-verify/ibm-verify-identity-access-automated-configurator/refs/heads/development/docs/schemas/container/cluster.json" },
+    "incremental_snapshot": {
+        "type": "boolean",
+        "description": "If enabled, the autoconf module will attempt to publish and push configuration snapshots after every 'Deploy Pending Changes' request. This is useful if subsequent configuration steps require a previous snapshot state: eg. the revery proxy wizards often require the runtime container to be started wit ha valid configuration snapshot to load the self-signed x509 certificate. Enabling this property will increase the time required to apply the defined configuration.",
+        "default": false
+    }
+  },
+  "unevaluatedProperties": false
+}

@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/admin_config.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/base/admin_config.json",
   "description": "System wide settings such as LMI log file configuration, account management and tuning parameters for the LMI JVM.",
   "type": "object",
   "properties": {

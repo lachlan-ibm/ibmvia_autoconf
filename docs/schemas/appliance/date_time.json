@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "date_time.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/appliance/date_time.json",
   "description": "Configuration for date, time, timezone, and NTP settings on IBM Verify Access appliances. The date and time settings can be synchronized to a external NTP server, or set to a time-zone using canonical names.",
   "type": "object",
   "properties": {

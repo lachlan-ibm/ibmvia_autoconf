@@ -5,22 +5,12 @@
 import os, logging, sys, yaml, pyivia, datetime, subprocess, shutil, time, json
 from typing import Optional, Tuple
 from . import constants as const
-from .data_util import Map, FileLoader, CustomLoader, get_kube_client, KUBE_CLIENT_SLEEP, PUBLISH_SNAPSHOT_SLEEP, get_k8s_pod_namespace
+from .data_util import Map, FileLoader, CustomLoader, get_kube_client, KUBE_CLIENT_SLEEP, PUBLISH_SNAPSHOT_SLEEP, get_k8s_pod_namespace, config_base_dir
 from .logging_util import setup_logging
 
 setup_logging()
 
 _logger = logging.getLogger(__name__)
-
-
-def config_base_dir():
-    if const.CONFIG_BASE_DIR in os.environ.keys():
-        return os.environ.get(const.CONFIG_BASE_DIR)
-    elif const.LEGACY_CONFIG_BASE_DIR in os.environ.keys():
-        _logger.warning("DEPRECIATED  The {} environment variable is depreciated, use the \"IVIA\" prefix'd " 
-                     "properties instead".format(const.LEGACY_CONFIG_BASE_DIR))
-        return os.environ.get(const.LEGACY_CONFIG_BASE_DIR)
-    return os.path.expanduser("~") #Default is home directory
 
 
 def config_yaml(config_file=None):

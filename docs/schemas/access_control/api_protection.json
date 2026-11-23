@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "api_protection.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/access_control/api_protection.json",
   "description": "Configuration for OAuth 2.0 and OpenID Connect (OIDC) API protection definitions and clients.",
   "type": "object",
   "properties": {

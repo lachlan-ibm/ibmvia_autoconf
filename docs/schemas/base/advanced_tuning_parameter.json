@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/advanced_tuning_parameter.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/base/advanced_tuning_parameter.json",
   "description": "Advanced Tuning Parameters can be set on an appliance to configure additional settings not exposed by the LMI. Any required advanced tuning parameters for your deployment will be communicated to you via IBM support.",
   "type": "array",
   "items": {

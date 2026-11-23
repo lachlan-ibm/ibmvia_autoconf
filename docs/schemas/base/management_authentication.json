@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/base/management_authentication.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/base/management_authentication.json",
   "description": "Configure how users authenticate to the Verify Identity Access management interface. By default the management interface uses a local user registry, but administrators can configure a LDAP server or integrate a third party identity provider using the OIDC specification.",
   "type": "object",
   "properties": {

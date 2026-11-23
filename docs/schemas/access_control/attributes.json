@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "attributes.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/access_control/attributes.json",
   "description": "Configuration for custom attributes used in risk profiles and access control policies. Attributes allow an administrator to source information about a user from a number of different places (LDAP, Session, Static) to build up credential attributes, which can then be used by subsequent authentication and authorization flows.",
   "type": "array",
   "items": {

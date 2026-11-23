@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/webseal/runtime.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/webseal/runtime.json",
   "description": "The WebSEAL runtime server is the Directory Server which contains the reverse proxy's user registry and policy server. This is typically a LDAP server external to the deployment, however an example LDAP server is made available to deployments for testing.\n\nThe Verify Identity Access specific LDAP schemas can be found in the System -> File Downloads section of an appliance/configuration container in the `isva` directory.\n\nAny PKI required to verify this connection should be imported into a SSL database before the runtime component is configured.",
   "type": "object",
   "properties": {

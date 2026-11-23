@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "server_connections.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/access_control/server_connections.json",
   "description": "Configuration for external server connections used by Access Control and Federation components. Server connections are used to connect to third party infrastructure such as LDAP registries, email servers, SMS servers, ect.",
   "type": "array",
   "items": {

@@ -9,8 +9,8 @@ import typing
 import copy
 import os
 
-from .util.configure_util import config_base_dir, deploy_pending_changes
-from .util.data_util import prefix_keys, Map, FILE_LOADER, optional_list, filter_list
+from .util.configure_util import deploy_pending_changes
+from .util.data_util import prefix_keys, Map, FILE_LOADER, optional_list, filter_list, config_base_dir
 
 from .util.api_tracker import track_failure
 _logger = logging.getLogger(__name__)
@@ -1427,8 +1427,8 @@ class WEB_Configurator(object):
         'TODO.'
 
     def kerberos(self, config):
-        if config.libdefault != None:
-            for kerbprop, value in config.libdefault.items():       
+        if config.libdefaults != None:
+            for kerbprop, value in config.libdefaults.items():       
                 exists = self.web.kerberos.get(f"libdefaults/{kerbprop}").success
                 if exists == True:
                     self.__update_kerberos_property('libdefaults', None, kerbprop, value)

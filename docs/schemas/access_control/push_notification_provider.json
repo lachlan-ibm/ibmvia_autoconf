@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/lachlan-ibm/verify-access-configurator/schemas/access_control/push_notification_provider.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/access_control/push_notification_provider.json",
   "description": "Push notification configuration is used to integrate with mobile push notification service. Supports Apple APNS and Android Firebase providers.",
   "type": "array",
   "items": {

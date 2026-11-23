@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "obligations.json",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "$id": "https://github.com/ibm-verify/ibm-verify-identity-access-automated-configurator/docs/schemas/access_control/obligations.json",
   "description": "Configuration for access control obligations that define actions to be performed before access is granted. For example a user must consent to registering a device (device fingerprinting) to be permitted access.",
   "type": "array",
   "items": {
