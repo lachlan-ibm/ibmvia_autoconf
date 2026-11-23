@@ -81,8 +81,11 @@
           "description": "The DN LDAP attribute for this user."
         },
         "groups": {
-          "type": "array.string",
-          "description": "List of ISAM groups to add the user to."
+          "type": "array",
+          "description": "List of ISAM groups to add the user to.",
+          "items": {
+            "type": "string"
+          }
         },
         "gso_user": {
           "type": "boolean",
