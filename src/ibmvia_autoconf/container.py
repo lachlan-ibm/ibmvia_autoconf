@@ -102,7 +102,7 @@ class Docker_Configurator(DeploymentBase):
         database = copy.deepcopy(config_database)
         methodArgs = {'db_type': database.pop('type'), 'host': database.pop('host'), 'port': database.pop('port'),
                         'secure': database.pop('ssl'), 'db_key_store': database.pop('ssl_keystore', None), 'embedded': False,
-                        'user': database.pop('user'), 'passwd': database.pop('password'), 'db_name': database.pop('db_name'),
+                        'user': database.pop('user'), 'passwd': database.pop('password', None), 'db_name': database.pop('db_name'),
                         'extra_config': database
             }
         rsp = self.factory.get_system_settings().cluster.set_config_db(**methodArgs)

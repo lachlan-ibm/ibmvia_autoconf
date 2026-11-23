@@ -418,7 +418,7 @@ class Appliance_Configurator(DeploymentBase):
             methodArgs = {"embedded": False, "db_type": confDbExtraConfig.pop('type'), 'host': confDbExtraConfig.pop('host'),
                           'port': confDbExtraConfig.pop('port'), 'secure': confDbExtraConfig.pop('ssl'), 
                           'db_keystore': confDbExtraConfig.pop('ssl_keystore'), 'user': confDbExtraConfig.pop('user'), 
-                          'passwd': confDbExtraConfig.pop('password'), 'db_name': confDbExtraConfig.pop('db_name'), 
+                          'passwd': confDbExtraConfig.pop('password', None), 'db_name': confDbExtraConfig.pop('db_name'), 
                           'extra_config': confDbExtraConfig
                 }
             rsp = self.appliance.get_system_settings().cluster.set_config_db(**methodArgs)
@@ -433,7 +433,7 @@ class Appliance_Configurator(DeploymentBase):
             methodArgs = {'embedded': False, 'db_type': hvdbExtraConfig.pop('type'), 'host': hvdbExtraConfig.pop('host'),
                           'port': hvdbExtraConfig.pop('port'), 'secure': hvdbExtraConfig.pop('ssl'),
                           'db_keystore': hvdbExtraConfig.pop('ssl_keystore'), 'user': hvdbExtraConfig.pop('user'),
-                          'passwd': hvdbExtraConfig.pop('password'), 'db_name': hvdbExtraConfig.pop('db_name'),
+                          'passwd': hvdbExtraConfig.pop('password', None), 'db_name': hvdbExtraConfig.pop('db_name'),
                           'extra_config': hvdbExtraConfig
                 }
             rsp = self.appliance.get_system_settings().cluster.set_runtime_db(**methodArgs)
