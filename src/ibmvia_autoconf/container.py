@@ -102,9 +102,13 @@ class Docker_Configurator(DeploymentBase):
         database = copy.deepcopy(config_database)
         methodArgs = {'db_type': database.pop('type'), 'host': database.pop('host'), 'port': database.pop('port'),
                         'secure': database.pop('ssl'), 'db_key_store': database.pop('ssl_keystore', None), 'embedded': False,
-                        'user': database.pop('user'), 'passwd': database.pop('password', None), 'db_name': database.pop('db_name'),
-                        'extra_config': database
+                        'user': database.pop('user'), 'passwd': database.pop('password', None), 'db_name': database.pop('db_name')
             }
+        if database: # have extra config, prefix with cfgdb_
+            extra_config = {}
+            for key in database.keys():
+                extra_config['cfgdb_' + key if not key.startswith('cfgdb_') else key] = database.get(key)
+            methodArgs['extra_config'] = extra_config
         rsp = self.factory.get_system_settings().cluster.set_config_db(**methodArgs)
         if rsp.success == True:
             _logger.info("Successfully configured config database")
@@ -118,9 +122,13 @@ class Docker_Configurator(DeploymentBase):
         database = copy.deepcopy(runtime_database)
         methodArgs = {'db_type': database.pop('type'), 'host': database.pop('host'), 'port': database.pop('port'),
                         'secure': database.pop('ssl'), 'db_key_store': database.pop('ssl_keystore', None), 
-                        'user': database.pop('user'), 'passwd': database.pop('password'), 'db_name': database.pop('db_name'), 
-                        'extra_config': database
+                        'user': database.pop('user'), 'passwd': database.pop('password', None), 'db_name': database.pop('db_name')
             }
+        if database: # have extra config, prefix with hvdb_
+            extra_config = {}
+            for key in database.keys():
+                extra_config['hvdb_' + key if not key.startswith('hvdb_') else key] = database.get(key)
+            methodArgs['extra_config'] = extra_config
         rsp = self.factory.get_system_settings().cluster.set_runtime_db(**methodArgs)
         if rsp.success == True:
             _logger.info("Successfully configured HVDB")

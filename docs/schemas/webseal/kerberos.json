@@ -67,7 +67,7 @@
       "type": "object",
       "description": "Kerberos domain realm mapping.",
       "properties": {
-        "name": {
+        "realm": {
           "type": "string",
           "description": "Name of the Domain Realm."
         },
@@ -76,7 +76,7 @@
           "description": "DNS server for the Domain Realm."
         }
       },
-      "required": ["name", "dns"]
+      "required": ["realm", "dns"]
     }
   },
   "examples": [

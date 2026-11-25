@@ -1442,7 +1442,7 @@ class WEB_Configurator(object):
                         for k, v in entry.items(): self.__create_kerberos_property("realms/" + realm.name, None, k, v)
         if config.domain_realms != None:
             for domain_realm in config.domain_realms: self.__create_kerberos_property("domain_realm", None,
-                    domain_realm.name, domain_realm.dns)
+                    domain_realm.dns, domain_realm.realm)
         if config.capaths != None:
             for capath in config.capaths:
                 self.__create_kerberos_property("capaths", capath.name, None, None)

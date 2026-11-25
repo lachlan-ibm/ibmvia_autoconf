@@ -22,6 +22,24 @@
     }
   },
   "$defs": {
+    "FailoverServer": {
+      "type": "object",
+      "description": "PostgreSQL failover connection properties.",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "The IP addess or hostname of the failover server."
+        },
+        "port": {
+          "type": "integer",
+          "description": "The port of the failover server."
+        },
+        "order": {
+          "type": "integer",
+          "description": "The order of the failover server. This will be used to indicate the order in which the array of failover servers will be configured in the JDBC settings."
+        }
+      }
+    },
     "Database": {
       "type": "object",
       "description": "External database configuration. PKI required to connect to databases should be defined in the the `ssl_certificates` property.",
@@ -32,7 +50,8 @@
           "enum": [
             "postgresql",
             "db2",
-            "oracle"
+            "oracle",
+            "mssql"
           ]
         },
         "host": {
@@ -59,17 +78,59 @@
         },
         "password": {
           "type": "string",
-          "description": "Password to authenticate as username.",
+          "description": "Password to authenticate as username. Password is always required unless ``ms_auth`` is true (Kerberos authentication).",
           "format": "password"
         },
         "db_name": {
           "type": "string",
           "description": "Name of the database instance to use."
         },
-        "extra_config": {
-          "type": "object",
-          "description": "Database type specific configuration.",
-          "additionalProperties": true
+        "ms_auth": {
+          "type": "boolean",
+          "description": "Enable Kerberos authentication for the JDBC connection. This property is only valid if ``type`` is 'mssql'."
+        },
+        "mssql_keyfile": {
+          "type": "string",
+          "description": "The Kerberos keytab file to authenticate with. Only valid if ``ms_auth`` is True. The Keytab file must be uploaded as part of the Kerberos configuration."
+        },
+        "mssql_instance_name": {
+          "type": "string",
+          "description": "The database instance name to connect to. When it isn't specified, a connection is made to the default instance. This property is only valid if ``type`` is 'mssql'."
+        },
+        "mssql_trust_server_cert": {
+          "type": "boolean",
+          "description": "Set to ``true`` to specify that the driver doesn't validate the server TLS/SSL certificate. This property is only valid if ``type`` is 'mssql'."
+        },
+        "mssql_failover_partner": {
+          "type": "string",
+          "description": "The name of the failover server used in a database mirroring configuration. This property is used for an initial connection failure to the principal server. After you make the initial connection, this property is ignored."
+        },
+        "db_truststore": {
+          "type": "string",
+          "description": "The SSL Key Store which contains the trusted certificate of the Oracle DB requiring secure connectivity. This property is only valid if ``type`` is 'oracle'."
+        },
+        "driver_type": {
+          "type": "string",
+          "description": "The type of Oracle JDBC driver to use. This property is only valid if ``type`` is 'oracle'."
+        },
+        "failover_servers": {
+          "type": "array",
+          "description": "An ordered list of PostgreSQL failover servers for the Runtime database. This property is only valid if ``type`` is 'postgresql'",
+          "items": {
+            "$ref": "#/$defs/FailoverServer"
+          }
+        },
+        "db2_alt_address": {
+          "type": "string",
+          "description": "The IP or hostname of the fail-over server in DB2 HADR/ACR environments. This property is only valid if ``type`` is 'db2'"
+        },
+        "db2_alt_port": {
+          "type": "string",
+          "description": "The portt of the fail-over server in DB2 HADR/ACR environments. This property is only valid if ``type`` is 'db2'"
+        },
+        "db2_ssl_version": {
+          "type": "string",
+          "description": "The SSL protocol version to use when communicating with the DB2 server. If not specified, the system default will be used."
         }
       },
       "required": [
@@ -78,7 +139,6 @@
         "port",
         "ssl",
         "user",
-        "password",
         "db_name"
       ]
     },
